@@ -1,0 +1,23 @@
+{
+  "cmake.configureOnOpen": false,
+  "cmake.statusbar.advanced": {
+    "debug" : {
+      "visibility": "hidden"
+              },    "launch" : {
+      "visibility": "hidden"
+               },
+    "build" : {
+      "visibility": "hidden"
+               },
+    "buildTarget" : {
+      "visibility": "hidden"
+               },
+    },
+    "files.associations": {
+      "stdlib.h": "c"
+    },
+    "cmake.buildBeforeRun": true,
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cortex-debug.openocdPath": "/home/ed/code/openocd/src/openocd",
+    "cortex-debug.variableUseNaturalFormat": false
+}
