@@ -73,32 +73,90 @@ int main()
     struct render_area area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : 0, end_page : OLED_NUM_PAGES - 1};
     calc_render_area_buflen(&area);
     
-    // test font display
-    uint8_t *ptr = display_buf;
-    uint16_t mask = 0x00FF;
-    uint8_t shift = 0;
-    for (int j = 0; j < 8; j++) {
-        if (j % 2 == 0) {
-            mask = 0x00FF;
-            shift = 0;
+    while (true) {
+        // test font display 1
+        uint8_t *ptr = display_buf;
+        int start_char = 0;
+        uint16_t mask = 0x00FF;
+        uint8_t shift = 0;
+        for (int j = 0; j < 8; j++) {
+            if (j % 2 == 0) {
+                mask = 0x00FF;
+                shift = 0;
+            }
+            else {
+                mask = 0xFF00;
+                shift = 8;
+            }
+            // The display is 128 columns, but 14 characters is 126. 
+            // So we have 2 blank columns.
+            *(ptr++) = 0x00;  // make first col blank 
+            for (int i = start_char + 0; i < (start_char + (14 * 9)); i++) {
+                uint16_t d = Font_Table[i + ((j/2)*(14*9))];
+                uint8_t bl = (uint8_t)((d & mask) >> shift);
+                *(ptr++) = bl;
+            }
+            *(ptr++) = 0x00;  // make last col blank
         }
-        else {
-            mask = 0xFF00;
-            shift = 8;
-        }
-        // The display is 128 columns, but 14 characters is 126. 
-        // So we have 2 blank columns.
-        *(ptr++) = 0x00;  // make first col blank 
-        for (int i = 0; i < 14 * 9; i++) {
-            uint16_t d = Font_Table[i + ((j/2)*(14*9))];
-            uint8_t bl = (uint8_t)((d & mask) >> shift);
-            *(ptr++) = bl;
-        }
-        *(ptr++) = 0x00;  // make last col blank
-    }
-    render(display_buf, &area);
+        render(display_buf, &area);
 
-    sleep_ms(5000);
+        sleep_ms(5000);
+
+        // test font display 2
+        ptr = display_buf;
+        start_char = 0x20 * 9;
+        mask = 0x00FF;
+        shift = 0;
+        for (int j = 0; j < 8; j++) {
+            if (j % 2 == 0) {
+                mask = 0x00FF;
+                shift = 0;
+            }
+            else {
+                mask = 0xFF00;
+                shift = 8;
+            }
+            // The display is 128 columns, but 14 characters is 126. 
+            // So we have 2 blank columns.
+            *(ptr++) = 0x00;  // make first col blank 
+            for (int i = start_char + 0; i < (start_char + (14 * 9)); i++) {
+                uint16_t d = Font_Table[i + ((j/2)*(14*9))];
+                uint8_t bl = (uint8_t)((d & mask) >> shift);
+                *(ptr++) = bl;
+            }
+            *(ptr++) = 0x00;  // make last col blank
+        }
+        render(display_buf, &area);
+
+        sleep_ms(5000);
+        // test font display 3
+        ptr = display_buf;
+        start_char = 0x40 * 9;
+        mask = 0x00FF;
+        shift = 0;
+        for (int j = 0; j < 8; j++) {
+            if (j % 2 == 0) {
+                mask = 0x00FF;
+                shift = 0;
+            }
+            else {
+                mask = 0xFF00;
+                shift = 8;
+            }
+            // The display is 128 columns, but 14 characters is 126. 
+            // So we have 2 blank columns.
+            *(ptr++) = 0x00;  // make first col blank 
+            for (int i = start_char + 0; i < (start_char + (14 * 9)); i++) {
+                uint16_t d = Font_Table[i + ((j/2)*(14*9))];
+                uint8_t bl = (uint8_t)((d & mask) >> shift);
+                *(ptr++) = bl;
+            }
+            *(ptr++) = 0x00;  // make last col blank
+        }
+        render(display_buf, &area);
+
+        sleep_ms(5000);
+    }
 
     return 0;
 }
