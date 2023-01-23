@@ -29,9 +29,9 @@ add_compile_options(-Wall
         -Wno-maybe-uninitialized
         )
 
-add_subdirectory(lib/oled1306_i2c)
+add_subdirectory(lib)
 
-include_directories(./lib/oled1306_i2c)
+include_directories(./lib/*)
 
 # Add executable. Default name is the project name, version 0.1
 add_executable(MuKOB MuKOB.c )
@@ -53,7 +53,7 @@ target_include_directories(MuKOB PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(MuKOB
-        oled1306_i2c
+        display
         hardware_spi
         hardware_i2c
         hardware_pio

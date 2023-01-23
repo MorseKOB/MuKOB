@@ -1,9 +1,10 @@
 # Library: oled1306_i2i
-if (NOT TARGET oled1306_i2c)
-    add_library(oled1306_i2c INTERFACE)
+add_library(oled1306_i2c oled1306_i2c.c)
 
-    target_sources(oled1306_i2c INTERFACE
-            ${CMAKE_CURRENT_LIST_DIR}/oled1306_i2c.c
-            ${CMAKE_CURRENT_LIST_DIR}/font.c)
-    target_link_libraries(oled1306_i2c INTERFACE pico_stdlib)
-endif()
+# pull in common dependencies and additional i2c hardware support
+target_link_libraries(oled1306_i2c pico_stdlib hardware_i2c)
+
+# Add the standard include files to the build
+target_include_directories(oled1306_i2c PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+)
