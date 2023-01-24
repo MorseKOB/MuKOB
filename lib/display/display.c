@@ -237,14 +237,18 @@ void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint) {
  * \param row 1-6 With 1 being the top (status) line
  * \param col 1-14 Starting column
  * \param pString Pointer to the first character of a null-terminated string
+ * \param invert True to invert the characters
  * \param paint True to paint the screen after the operation
  */
-void disp_string(unsigned int row, unsigned int col, const char *pString, bool paint) {
+void disp_string(unsigned int row, unsigned int col, const char *pString, bool invert, bool paint) {
     if (row >= DISP_CHAR_ROWS || col >= DISP_CHAR_COLS) {
         return;  // Invalid row or column
     }
     unsigned char c;
     while (c = *pString++) {
+        if (invert) {
+            c = c ^ DISP_CHAR_INVERT_BIT;
+        }
         disp_char(row, col, c, false);
         col++;
         if (col == DISP_CHAR_COLS) {

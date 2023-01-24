@@ -109,9 +109,10 @@ void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint);
  * \param row 1-6 With 1 being the top (status) line
  * \param col 1-14 Starting column
  * \param pString Pointer to the first character of a null-terminated string
+ * \param invert True to invert the characters
  * \param paint True to paint the screen after the operation
  */
-void disp_string(unsigned int row, unsigned int col, const char *pString, bool paint);
+void disp_string(unsigned int row, unsigned int col, const char *pString, bool invert, bool paint);
 
 /** \brief Update the display (graphics) buffer from the row data. Optionally paint the screen 
  *  \ingroup display

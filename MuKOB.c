@@ -96,8 +96,15 @@ int main()
         disp_row_clear(1, true);
         sleep_ms(1000);
         // Test displaying a string
-        disp_string(4, 2, "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS.", true);
+        disp_string(4, 2, "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS.", false, true);
         sleep_ms(1000);
+        // Simulate the MuKOB screen
+        disp_clear(true);
+        const char status_bar[] = {0x0B,0x1B,'1','0','8',' ',0x1A,'2','5',' ',0x01,0x04,0x1F,0x1E,0x00};
+        disp_string(0, 0, status_bar, true, false);
+        disp_string(1,0,"HOW EATING OYSTERS COULD HELP PROTECT THE ", false, false);
+        disp_string(5,0,"BBC WORLD NE \x11", false, true);
+        sleep_ms(5000);
     }
 
     return 0;
