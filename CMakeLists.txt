@@ -29,7 +29,7 @@ add_compile_options(-Wall
         -Wno-maybe-uninitialized
         )
 
-add_subdirectory(lib)
+add_subdirectory(lib build)
 
 include_directories(./lib/*)
 
@@ -54,6 +54,7 @@ target_include_directories(MuKOB PRIVATE
 # Add any user requested libraries
 target_link_libraries(MuKOB
         display
+        FatFs_SPI
         hardware_spi
         hardware_i2c
         hardware_pio

@@ -136,7 +136,7 @@ void disp_char(unsigned int row, unsigned int col, const char c, bool paint) {
     uint16_t mask = (FONT_BIT_MASK << shift) ^ 0xFFFF;
     uint16_t invert_mask = 0x0000;
     if (c & DISP_CHAR_INVERT_BIT) {
-        invert_mask = FONT_BIT_MASK << shift;
+        invert_mask = 0x03FF << shift;
     } 
     for (int i = 0; i < FONT_WIDTH; i++) {
         uint16_t cdata = Font_Table[(cl * FONT_WIDTH) + i] << shift;
