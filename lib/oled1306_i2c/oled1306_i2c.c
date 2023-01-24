@@ -15,19 +15,19 @@
 #include "oled1306_i2c.h"
 
 /*! \brief Memory area for the screen data pixel-bytes */
-uint8_t display_buf[OLED_BUF_LEN];
+uint8_t oled_disp_buf[OLED_BUF_LEN];
 
 /*! \brief Memory area for the screen data pixel-bytes */
-struct render_area display_area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : 0, end_page : OLED_NUM_PAGES - 1};
+struct render_area display_full_area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : 0, end_page : OLED_NUM_PAGES - 1};
 
-void fill(uint8_t buf[], uint8_t fill) {
-    // fill entire buffer with the same byte
+void oled_disp_fill(uint8_t buf[], uint8_t oled_disp_fill) {
+    // oled_disp_fill entire buffer with the same byte
     for (int i = 0; i < OLED_BUF_LEN; i++) {
-        buf[i] = fill;
+        buf[i] = oled_disp_fill;
     }
 };
 
-void fill_page(uint8_t *buf, uint8_t fill, uint8_t page) {
+void oled_disp_fill_page(uint8_t *buf, uint8_t fill, uint8_t page) {
     // fill entire page with the same byte
     memset(buf + (page * OLED_WIDTH), fill, OLED_WIDTH);
 };
@@ -132,11 +132,11 @@ void oled_init() {
     oled_send_cmd(OLED_SET_DISP | 0x01);            // turn display on
 
     // initialize render area for entire display (128 pixels by 8 pages)
-    calc_render_area_buflen(&display_area);
+    calc_render_area_buflen(&display_full_area);
 
     // zero the entire display
-    fill(display_buf, 0x00);
-    render(display_buf, &display_area);
+    oled_disp_fill(oled_disp_buf, 0x00);
+    oled_disp_render(oled_disp_buf, &display_full_area);
 
     // intro sequence: flash the screen twice
     for (int i = 0; i < 2; i++) {
@@ -147,7 +147,7 @@ void oled_init() {
     }
 }
 
-void render(uint8_t *buf, struct render_area *area) {
+void oled_disp_render(uint8_t *buf, struct render_area *area) {
     // update a portion of the display with a render area
     oled_send_cmd(OLED_SET_COL_ADDR);
     oled_send_cmd(area->start_col);
@@ -165,7 +165,7 @@ void render(uint8_t *buf, struct render_area *area) {
  *
  *  Scroll the full display from right to left.
  */
-void scroll_horz(void) {
+void oled_disp_scroll_horz(void) {
     oled_send_cmd(OLED_SET_HORIZ_SCROLL | 0x00);
     oled_send_cmd(0x00); // dummy byte
     oled_send_cmd(0x00); // start page 0
@@ -181,7 +181,7 @@ void scroll_horz(void) {
 // print_xxx convenience methods for printing out a buffer to be rendered
 // mostly useful for debugging images, patterns, etc
 
-void print_buf_page(uint8_t buf[], uint8_t page) {
+void oled_disp_print_buf_page(uint8_t buf[], uint8_t page) {
     // prints one page of a full length (128x4) buffer
     for (int j = 0; j < OLED_PAGE_HEIGHT; j++) {
         for (int k = 0; k < OLED_WIDTH; k++) {
@@ -191,15 +191,15 @@ void print_buf_page(uint8_t buf[], uint8_t page) {
     }
 }
 
-void print_buf_pages(uint8_t buf[]) {
+void oled_disp_print_buf_pages(uint8_t buf[]) {
     // prints all pages of a full length buffer
     for (int i = 0; i < OLED_NUM_PAGES; i++) {
         printf("--page %d--\n", i);
-        print_buf_page(buf, i);
+        oled_disp_print_buf_page(buf, i);
     }
 }
 
-void print_buf_area(uint8_t *buf, struct render_area *area) {
+void oled_disp_print_buf_area(uint8_t *buf, struct render_area *area) {
     // print a render area of generic size
     int area_width = area->end_col - area->start_col + 1;
     int area_height = area->end_page - area->start_page + 1; // in pages, not pixels

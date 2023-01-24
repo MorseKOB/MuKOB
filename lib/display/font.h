@@ -12,17 +12,12 @@
 
 #include <stdint.h>
 
-//ASCII
-typedef struct _tFont
-{    
-  const uint8_t *table;
-  uint16_t Width;
-  uint16_t Height;
-  
-} sFONT;
+#define LOWBYTE(v)   ((unsigned char) (v))
+#define HIGHBYTE(v)  ((unsigned char) (((unsigned int) (v)) >> 8))
 
-
-//extern sFONT Font;
+#define FONT_WIDTH 9
+#define FONT_HIEGHT 10
+#define FONT_BIT_MASK 0x01FF
 extern const uint16_t Font_Table[];
 
 #ifdef __cplusplus

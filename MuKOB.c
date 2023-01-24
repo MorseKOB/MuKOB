@@ -67,10 +67,36 @@ int main()
     puts("MuKOB says hello!");
 
     // Initialize the display
-    display_init();
+    disp_init();
 
     while(true) {
-        disp_font_test();
+//        disp_font_test();
+//        sleep_ms(1000);
+        disp_clear(true);
+        char d = '\x01';
+        for (unsigned int r = 0; r < 6; r++) {
+            for (unsigned int c = 0; c < 14; c++) {
+                disp_char(r, c, d++, false);
+            }
+            disp_row_paint(r);
+        }
+        sleep_ms(1000);
+        // Test setting the invert on chars directly in the text buffer
+        // then paint.
+        for (int i = 0; i < 10; i++) {
+            int offset = (5 * DISP_CHAR_COLS) + i;
+            *(text_full_screen + offset) = (*(text_full_screen + offset) | DISP_CHAR_INVERT_BIT);
+        }
+        disp_update(true);
+        sleep_ms(1000);
+        // Test scrolling 3 rows up
+        disp_rows_scroll_up(2, 4, true);
+        sleep_ms(1000);
+        // Test clearing a row
+        disp_row_clear(1, true);
+        sleep_ms(1000);
+        // Test displaying a string
+        disp_string(4, 2, "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS.", true);
         sleep_ms(1000);
     }
 

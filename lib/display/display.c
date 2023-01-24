@@ -7,188 +7,285 @@
 #include "font.h"
 #include "../oled1306_i2c/oled1306_i2c.h"
 
-// Structure for the full rendering area.
-struct render_area area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : 0, end_page : OLED_NUM_PAGES - 1};
+/*! \brief Memory display_full_area for a screen of text (characters) */
+char text_full_screen[DISP_CHAR_ROWS * DISP_CHAR_COLS];
 
-/*! \brief Memory area for a screen of text (characters) */
-char text_screen[DISP_CHAR_ROWS * DISP_CHAR_COLS];
-
-/** \brief Initialize the display
- * 
+/*
  * This must be called before using the display.
- *
  */
-void display_init(void) {
+void disp_init(void) {
     // run through the complete initialization process
     oled_init();
 
-    calc_render_area_buflen(&area);
+    disp_clear(true);
 }
 
+/*
+ * Clear the current text content and the screen.
+ * 
+ *  \param paint Set true to paint the actual display. Otherwise, only buffers will be cleared.
+*/
+void disp_clear(bool paint) {
+    memset(text_full_screen, 0x00, sizeof(text_full_screen));
+    oled_disp_fill(oled_disp_buf, 0x00);
+    if (paint) {
+        disp_paint();
+    }
+}
 
-/*! \brief Display a string
- *  \ingroup oled1306_i2c
+/*
+ * Display an ASCII character (plus some special characters)
+ * If the top bit is set (c>127) the character is inverse (black on white background).
  *
- * Display a string of ASCII characters (plus some special characters)
- * The font characters are in a 8x9 matrix allowing for 7 lines of 16 characters
+ * The font characters are 9x10 allowing for 6 lines of 14 characters
  * on the 128x64 dot display.
- * 
- * The first line includes an extra line of whitespace to allow it to be used
- * as a header/status bar.
- * 
- * \param row 0-6 With 0 being the top (status) line
- * \param col 0-127 Starting column
+ *
+ * \param row 0-5
+ * \param col 0-13
  * \param c character to display
  * 
- * Using a 9 pixel high font on an 64 pixel high screen with 8 pixel high pages, with the 
- * first row having an extra line of whitespace seperation from the next row (to create a 'status line')
- * gives us a memory layout as follows:
+ * Using a 10 pixel high font on an 64 pixel high screen with 8 pixel high pages,
+ * gives us a memory row layout as follows:
  * 
  * PxR | Page | Row
  * -----------------
  *   0 |    0 |  0
- *  .. |      |
+ *   7 |      |
  *  ----------|
  *   8 |    1 |
- *   9 |      |XXXXX
- *     |      |-----
+ *    -|      |-----
  *  10 |      |  1
- *  .. |      |
+ *  15 |      |
  *  ----------|
  *  16 |    2 |
- *     |      |-----
- *  19 |      |  2
+ *    -|      |-----
+ *  20 |      |  2
  *  .. |      |
+ *  23 |      |
  *  ----------|
  *  24 |    3 |
  *  .. |      |
- *     |      |-----
- *  28 |      |  3
- *  .. |      |
+ *  29 |      |
+ *    -|      |-----
+ *  30 |      |  3
+ *  31 |      |
  *  ----------|
  *  32 |    4 |
  *  .. |      |
- *     |      |-----
- *  37 |      |  4
+ *  39 |      |
+ *  ----------|-----
+ *  40 |    5 |  4
  *  .. |      |
- *  ----------|
- *  40 |    5 |
- *  .. |      |
- *     |      |-----
- *  46 |      |  5
  *  47 |      |
  *  ----------|
  *  48 |    6 |
- *     |      |-----
- *  49 |      |  6
- *  .. |      |
+ *  49 |      |
+ *    -|      |-----
+ *  50 |      |  5
+ *  55 |      |
  *  ----------|
  *  56 |    7 |
  *  .. |      |
- *  63 |      |
+ *  59 |      |
+ *    -|      |-----
+ *  60 |      | BLANK
+ *  .. |      |   |
+ *  63 |      | BLANK
  *  ----------------
  *  
- * Therefore; writing a character into row-col on the screen requires that it be merged in with 
- * existing buffer data from two pages using masks that depend on what row it is being written.
+ * Therefore; writing a character into row-col on the screen requires that it be merged (or'ed) in with 
+ * existing buffer data from two pages using masks and shifts that depend on what row is being written.
  * The masks are:
- * Row 0 0-7: P0:00
- *       8  : P1:3F
+ * Row 1 l: P0:00 <0
+ *       h: P1:FE
  * 
- * Row 1 0-7: P1:C0
- *       8  : P2:7F
+ * Row 2 l: P1:01 <2
+ *       h: P2:FC
  * 
- * Row 2 0-3: P2:E0
- *       4-
- *  
+ * Row 3 l: P2:03 <4
+ *       h: P3:F8
+ * 
+ * Row 4 l: P3:07 <6
+ *       h: P4:F0
+ * 
+ * Row 5 l: P4:0F <0
+ *       h: P5:E0
+ * 
+ * Row 6 l: P5:1F <2
+ *       h: P6:C0
+ * 
+ * Row 7 l: P6:3F <6
+ *          P7:00 (special mask, since the bottom 2 rows are blank)
+ * 
+ * An additional complication comes from the font being 9 bits wide and the display 
+ * being 128 bits wide. This allows 14 chars with 2 dot columns left over.
+ * These extra pixels must be accounted for when indexing into the display buffer.
  */
-// void display_char(int row, int col, const char c) {
-//     if (row < 0 || row > 6 || col < 0 || col > 127) {
-//         debug_out("ERROR: Row or Col out of range - %d, %d\n", row, col);
-//         return;
-//     }
+void disp_char(unsigned int row, unsigned int col, const char c, bool paint) {
+    if (row >= DISP_CHAR_ROWS || col >= DISP_CHAR_COLS) {
+        return;  // Invalid row or column
+    }
+    *(text_full_screen + (row * DISP_CHAR_COLS) + col) = c;
+    unsigned char cl = c & 0x7F;
+    // Calculate the display pages the character falls into,
+    // the font data shift, and the mask required.
+    uint8_t pagel = (row * FONT_HIEGHT) / (OLED_PAGE_HEIGHT);
+    uint16_t offsetl = pagel * OLED_WIDTH;
+    uint16_t offseth = (pagel + 1) * OLED_WIDTH;
+    uint8_t shift = ((FONT_HIEGHT - OLED_PAGE_HEIGHT) * row) % OLED_PAGE_HEIGHT;
+    uint16_t mask = (FONT_BIT_MASK << shift) ^ 0xFFFF;
+    uint16_t invert_mask = 0x0000;
+    if (c & DISP_CHAR_INVERT_BIT) {
+        invert_mask = FONT_BIT_MASK << shift;
+    } 
+    for (int i = 0; i < FONT_WIDTH; i++) {
+        uint16_t cdata = Font_Table[(cl * FONT_WIDTH) + i] << shift;
+        cdata = cdata ^ invert_mask;
+        // Read the existing data
+        uint16_t indx_l = offsetl + ((col * FONT_WIDTH) + i);
+        uint16_t indx_h = offseth + ((col * FONT_WIDTH) + i);
+        uint8_t edata_l = oled_disp_buf[indx_l];
+        uint8_t edata_h = oled_disp_buf[indx_h];
+        uint16_t edata = edata_h << 8 | edata_l;
+        // create the result
+        uint16_t rdata = (edata & mask) | cdata;
+        // Write the data back to the buffer
+        oled_disp_buf[indx_l] = LOWBYTE(rdata);
+        oled_disp_buf[indx_h] = HIGHBYTE(rdata);
+    }
+    if (paint) {
+        disp_paint();
+    }
+}
 
-//     while (*pString != '\0')
-//     {
-//         // Find starting pixel (top-right)
-//         if ((Xpoint + Font9->Width) > Paint.Width)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint += Font->Height;
-//         }
+/** \brief Paint the physical screen
+ */ 
+void disp_paint(void) {
+    oled_disp_render(oled_disp_buf, &display_full_area);
+}
 
-//         // If the Y direction is full, reposition to(Xstart, Ystart)
-//         if ((Ypoint + Font->Height) > Paint.Height)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint = Ystart;
-//         }
-//         Paint_DrawChar(Xpoint, Ypoint, *pString, Font, Color_Background, Color_Foreground);
-
-//         // The next character of the address
-//         pString++;
-
-//         // The next word of the abscissa increases the font of the broadband
-//         Xpoint += Font->Width;
-//     }
-// }
-
-// /*! \brief Display a string
-//  *  \ingroup oled1306_i2c
-//  *
-//  * Display a string of ASCII characters (plus some special characters)
-//  * The font characters are in a 8x9 matrix allowing for 7 lines of 16 characters
-//  * on the 128x64 dot display.
-//  * 
-//  * The first line includes an extra line of whitespace to allow it to be used
-//  * as a header/status bar.
-//  * 
-//  * \param row 0-6 With 0 being the top (status) line
-//  * \param col 0-127 Starting column
-//  * \param pString Pinter to the first character of a null-terminated string
-//  */
-// void display_string(int row, int col, const char *pString) {
-//     if (row < 0 || row > 6 || col < 0 || col > 127) {
-//         debug_out("ERROR: Row or Col out of range - %d, %d\n", row, col);
-//         return;
-//     }
-
-//     while (*pString != '\0')
-//     {
-//         // Find starting pixel (top-right)
-//         if ((Xpoint + Font9->Width) > Paint.Width)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint += Font->Height;
-//         }
-
-//         // If the Y direction is full, reposition to(Xstart, Ystart)
-//         if ((Ypoint + Font->Height) > Paint.Height)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint = Ystart;
-//         }
-//         Paint_DrawChar(Xpoint, Ypoint, *pString, Font, Color_Background, Color_Foreground);
-
-//         // The next character of the address
-//         pString++;
-
-//         // The next word of the abscissa increases the font of the broadband
-//         Xpoint += Font->Width;
-//     }
-// }
-
-/*! \brief Test the fonts by displaying all of the characters
+/** \brief Clear the character row.
  *  \ingroup display
  *
+ *  \param row The 0-based row to clear.
+ *  \param paint True to paint the screen.
+*/
+void disp_row_clear(unsigned int row, bool paint) {
+    if (row >= DISP_CHAR_ROWS) {
+        return;  // Invalid row or column
+    }
+    memset((text_full_screen + (row * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
+    // Calculate the display pages the character falls into
+    // and the mask required.
+    uint8_t pagel = (row * FONT_HIEGHT) / (OLED_PAGE_HEIGHT);
+    uint16_t offsetl = pagel * OLED_WIDTH;
+    uint16_t offseth = (pagel + 1) * OLED_WIDTH;
+    uint8_t shift = ((FONT_HIEGHT - OLED_PAGE_HEIGHT) * row) % OLED_PAGE_HEIGHT;
+    uint16_t mask = (FONT_BIT_MASK << shift) ^ 0xFFFF; 
+    for (int i = 0; i < OLED_WIDTH; i++) {
+        // Read the existing data
+        uint16_t indx_l = offsetl + i;
+        uint16_t indx_h = offseth + i;
+        uint8_t edata_l = oled_disp_buf[indx_l];
+        uint8_t edata_h = oled_disp_buf[indx_h];
+        uint16_t edata = edata_h << 8 | edata_l;
+        // create the result
+        uint16_t rdata = (edata & mask);
+        // Write the data back to the buffer
+        oled_disp_buf[indx_l] = LOWBYTE(rdata);
+        oled_disp_buf[indx_h] = HIGHBYTE(rdata);
+    }
+    if (paint) {
+        disp_paint();
+    }
+}
+
+/**
+ * Update the portion of the screen containing the given character row.
+ */
+void disp_row_paint(unsigned int row) {
+    // Calculate the display page the row falls into,
+    uint8_t pagel = (row * FONT_HIEGHT) / (OLED_PAGE_HEIGHT);
+    struct render_area row_area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : pagel, end_page : pagel + 1};
+    calc_render_area_buflen(&row_area);
+    oled_disp_render(oled_disp_buf + (pagel * OLED_WIDTH), &row_area);
+}
+
+/** Scroll 2 or more rows up.
+ *
+ *  Scroll the character rows up, removing the top row and 
+ *  clearing the bottom row.
+ * 
+ *  \param row_t The 0-based top row.
+ *  \param row_b The 0-based bottom row.
+ *  \param paint True to paint the screen after the operation.
+*/
+void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint) {
+    if (row_b <= row_t || row_b >= DISP_CHAR_ROWS) {
+        return;  // Invalid row value
+    }
+    memmove((text_full_screen + (row_t * DISP_CHAR_COLS)), (text_full_screen + ((row_t + 1) * DISP_CHAR_COLS)), (row_b - row_t) * DISP_CHAR_COLS);
+    memset((text_full_screen + (row_b * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
+    disp_update(paint);
+}
+
+/** \brief Display a string
+ *  \ingroup display
+ *
+ * Display a string of ASCII characters (plus some special characters)
+ * 
+ * \param row 1-6 With 1 being the top (status) line
+ * \param col 1-14 Starting column
+ * \param pString Pointer to the first character of a null-terminated string
+ * \param paint True to paint the screen after the operation
+ */
+void disp_string(unsigned int row, unsigned int col, const char *pString, bool paint) {
+    if (row >= DISP_CHAR_ROWS || col >= DISP_CHAR_COLS) {
+        return;  // Invalid row or column
+    }
+    unsigned char c;
+    while (c = *pString++) {
+        disp_char(row, col, c, false);
+        col++;
+        if (col == DISP_CHAR_COLS) {
+            col = 0;
+            row++;
+            if (row == DISP_CHAR_ROWS) {
+                break;
+            }
+        }
+    }
+    if (paint) {
+        disp_paint();
+    }
+}
+
+/** \brief Update the display buffer from the character row data
+ * 
+ *  \param paint True to paint the display after the operation.
+*/
+void disp_update(bool paint) {
+    // TODO: More efficient way to do this...
+    for (unsigned int r = 0; r < DISP_CHAR_ROWS; r++) {
+        for (unsigned int c = 0; c < DISP_CHAR_COLS; c++) {
+            unsigned char d = *(text_full_screen + (r * DISP_CHAR_COLS) + c);
+            disp_char(r, c, d, false);
+        }
+        if (paint) {
+            disp_paint();
+        }
+    }
+}
+
+/*
  * Display all of the font characters a page at a time. Pause between pages and overlap 
  * the range of characters some from page to page.
- * 
  */
 void disp_font_test(void) {
-    // init render buffer
+    // init oled_disp_render buffer
     
     // test font display 1
-    uint8_t *ptr = display_buf;
+    uint8_t *ptr = oled_disp_buf;
     int start_char = 0;
     uint16_t mask = 0x00FF;
     uint8_t shift = 0;
@@ -212,12 +309,12 @@ void disp_font_test(void) {
         }
         *(ptr++) = 0x00;  // make last col blank
     }
-    render(display_buf, &area);
+    oled_disp_render(oled_disp_buf, &display_full_area);
 
     sleep_ms(1000);
 
     // test font display 2
-    ptr = display_buf;
+    ptr = oled_disp_buf;
     start_char = 0x20 * 9;
     mask = 0x00FF;
     shift = 0;
@@ -241,12 +338,12 @@ void disp_font_test(void) {
         }
         *(ptr++) = 0x00;  // make last col blank
     }
-    render(display_buf, &area);
+    oled_disp_render(oled_disp_buf, &display_full_area);
 
     sleep_ms(1000);
 
     // test font display 3
-    ptr = display_buf;
+    ptr = oled_disp_buf;
     start_char = 0x40 * 9;
     mask = 0x00FF;
     shift = 0;
@@ -270,12 +367,12 @@ void disp_font_test(void) {
         }
         *(ptr++) = 0x00;  // make last col blank
     }
-    render(display_buf, &area);
+    oled_disp_render(oled_disp_buf, &display_full_area);
 
     sleep_ms(1000);
 
     // test font display 4
-    ptr = display_buf;
+    ptr = oled_disp_buf;
     start_char = 0x60 * 9;
     mask = 0x00FF;
     shift = 0;
@@ -302,7 +399,7 @@ void disp_font_test(void) {
         }
         *(ptr++) = 0x00;  // make last col blank
     }
-    render(display_buf, &area);
+    oled_disp_render(oled_disp_buf, &display_full_area);
 
     sleep_ms(1000);
 }

@@ -69,11 +69,13 @@ struct render_area {
 };
 
 /*! \brief Memory area for the screen data pixel-bytes */
-extern uint8_t display_buf[];
+extern uint8_t oled_disp_buf[];
+/*! \brief Render area for the full oled display screen */
+extern struct render_area display_full_area;
 
-void fill(uint8_t buf[], uint8_t fill);
+void oled_disp_fill(uint8_t buf[], uint8_t fill);
 
-void fill_page(uint8_t *buf, uint8_t fill, uint8_t page);
+void oled_disp_fill_page(uint8_t *buf, uint8_t fill, uint8_t page);
 
 void calc_render_area_buflen(struct render_area *area);
 
@@ -83,24 +85,24 @@ void oled_send_buf(uint8_t buf[], int buflen);
 
 void oled_init();
 
-void render(uint8_t *buf, struct render_area *area);
+void oled_disp_render(uint8_t *buf, struct render_area *area);
 
 /*! \brief Scroll display horizontally
  *  \ingroup oled1306_i2c
  *
  *  Scroll the full display from right to left.
  */
-void scroll_horz(void);
+void oled_disp_scroll_horz(void);
 
 // ################################################################################################
 // print_xxx convenience methods for printing out a buffer to be rendered
 // mostly useful for debugging images, patterns, etc
 
-void print_buf_page(uint8_t buf[], uint8_t page);
+void oled_disp_print_buf_page(uint8_t buf[], uint8_t page);
 
-void print_buf_pages(uint8_t buf[]);
+void oled_disp_print_buf_pages(uint8_t buf[]);
 
-void print_buf_area(uint8_t *buf, struct render_area *area);
+void oled_disp_print_buf_area(uint8_t *buf, struct render_area *area);
 
 #ifdef __cplusplus
 }

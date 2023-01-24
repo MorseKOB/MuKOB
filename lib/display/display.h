@@ -10,168 +10,42 @@
  extern "C" {
 #endif
 
+#include <stdbool.h>
+
 #define DISP_CHAR_ROWS 6
 #define DISP_CHAR_COLS 14
 
-/** \brief Initialize the display
- * 
- * This must be called before using the display.
- *
- */
-void display_init(void);
+/** \brief Text character data for the full text (non-partitioned) screen */
+extern char text_full_screen[DISP_CHAR_ROWS * DISP_CHAR_COLS];
 
-/*! \brief Display a string
- *  \ingroup oled1306_i2c
+/** \brief Bit to OR in to invert a character (display black char on white background) */
+#define DISP_CHAR_INVERT_BIT 0x80
+/** \brief Mask to AND with a character to remove intert (display white char on black background) */
+#define DISP_CHAR_NORMAL_MASK 0x7F
+
+/** \brief Clear the text screen
+ *  \ingroup display
+ * 
+ * Clear the current text content and the screen.
+ * 
+ *  \param paint Set true to paint the actual display. Otherwise, only buffers will be cleared.
+*/
+void disp_clear(bool paint);
+
+/** \brief Display a character on the text screen
+ *  \ingroup display
  *
- * Display a string of ASCII characters (plus some special characters)
- * The font characters are in a 8x9 matrix allowing for 7 lines of 16 characters
- * on the 128x64 dot display.
+ * Display an ASCII character (plus some special characters).
+ * If the top bit is set (c>127) the character is inverse (black on white background).
  * 
- * The first line includes an extra line of whitespace to allow it to be used
- * as a header/status bar.
- * 
- * \param row 0-6 With 0 being the top (status) line
- * \param col 0-127 Starting column
+ * \param row 0-5 With 0 being the top line
+ * \param col 0-13 Starting column
  * \param c character to display
- * 
- * Using a 9 pixel high font on an 64 pixel high screen with 8 pixel high pages, with the 
- * first row having an extra line of whitespace seperation from the next row (to create a 'status line')
- * gives us a memory layout as follows:
- * 
- * PxR | Page | Row
- * -----------------
- *   0 |    0 |  0
- *  .. |      |
- *  ----------|
- *   8 |    1 |
- *   9 |      |XXXXX
- *     |      |-----
- *  10 |      |  1
- *  .. |      |
- *  ----------|
- *  16 |    2 |
- *     |      |-----
- *  19 |      |  2
- *  .. |      |
- *  ----------|
- *  24 |    3 |
- *  .. |      |
- *     |      |-----
- *  28 |      |  3
- *  .. |      |
- *  ----------|
- *  32 |    4 |
- *  .. |      |
- *     |      |-----
- *  37 |      |  4
- *  .. |      |
- *  ----------|
- *  40 |    5 |
- *  .. |      |
- *     |      |-----
- *  46 |      |  5
- *  47 |      |
- *  ----------|
- *  48 |    6 |
- *     |      |-----
- *  49 |      |  6
- *  .. |      |
- *  ----------|
- *  56 |    7 |
- *  .. |      |
- *  63 |      |
- *  ----------------
- *  
- * Therefore; writing a character into row-col on the screen requires that it be merged in with 
- * existing buffer data from two pages using masks that depend on what row it is being written.
- * The masks are:
- * Row 0 0-7: P0:00
- *       8  : P1:3F
- * 
- * Row 1 0-7: P1:C0
- *       8  : P2:7F
- * 
- * Row 2 0-3: P2:E0
- *       4-
- *  
+ * \param paint Set true to paint the actual display. Otherwise, only buffers will be updated.
  */
-// void display_char(int row, int col, const char c) {
-//     if (row < 0 || row > 6 || col < 0 || col > 127) {
-//         debug_out("ERROR: Row or Col out of range - %d, %d\n", row, col);
-//         return;
-//     }
+void disp_char(unsigned int row, unsigned int col, const char c, bool paint);
 
-//     while (*pString != '\0')
-//     {
-//         // Find starting pixel (top-right)
-//         if ((Xpoint + Font9->Width) > Paint.Width)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint += Font->Height;
-//         }
-
-//         // If the Y direction is full, reposition to(Xstart, Ystart)
-//         if ((Ypoint + Font->Height) > Paint.Height)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint = Ystart;
-//         }
-//         Paint_DrawChar(Xpoint, Ypoint, *pString, Font, Color_Background, Color_Foreground);
-
-//         // The next character of the address
-//         pString++;
-
-//         // The next word of the abscissa increases the font of the broadband
-//         Xpoint += Font->Width;
-//     }
-// }
-
-// /*! \brief Display a string
-//  *  \ingroup oled1306_i2c
-//  *
-//  * Display a string of ASCII characters (plus some special characters)
-//  * The font characters are in a 8x9 matrix allowing for 7 lines of 16 characters
-//  * on the 128x64 dot display.
-//  * 
-//  * The first line includes an extra line of whitespace to allow it to be used
-//  * as a header/status bar.
-//  * 
-//  * \param row 0-6 With 0 being the top (status) line
-//  * \param col 0-127 Starting column
-//  * \param pString Pinter to the first character of a null-terminated string
-//  */
-// void display_string(int row, int col, const char *pString) {
-//     if (row < 0 || row > 6 || col < 0 || col > 127) {
-//         debug_out("ERROR: Row or Col out of range - %d, %d\n", row, col);
-//         return;
-//     }
-
-//     while (*pString != '\0')
-//     {
-//         // Find starting pixel (top-right)
-//         if ((Xpoint + Font9->Width) > Paint.Width)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint += Font->Height;
-//         }
-
-//         // If the Y direction is full, reposition to(Xstart, Ystart)
-//         if ((Ypoint + Font->Height) > Paint.Height)
-//         {
-//             Xpoint = Xstart;
-//             Ypoint = Ystart;
-//         }
-//         Paint_DrawChar(Xpoint, Ypoint, *pString, Font, Color_Background, Color_Foreground);
-
-//         // The next character of the address
-//         pString++;
-
-//         // The next word of the abscissa increases the font of the broadband
-//         Xpoint += Font->Width;
-//     }
-// }
-
-/*! \brief Test the fonts by displaying all of the characters
+/** \brief Test the fonts by displaying all of the characters
  *  \ingroup display
  *
  * Display all of the font characters a page at a time. Pause between pages and overlap 
@@ -179,6 +53,72 @@ void display_init(void);
  * 
  */
 void disp_font_test(void);
+
+/** \brief Initialize the display
+ *  \ingroup display
+ * 
+ * This must be called before using the display.
+ *
+ */
+void disp_init(void);
+
+/** \brief Paint the actual display screen
+ *  \ingroup display
+ *
+ * To improve performance and the look of the display, most changes can be made without 
+ * updating the physical display. Then, once a batch of changes have been made, this 
+ * is called to move the screen/image buffer onto the display.
+ */
+void disp_paint(void);
+
+/** \brief Clear the character row.
+ *  \ingroup display
+ *
+ *  \param row The 0-based row to clear.
+ *  \param paint True to also paint the screen.
+*/
+void disp_row_clear(unsigned int row, bool paint);
+
+/** \brief Paint the portion of the screen containing the given character row.
+ *  \ingroup display
+ *
+ *  This 'paints' the screen from the display buffer. To paint the buffer 
+ *  from the row data use `disp_row_refresh`.
+ * 
+ *  \param row The 0-based character row to paint.
+*/
+void disp_row_paint(unsigned int row);
+
+/** \brief Scroll 2 or more rows up.
+ *  \ingroup display
+ *
+ *  Scroll the character rows up, removing the top row and 
+ *  clearing the bottom row.
+ * 
+ *  \param row_t The 0-based top row.
+ *  \param row_b The 0-based bottom row.
+ *  \param paint True to paint the screen after the operation.
+*/
+void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint);
+
+/** \brief Display a string
+ *  \ingroup display
+ *
+ * Display a string of ASCII characters (plus some special characters)
+ * 
+ * \param row 1-6 With 1 being the top (status) line
+ * \param col 1-14 Starting column
+ * \param pString Pointer to the first character of a null-terminated string
+ * \param paint True to paint the screen after the operation
+ */
+void disp_string(unsigned int row, unsigned int col, const char *pString, bool paint);
+
+/** \brief Update the display (graphics) buffer from the row data. Optionally paint the screen 
+ *  \ingroup display
+ * 
+ *  \param paint True to paint the screen after the operation.
+*/
+void disp_update(bool paint);
 
 #ifdef __cplusplus
 }

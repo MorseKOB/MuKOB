@@ -14,7 +14,8 @@
                },
     },
     "files.associations": {
-      "stdlib.h": "c"
+      "stdlib.h": "c",
+      "stdbool.h": "c"
     },
     "cmake.buildBeforeRun": true,
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
