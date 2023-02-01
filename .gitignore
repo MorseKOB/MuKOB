@@ -1,7 +1,21 @@
+# IDE files
+.DS_Store
+.eclipse
 .idea
 .vscode
-_deps
-cmake-*
-build
-.DS_Store
-*.json
+
+# Build and Output
+build/
+
+# Generated / Intermediate
+**/CMakeCache.txt
+**/CMakePresets.json
+**/CTestTestfile.cmake
+**/CPackConfig.cmake
+**/cmake_install.cmake
+**/install_manifest.txt
+**/compie_commands.json
+
+# Local info
+*.private
+*.private.cmake

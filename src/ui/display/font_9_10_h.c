@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "font.h"
+#include "font_9_10_h.h"
 
 //
 // Font data for Terminal (fixed-pitch) 9 x 10

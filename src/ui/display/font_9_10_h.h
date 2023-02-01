@@ -23,4 +23,4 @@ extern const uint16_t Font_Table[];
 #ifdef __cplusplus
 }
 #endif
-#endif /* __FONTS_H */
+#endif // __FONTS_H

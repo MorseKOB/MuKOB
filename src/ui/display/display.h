@@ -2,7 +2,7 @@
  * Copyright 2023 AESilky
  * 
  *
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: MIT
  */
 #ifndef DISPLAY_H
 #define DISPLAY_H
@@ -12,10 +12,10 @@
 
 #include <stdbool.h>
 
-#define DISP_CHAR_ROWS 6
-#define DISP_CHAR_COLS 14
+#define DISP_CHAR_ROWS 10  // 240 / 12
+#define DISP_CHAR_COLS 32  // 320 / 10
 
-/** \brief Text character data for the full text (non-partitioned) screen */
+/** \brief Text character data for the full text screen */
 extern char text_full_screen[DISP_CHAR_ROWS * DISP_CHAR_COLS];
 
 /** \brief Bit to OR in to invert a character (display black char on white background) */
