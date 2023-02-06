@@ -1,0 +1,81 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"add_dependencies",
+			"pico_generate_pio_header",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"ui/rotory_encoder/CMakeLists.txt",
+			"/home/ed/code/pico/pico-sdk/tools/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 2,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 37,
+				"parent" : 2
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 6,
+				"parent" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "rotory_encoder_quadrature_encoder_pio_h::@305ead5bb464462df799"
+		}
+	],
+	"id" : "rotory_encoder::@305ead5bb464462df799",
+	"name" : "rotory_encoder",
+	"paths" : 
+	{
+		"build" : "ui/rotory_encoder",
+		"source" : "ui/rotory_encoder"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 4,
+			"path" : "ui/rotory_encoder/rotory_encoder.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "INTERFACE_LIBRARY"
+}
