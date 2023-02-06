@@ -1,0 +1,125 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c100000\c100000\c100000;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Hi there bigjosh! What a great question - it made me drag up my old\
+VGA programming skills again.\
+\
+I wrote a small program to read these values directly from the video\
+card. In VGA text mode, the RGB triplet is only represented by the\
+first six bits of the byte, so the range returned is beteen 0 and 63.\
+If you're looking for values to use in an 8 bit RGB system, the best\
+you can do is to quadruple these values (not ideal, because bright\
+white is given as 252, 252, 252, when in fact it should be 255, 255,\
+255).\
+\
+If you're interested, the way to retrieve these values when\
+programming, is as follows:\
+\
+* Set port 0x3c7 to the value of the colour you want to read\
+* Read port 0x3c9 three times, one for each colour component\
+\
+Here are the RGB triplets for VGA text mode:\
+\
+---\
+Colour: 0\
+VGA 6 bit colour: R:0|G:0|B:0\
+Approximate 8 bit colour: R:0|G:0|B:0\
+---\
+Colour: 1\
+VGA 6 bit colour: R:0|G:0|B:42\
+Approximate 8 bit colour: R:0|G:0|B:168\
+---\
+Colour: 2\
+VGA 6 bit colour: R:0|G:42|B:0\
+Approximate 8 bit colour: R:0|G:168|B:0\
+---\
+Colour: 3\
+VGA 6 bit colour: R:0|G:42|B:42\
+Approximate 8 bit colour: R:0|G:168|B:168\
+---\
+Colour: 4\
+VGA 6 bit colour: R:42|G:0|B:0\
+Approximate 8 bit colour: R:168|G:0|B:0\
+---\
+Colour: 5\
+VGA 6 bit colour: R:42|G:0|B:42\
+Approximate 8 bit colour: R:168|G:0|B:168\
+---\
+Colour: 6\
+VGA 6 bit colour: R:42|G:42|B:0\
+Approximate 8 bit colour: R:168|G:168|B:0\
+---\
+Colour: 7\
+VGA 6 bit colour: R:52|G:52|B:52\
+Approximate 8 bit colour: R:208|G:208|B:208\
+---\
+Colour: 8\
+VGA 6 bit colour: R:42|G:42|B:42\
+Approximate 8 bit colour: R:168|G:168|B:168\
+---\
+Colour: 9\
+VGA 6 bit colour: R:0|G:0|B:63\
+Approximate 8 bit colour: R:0|G:0|B:252\
+---\
+Colour: 10\
+VGA 6 bit colour: R:0|G:63|B:0\
+Approximate 8 bit colour: R:0|G:252|B:0\
+---\
+Colour: 11\
+VGA 6 bit colour: R:0|G:63|B:63\
+Approximate 8 bit colour: R:0|G:252|B:252\
+---\
+Colour: 12\
+VGA 6 bit colour: R:63|G:0|B:0\
+Approximate 8 bit colour: R:252|G:0|B:0\
+---\
+Colour: 13\
+VGA 6 bit colour: R:63|G:0|B:63\
+Approximate 8 bit colour: R:252|G:0|B:252\
+---\
+Colour: 14\
+VGA 6 bit colour: R:63|G:63|B:0\
+Approximate 8 bit colour: R:252|G:252|B:0\
+---\
+Colour: 15\
+VGA 6 bit colour: R:63|G:63|B:63\
+Approximate 8 bit colour: R:252|G:252|B:252\
+---\
+\
+I hope this answers your question, and these values prove useful to\
+you. Please don't hesitate to request clarification before rating this\
+answer, if you would like me to provide any more detail.\
+\
+Thanks,\
+\
+--seizer-ga\
+\
+No searching required, as I had previous knowledge of VGA programming.\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+\
+\'a0\'a0\'a0\'a0\'a0\'a0color\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0no\'a0\'a02-bit\'a0RGB\'a0\'a0\'a0\'a0\'a08-bit\'a0RGB\
+\'a0\'a0=================\'a0\'a0==\'a0\'a0=========\'a0\'a0===============\
+\'a0\'a0\'a00\'a0\'a0black........\'a0\'a0\'a00\'a0\'a0(0,\'a00,\'a00)\'a0\'a0(\'a0\'a00,\'a0\'a0\'a00,\'a0\'a0\'a00)\
+\'a0\'a0\'a01\'a0\'a0blue.........\'a0\'a0\'a01\'a0\'a0(0,\'a00,\'a02)\'a0\'a0(\'a0\'a00,\'a0\'a0\'a00,\'a0170)\
+\'a0\'a0\'a02\'a0\'a0green........\'a0\'a0\'a02\'a0\'a0(0,\'a02,\'a00)\'a0\'a0(\'a0\'a00,\'a0170,\'a0\'a0\'a00)\
+\'a0\'a0\'a03\'a0\'a0cyan.........\'a0\'a0\'a03\'a0\'a0(0,\'a02,\'a02)\'a0\'a0(\'a0\'a00,\'a0170,\'a0170)\
+\'a0\'a0\'a04\'a0\'a0red..........\'a0\'a0\'a04\'a0\'a0(2,\'a00,\'a00)\'a0\'a0(170,\'a0\'a0\'a00,\'a0\'a0\'a00)\
+\'a0\'a0\'a05\'a0\'a0magenta......\'a0\'a0\'a05\'a0\'a0(2,\'a00,\'a02)\'a0\'a0(170,\'a0\'a0\'a00,\'a0170)\
+\'a0\'a0\'a06\'a0\'a0brown........\'a0\'a020\'a0\'a0(2,\'a01,\'a00)\'a0\'a0(170,\'a0\'a085,\'a0\'a0\'a00)\
+\'a0\'a0\'a07\'a0\'a0white........\'a0\'a0\'a07\'a0\'a0(2,\'a02,\'a02)\'a0\'a0(170,\'a0170,\'a0170)\
+\'a0\'a0\'a08\'a0\'a0gray.........\'a0\'a056\'a0\'a0(1,\'a01,\'a01)\'a0\'a0(\'a085,\'a0\'a085,\'a0\'a085)\
+\'a0\'a0\'a09\'a0\'a0light\'a0blue...\'a0\'a057\'a0\'a0(1,\'a01,\'a03)\'a0\'a0(\'a085,\'a0\'a085,\'a0255)\
+\'a0\'a010\'a0\'a0light\'a0green..\'a0\'a058\'a0\'a0(1,\'a03,\'a01)\'a0\'a0(\'a085,\'a0255,\'a0\'a064)\
+\'a0\'a011\'a0\'a0light\'a0cyan...\'a0\'a059\'a0\'a0(1,\'a03,\'a03)\'a0\'a0(\'a085,\'a0255,\'a0255)\
+\'a0\'a012\'a0\'a0light\'a0red....\'a0\'a060\'a0\'a0(3,\'a01,\'a01)\'a0\'a0(255,\'a0\'a085,\'a0\'a085)\
+\'a0\'a013\'a0\'a0light\'a0magenta\'a0\'a061\'a0\'a0(3,\'a01,\'a03)\'a0\'a0(255,\'a0\'a085,\'a0255)\
+\'a0\'a014\'a0\'a0yellow.......\'a0\'a062\'a0\'a0(3,\'a03,\'a01)\'a0\'a0(255,\'a0255,\'a0\'a085)\
+\'a0\'a015\'a0\'a0bright\'a0white.\'a0\'a063\'a0\'a0(3,\'a03,\'a03)\'a0\'a0(255,\'a0255,\'a0255)\
+}
