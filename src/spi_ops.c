@@ -35,8 +35,17 @@ int spi_read(uint8_t txv, uint8_t *dst, size_t len) {
     return (read);
 }
 
-int spi_write(const uint8_t *src, size_t len) {
-    int written = spi_write_blocking(SPI_DEVICE, src, len);
+int spi_write(const uint8_t *data, size_t len) {
+    int written = spi_write_blocking(SPI_DEVICE, data, len);
 
     return (written);
+}
+
+int spi_write16(const uint16_t *data, size_t len) {
+    for (int i = 0; i < len; i++) {
+        uint8_t bytes[] = {(*data & 0xff00) >> 8, *data & 0xff};
+        spi_write_blocking(SPI_DEVICE, bytes, 2);
+        data++;
+    }
+    return (len);
 }

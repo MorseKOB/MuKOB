@@ -22,8 +22,9 @@ void spi_end(void);
 
 int spi_read(uint8_t txv, uint8_t *dst, size_t len);
 
-int spi_write(const uint8_t *src, size_t len);
+int spi_write(const uint8_t *data, size_t len);
 
+int spi_write16(const uint16_t *data, size_t len);
 
 #ifdef __cplusplus
  }

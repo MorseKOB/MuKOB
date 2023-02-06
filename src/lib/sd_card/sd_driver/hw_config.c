@@ -53,8 +53,8 @@ static spi_t spis[] = {  // One for each SPI.
         .mosi_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
         .sck_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
 
-        .baud_rate = 1000 * 1000,   // Very conservative, given the small amount of data being used
-        //.baud_rate = 12500 * 1000,  // The limitation here is SPI slew rate.
+        //.baud_rate = 1000 * 1000,   // Very conservative, given the small amount of data being used
+        .baud_rate = 20000 * 1000,  // The limitation here is SPI slew rate.
 
         .dma_isr = spi_dma_isr,
         .initialized = false,

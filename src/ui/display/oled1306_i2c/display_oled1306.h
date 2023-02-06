@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef DISPLAY_OLED1306_H
+#define DISPLAY_OLED1306_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -16,7 +16,7 @@
 #define DISP_CHAR_COLS 32  // 320 / 10
 
 /** \brief Text character data for the full text screen */
-extern char text_full_screen[DISP_CHAR_ROWS * DISP_CHAR_COLS];
+extern char full_screen_text[DISP_CHAR_ROWS * DISP_CHAR_COLS];
 
 /** \brief Bit to OR in to invert a character (display black char on white background) */
 #define DISP_CHAR_INVERT_BIT 0x80
@@ -43,7 +43,7 @@ void disp_clear(bool paint);
  * \param c character to display
  * \param paint Set true to paint the actual display. Otherwise, only buffers will be updated.
  */
-void disp_char(unsigned int row, unsigned int col, const char c, bool paint);
+void disp_char(unsigned short int row, unsigned short int col, const char c, bool paint);
 
 /** \brief Test the fonts by displaying all of the characters
  *  \ingroup display
@@ -77,7 +77,7 @@ void disp_paint(void);
  *  \param row The 0-based row to clear.
  *  \param paint True to also paint the screen.
 */
-void disp_row_clear(unsigned int row, bool paint);
+void disp_row_clear(unsigned short int row, bool paint);
 
 /** \brief Paint the portion of the screen containing the given character row.
  *  \ingroup display
@@ -87,7 +87,7 @@ void disp_row_clear(unsigned int row, bool paint);
  * 
  *  \param row The 0-based character row to paint.
 */
-void disp_row_paint(unsigned int row);
+void disp_row_paint(unsigned short int row);
 
 /** \brief Scroll 2 or more rows up.
  *  \ingroup display
@@ -99,7 +99,7 @@ void disp_row_paint(unsigned int row);
  *  \param row_b The 0-based bottom row.
  *  \param paint True to paint the screen after the operation.
 */
-void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint);
+void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, bool paint);
 
 /** \brief Display a string
  *  \ingroup display
@@ -112,7 +112,7 @@ void disp_rows_scroll_up(unsigned int row_t, unsigned int row_b, bool paint);
  * \param invert True to invert the characters
  * \param paint True to paint the screen after the operation
  */
-void disp_string(unsigned int row, unsigned int col, const char *pString, bool invert, bool paint);
+void disp_string(unsigned short int row, unsigned short int col, const char *pString, bool invert, bool paint);
 
 /** \brief Update the display (graphics) buffer from the row data. Optionally paint the screen 
  *  \ingroup display
@@ -124,5 +124,5 @@ void disp_update(bool paint);
 #ifdef __cplusplus
 }
 #endif
-#endif // DISPLAY_H
+#endif // DISPLAY_OLED1306_H
 

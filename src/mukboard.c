@@ -28,7 +28,7 @@
 #include "pico/cyw43_arch.h"
 #include "system_defs.h"
 #include "config.h"
-#include "display.h"
+#include "display_ili9341.h"
 
 uint8_t __options_value = 0;
 
@@ -49,7 +49,7 @@ int board_init() {
     stdio_init_all();
 
     sleep_ms(1000);
-    
+
     retval = cyw43_arch_init();
     if (retval) {
         printf("WiFi init failed");

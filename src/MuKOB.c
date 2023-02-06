@@ -9,7 +9,7 @@
 
 #include "system_defs.h"
 // (some defines in the above are used in the following, so must be included first)
-// #include "display.h"
+#include "display_ili9341.h"
 #include "mukboard.h"
 
 int say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
@@ -32,47 +32,50 @@ int main()
         buzzer_beep(500);
     }
 
-    while(true) {
-//        disp_font_test();
-//        sleep_ms(1000);
+    printf("int: %d uint32_t %d, short int: %d uint16_t: %d char: %d uint8_t: %d\n", sizeof(int), sizeof(uint32_t), sizeof(short int), sizeof(uint16_t), sizeof(char), sizeof(uint8_t));
 
+    uint8_t color = 0;
+    while(true) {
+        color++;
+        uint8_t fgc = fg_from_cb(color);
+        uint8_t bgc = bg_from_cb(color);
+        if (fgc == bgc) {
+            continue;
+        }
+        disp_clear(true);
+        sleep_ms(500);
+        disp_set_text_colors(fg_from_cb(color), bg_from_cb(color));
+        disp_font_test();
+        sleep_ms(1000);
+        led_on_off(say_hi);
+
+        disp_clear(true);
+        margins_set(0, 0, DISP_CHAR_ROWS - 1, DISP_CHAR_COLS - 1);
+        char ca = 0;
+        for (int i = 0; i < 4 * DISP_CHAR_COLS * DISP_CHAR_ROWS; i++) {
+            for (int col = 0; col < DISP_CHAR_COLS; col++) {
+                char c = '@' + ca + col;
+                c &= 0x1F;
+                c |= 0x40;
+                printc(c, false);
+            }
+            disp_paint();
+            ca++;
+        }
 //        kobnet_set_network();
 //        kobnet_test();
 
         // disp_clear(true);
-        // char d = '\x01';
-        // for (unsigned int r = 0; r < 6; r++) {
-        //     for (unsigned int c = 0; c < 14; c++) {
-        //         disp_char(r, c, d++, false);
-        //     }
-        //     disp_row_paint(r);
+        // // VGA Color Test
+        // disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
+        // for (uint8_t i = 0; i < 16; i++) {
+        //     char c = '0'+i;
+        //     if (c > '9')
+        //         c += 7;
+        //     disp_char(4, 2 * i, c, true);
+        //     disp_char_colorbyte(5, 2 * i, DISP_CHAR_INVERT_BIT, i, true);
         // }
-        // sleep_ms(1000);
-        // // Test setting the invert on chars directly in the text buffer
-        // // then paint.
-        // for (int i = 0; i < 10; i++) {
-        //     int offset = (5 * DISP_CHAR_COLS) + i;
-        //     *(text_full_screen + offset) = (*(text_full_screen + offset) | DISP_CHAR_INVERT_BIT);
-        // }
-        // disp_update(true);
-        // sleep_ms(1000);
-        // // Test scrolling 3 rows up
-        // disp_rows_scroll_up(2, 4, true);
-        // sleep_ms(1000);
-        // // Test clearing a row
-        // disp_row_clear(1, true);
-        // sleep_ms(1000);
-        // // Test displaying a string
-        // disp_string(4, 2, "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS.", false, true);
-        // sleep_ms(1000);
-        // // Simulate the MuKOB screen
-        // disp_clear(true);
-        // const char status_bar[] = {0x0B,0x1B,'1','0','8',' ',0x1A,'2','5',' ',0x01,0x04,0x1F,0x1E,0x00};
-        // disp_string(0, 0, status_bar, true, false);
-        // disp_string(1,0,"HOW EATING OYSTERS COULD HELP PROTECT THE ", false, false);
-        // disp_string(5,0,"BBC WORLD NE \x11", false, true);
-        led_on_off(say_hi);
-        sleep_ms(5000);
+        // sleep_ms(2000);
     }
 
     return 0;

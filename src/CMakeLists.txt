@@ -30,13 +30,13 @@ add_compile_options(-Wall
 # External libraries
 add_subdirectory(lib/sd_card)
 # Local libraries (additional sources)
+add_subdirectory(config)
 add_subdirectory(net)
 add_subdirectory(ui)
 
 # Add executable.
 add_executable(MuKOB
   MuKOB.c
-  config.c
   mukboard.c
   spi_ops.c
 )
@@ -59,7 +59,8 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_pio/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   net
-  ui/display
+  config
+  ui/display/ili9341_spi
   ui/rotory_encoder
   lib/sd_card/sd_driver
   lib/sd_card/ff15/source
@@ -67,6 +68,7 @@ include_directories(
 
 # Add the libraries required by the system to the build
 target_link_libraries(MuKOB
+  config
   display
   hardware_spi
   hardware_i2c
