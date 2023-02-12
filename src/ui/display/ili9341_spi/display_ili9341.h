@@ -13,9 +13,9 @@
 #include <stdbool.h>
 #include "ili9341_spi.h"
 
-// Sizes when using a 10x16 pixel fixed-width font
+// Sizes when using a 10x15 pixel fixed-width font
 #define DISP_CHAR_COLS 32
-#define DISP_CHAR_ROWS 15
+#define DISP_CHAR_ROWS 16
 
 /*! \brief VGA-16 Color numbers. */
 typedef enum color16 {

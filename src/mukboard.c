@@ -1,32 +1,38 @@
 /**
  * MuKOB Board Initialization and General Functions.
- * 
+ *
  * Copyright 2023 AESilky
  * SPDX-License-Identifier: MIT License
- * 
- * This sets up the Pico-W for use for MuKOB. 
+ *
+ * This sets up the Pico-W for use for MuKOB.
  * It:
  * 1. Configures the GPIO Pins for the proper IN/OUT, pull-ups, etc.
  * 2. Calls the init routines for Config, UI (Display, Touch, Rotory)
- * 
+ *
  * It provides some utility methods to:
  * 1. Turn the On-Board LED ON/OFF
  * 2. Flash the On-Board LED a number of times
  * 3. Turn the buzzer ON/OFF
  * 4. Beep the buzzer a number of times
- *  
+ *
 */
 #include <stdio.h>
+#include <time.h>
 
-#include "mukboard.h"
 #include "pico/stdlib.h"
+#include "pico/time.h"
+#include "pico/types.h"
+#include "pico/util/datetime.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
 #include "hardware/timer.h"
 #include "hardware/clocks.h"
+#include "hardware/rtc.h"
 #include "pico/cyw43_arch.h"
 #include "system_defs.h"
+#include "mukboard.h"
+#include "net.h"
 #include "config.h"
 #include "display_ili9341.h"
 
@@ -34,13 +40,13 @@ uint8_t __options_value = 0;
 
 /**
  * \brief Initialize the board
- * 
+ *
  * This sets up the GPIO for the proper direction (IN/OUT), pull-ups, etc.
  * This calls the init for each of the devices/subsystems.
  * If all is okay, it returns 0, else non-zero.
- * 
- * Although each subsystem could (some might argue should) configure thier own Pico 
- * pins, having everything here makes the overall system easier to understand 
+ *
+ * Although each subsystem could (some might argue should) configure thier own Pico
+ * pins, having everything here makes the overall system easier to understand
  * and helps assure that there are no conflicts.
 */
 int board_init() {
@@ -48,16 +54,39 @@ int board_init() {
 
     stdio_init_all();
 
-    sleep_ms(1000);
+    sleep_ms(100);
+
+    // Initialize the board RTC. It will be set correctly later when we 
+    // have WiFi and can make a NTP call.
+    // Start on Sunday the 1st of January 2023 00:00:01
+    datetime_t t = {
+            .year = 2023,
+            .month = 01,
+            .day = 01,
+            .dotw = 0, // 0 is Sunday
+            .hour = 00,
+            .min = 00,
+            .sec = 01
+    };
+    rtc_init();
+    rtc_set_datetime(&t);
+    // clk_sys is >2000x faster than clk_rtc, so datetime is not updated immediately when rtc_set_datetime() is called.
+    // tbe delay is up to 3 RTC clock cycles (which is 64us with the default clock settings)
+    sleep_us(100);
+    char datetime_buf[256];
+    rtc_get_datetime(&t);
+    datetime_to_str(datetime_buf, sizeof(datetime_buf), &t);
+    printf("%s\n", datetime_buf);
 
     retval = cyw43_arch_init();
     if (retval) {
-        printf("WiFi init failed");
+        error_printf("WiFi init failed");
         return retval;
     }
+    cyw43_arch_enable_sta_mode();
 
-    // SPI initialisation. Use SPI at 1MHz.
-    spi_init(SPI_DEVICE, 1000*1000);
+    // SPI initialisation. Use SPI at 20MHz.
+    spi_init(SPI_DEVICE, 20000 * 1000);
     gpio_set_function(SPI_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_SCK,  GPIO_FUNC_SPI);
     gpio_set_function(SPI_MOSI, GPIO_FUNC_SPI);
@@ -83,10 +112,10 @@ int board_init() {
     gpio_put(SPI_DC_DISPLAY, ILI9341_DC_DATA);
     gpio_put(SPI_CS_SDCARD, SPI_CS_DISABLE);
     gpio_put(SPI_CS_TOUCH, SPI_CS_DISABLE);
-    
+
     // NOT USING I2C AT THIS TIME.
     //
-    // I2C Initialisation. 
+    // I2C Initialisation.
     // i2c_init(I2C_PORT, 400*1000);
     // // I2C is "open drain", pull ups to keep signal high when no data is being sent
     // gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
@@ -129,6 +158,15 @@ int board_init() {
 
     // Get the configuration
     config_init();
+
+    // Make an NTP call to get the actual time and set the RTC correctly
+    wifi_set_creds("marconi", "Tacotia1");  // ZZZ!
+    network_update_rtc();  // This also initializes the network subsystem
+    sleep_ms(3000);  // Give it time to make a NTP call
+    // Now read the RTC and print it
+    rtc_get_datetime(&t);
+    datetime_to_str(datetime_buf, sizeof(datetime_buf), &t);
+    printf("%s\n", datetime_buf);
 
     // Initialize the display
     disp_init();
@@ -178,6 +216,60 @@ void led_on_off(int pattern[]) {
         }
         sleep_ms(off_time);
     }
+}
+
+struct _led_blink_mcode_context {
+    uint32_t len;
+    uint32_t index;
+    alarm_id_t alarm_id;
+    int* code;
+};
+static struct _led_blink_mcode_context _mcode_context = {0, 0, (alarm_id_t)0, (int*)NULL};
+
+int64_t _led_blink_mcode_handler(alarm_id_t id, void* request_state) {
+    if (_mcode_context.alarm_id != 0) {
+        cancel_alarm(_mcode_context.alarm_id);
+        _mcode_context.alarm_id = 0;
+    }
+    if (_mcode_context.index == _mcode_context.len) {
+        if (_mcode_context.code) {
+            free(_mcode_context.code);
+            _mcode_context.code = NULL;
+        }
+        led_on(false);
+        return 0;
+    }
+    int ms = *(_mcode_context.code + _mcode_context.index);
+    if (ms == 0) {
+        if (_mcode_context.code) {
+            free(_mcode_context.code);
+            _mcode_context.code = NULL;
+        }
+        led_on(false);
+        return 0;
+    }
+    _mcode_context.index++;
+    led_on(ms > 0);
+    _mcode_context.alarm_id = add_alarm_in_ms(abs(ms), _led_blink_mcode_handler, NULL, true);
+
+    return 0;
+}
+
+void led_blink_mcode(int32_t* code, uint32_t len) {
+    if (_mcode_context.alarm_id != 0) {
+        cancel_alarm(_mcode_context.alarm_id);
+        _mcode_context.alarm_id = 0;
+        led_on(false);
+    }
+    if (_mcode_context.code) {
+        free(_mcode_context.code);
+    }
+    _mcode_context.code = malloc(len);
+    memcpy(_mcode_context.code, code, len);
+    _mcode_context.len = len;
+    _mcode_context.index = 0;
+    _mcode_context.alarm_id = 0;
+    _led_blink_mcode_handler(0, NULL);
 }
 
 uint8_t options_read(void) {

@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #define FONT_WIDTH 10
-#define FONT_HIEGHT 16
+#define FONT_HIEGHT 15
 #define FONT_BIT_MASK 0x03FF
 extern const uint16_t Font_Table[];
 
