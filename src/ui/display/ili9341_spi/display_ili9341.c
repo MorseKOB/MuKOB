@@ -35,11 +35,11 @@ uint32_t _color16_map[] = {
 };
 
 #define C24_MASK_RED    0x00FF0000
-#define C24_SHIFT_RED   16
+#define C24_SHIFT_RED   16u
 #define C24_MASK_GREEN  0x0000FF00
-#define C24_SHIFT_GREEN 8
+#define C24_SHIFT_GREEN 8u
 #define C24_MASK_BLUE   0x000000FF
-#define C24_SHIFT_BLUE  0
+#define C24_SHIFT_BLUE  0u
 
 /* Dirty text rows */
 static bool __dirty_text_rows[DISP_CHAR_ROWS]; 
@@ -105,7 +105,7 @@ rgb_t rgb_from_color24(uint32_t color24) {
 
 /*! \brief Create 'color-byte number' from forground & background color numbers */
 uint8_t colorbyte(uint8_t fg, uint8_t bg) {
-    return ((bg << 4) | fg);
+    return ((bg << 4u) | fg);
 }
 
 /*! \brief Get forground color number from color-byte number */
@@ -115,7 +115,7 @@ uint8_t fg_from_cb(uint8_t cb) {
 
 /*! \brief Get background color number from color-byte number */
 uint8_t bg_from_cb(uint8_t cb) {
-    return ((cb & 0xf0) >> 4);
+    return ((cb & 0xf0) >> 4u);
 }
 
 /*! \brief Fill an RGB buffer with an RGB value. */
@@ -204,13 +204,13 @@ void disp_char_colorbyte(unsigned short int row, unsigned short int col, char c,
         for (int r = 0; r < CHAR_HIEGHT; r++) {
             // Get the glyph row for the character.
             uint16_t cgr = Font_Table[glyphindex++];
-            uint16_t mask = 1 << (CHAR_WIDTH - 1);
+            uint16_t mask = 1u << (CHAR_WIDTH - 1);
             for (int c = 0; c < CHAR_WIDTH; c++) {
                 // For each glyph column bit that is set, set the forground color in the character buffer.
                 if (cgr & mask) {
                     *pbuf = fgrgb;
                 }
-                mask >>= 1;
+                mask >>= 1u;
                 pbuf++;
             }
         }
@@ -297,7 +297,7 @@ void disp_row_paint(unsigned short int row) {
                 bgrgb = tmp;
             }
             uint16_t glyphline = *(Font_Table + (c * FONT_HIEGHT) + fontline);
-            for (uint16_t mask = (1 << (FONT_WIDTH-1)); mask; mask >>= 1) {
+            for (uint16_t mask = (1u << (FONT_WIDTH-1)); mask; mask >>= 1u) {
                 if (glyphline & mask) {
                     // set the fg color
                     *rbuf++ = fgrgb;

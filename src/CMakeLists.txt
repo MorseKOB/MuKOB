@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 # (note this can come from environment, CMake cache etc)
 set(PICO_SDK_PATH "/home/ed/code/pico/pico-sdk")
 set(PICO_BOARD pico_w CACHE STRING "Board type")
+set(PICO_USE_MALLOC_MUTEX 1)
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
@@ -31,7 +32,7 @@ add_compile_options(-Wall
 add_subdirectory(lib/sd_card)
 # Local libraries (additional sources)
 add_subdirectory(config)
-add_subdirectory(net)
+add_subdirectory(wire)
 add_subdirectory(ui)
 
 # Add executable.
@@ -57,11 +58,12 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_spi/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_i2c/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_pio/include
+  ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
-  net
   config
   ui/display/ili9341_spi
   ui/rotory_encoder
+  wire
   lib/sd_card/sd_driver
   lib/sd_card/ff15/source
 )
@@ -70,6 +72,7 @@ include_directories(
 target_link_libraries(MuKOB
   config
   display
+  wire
   hardware_spi
   hardware_i2c
   hardware_pio

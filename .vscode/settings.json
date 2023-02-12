@@ -17,7 +17,11 @@
       "stdlib.h": "c",
       "stdbool.h": "c",
       "net.h": "c",
-      "system-defs.h": "c"
+      "system-defs.h": "c",
+      "rtc.h": "c",
+      "ctime": "c",
+      "udp.h": "c",
+      "system_defs.h": "c"
     },
     "cmake.buildBeforeRun": true,
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",

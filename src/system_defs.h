@@ -70,4 +70,13 @@ enum option_t {
     OPTION_DEBUG      = 0x01,  // 0001 < Mask for Debug functionality option
 };
 
+/** @brief Macro to get the size of a structure member */
+#define member_size(type, member) sizeof(((type *)0)->member)
+
+void _mk_printf(const char* prefix, const char* format, ...) __attribute__((format(__printf__, 2, 3)));
+void debug_printf(const char* format, ...) __attribute__((format(__printf__, 1, 2)));
+void error_printf(const char* format, ...) __attribute__((format(__printf__, 1, 2)));
+void info_printf(const char* format, ...) __attribute__((format(__printf__, 1, 2)));
+void warn_printf(const char* format, ...) __attribute__((format(__printf__, 1, 2)));
+
 #endif

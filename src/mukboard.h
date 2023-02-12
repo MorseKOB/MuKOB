@@ -78,6 +78,16 @@ void led_on(bool on);
 void led_on_off(int pattern[]);
 
 /**
+ * \brief Turn the LED on/off based on MorseKOB code array...
+ *
+ * This flashes the LED for times specified by the `pattern` in milliseconds.
+ *
+ * \param pattern Array of millisend values to turn the LED on, off, on, etc.
+ *      The last element of the array must be 0. Negative values are off time, positive values are on time.
+*/
+void led_blink_mcode(int32_t *code, uint32_t len);
+
+/**
  * \brief Read the option switch
  * 
  * Reads the 4-position option switch, caches and returns 
