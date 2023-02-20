@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
-/*! \brief Memory display_full_area for a screen of text (characters) */
-char full_screen_text[DISP_CHAR_ROWS * DISP_CHAR_COLS];
+/*! @brief Memory display_full_area for a screen of text (characters) */
+char full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
 
 /*
  * This must be called before using the display.
@@ -126,7 +126,7 @@ void disp_clear(bool paint) {
  * These extra pixels must be accounted for when indexing into the display buffer.
  */
 void disp_char(unsigned short int row, unsigned short int col, const char c, bool paint) {
-    if (row >= DISP_CHAR_ROWS || col >= DISP_CHAR_COLS) {
+    if (row >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {
         return;  // Invalid row or column
     }
     *(full_screen_text + (row * DISP_CHAR_COLS) + col) = c;
@@ -162,20 +162,20 @@ void disp_char(unsigned short int row, unsigned short int col, const char c, boo
     }
 }
 
-/** \brief Paint the physical screen
+/** @brief Paint the physical screen
  */ 
 void disp_paint(void) {
     oled_disp_render(oled_disp_buf, &display_full_area);
 }
 
-/** \brief Clear the character row.
+/** @brief Clear the character row.
  *  \ingroup display
  *
  *  \param row The 0-based row to clear.
  *  \param paint True to paint the screen.
 */
 void disp_row_clear(unsigned short int row, bool paint) {
-    if (row >= DISP_CHAR_ROWS) {
+    if (row >= DISP_CHAR_LINES) {
         return;  // Invalid row or column
     }
     memset((full_screen_text + (row * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
@@ -225,7 +225,7 @@ void disp_row_paint(unsigned short int row) {
  *  \param paint True to paint the screen after the operation.
 */
 void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, bool paint) {
-    if (row_b <= row_t || row_b >= DISP_CHAR_ROWS) {
+    if (row_b <= row_t || row_b >= DISP_CHAR_LINES) {
         return;  // Invalid row value
     }
     memmove((full_screen_text + (row_t * DISP_CHAR_COLS)), (full_screen_text + ((row_t + 1) * DISP_CHAR_COLS)), (row_b - row_t) * DISP_CHAR_COLS);
@@ -233,7 +233,7 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
     disp_update(paint);
 }
 
-/** \brief Display a string
+/** @brief Display a string
  *  \ingroup display
  *
  * Display a string of ASCII characters (plus some special characters)
@@ -245,7 +245,7 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
  * \param paint True to paint the screen after the operation
  */
 void disp_string(unsigned short int row, unsigned short int col, const char *pString, bool invert, bool paint) {
-    if (row >= DISP_CHAR_ROWS || col >= DISP_CHAR_COLS) {
+    if (row >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {
         return;  // Invalid row or column
     }
     for (unsigned char c = *pString; c != 0; c = *(++pString)) {
@@ -257,7 +257,7 @@ void disp_string(unsigned short int row, unsigned short int col, const char *pSt
         if (col == DISP_CHAR_COLS) {
             col = 0;
             row++;
-            if (row == DISP_CHAR_ROWS) {
+            if (row == DISP_CHAR_LINES) {
                 break;
             }
         }
@@ -267,13 +267,13 @@ void disp_string(unsigned short int row, unsigned short int col, const char *pSt
     }
 }
 
-/** \brief Update the display buffer from the character row data
+/** @brief Update the display buffer from the character row data
  * 
  *  \param paint True to paint the display after the operation.
 */
 void disp_update(bool paint) {
     // TODO: More efficient way to do this...
-    for (unsigned int r = 0; r < DISP_CHAR_ROWS; r++) {
+    for (unsigned int r = 0; r < DISP_CHAR_LINES; r++) {
         for (unsigned int c = 0; c < DISP_CHAR_COLS; c++) {
             unsigned char d = *(full_screen_text + (r * DISP_CHAR_COLS) + c);
             disp_char(r, c, d, false);

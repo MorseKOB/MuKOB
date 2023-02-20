@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: MIT License
  * 
  */
-#ifndef __KOB_CONFIG_H
-#define __KOB_CONFIG_H
+#ifndef _KOB_CONFIG_H
+#define _KOB_CONFIG_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 #include <stdbool.h>
 
 /**
- * \brief Initialize the configuration subsystem
+ * @brief Initialize the configuration subsystem
  * 
 */
 int config_init(void);
@@ -21,4 +21,4 @@ int config_init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif // __KOB_CONFIG_H
+#endif // _KOB_CONFIG_H

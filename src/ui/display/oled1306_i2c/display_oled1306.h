@@ -15,15 +15,15 @@
 #define DISP_CHAR_ROWS 10  // 240 / 12
 #define DISP_CHAR_COLS 32  // 320 / 10
 
-/** \brief Text character data for the full text screen */
-extern char full_screen_text[DISP_CHAR_ROWS * DISP_CHAR_COLS];
+/** @brief Text character data for the full text screen */
+extern char full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
 
-/** \brief Bit to OR in to invert a character (display black char on white background) */
+/** @brief Bit to OR in to invert a character (display black char on white background) */
 #define DISP_CHAR_INVERT_BIT 0x80
-/** \brief Mask to AND with a character to remove intert (display white char on black background) */
+/** @brief Mask to AND with a character to remove intert (display white char on black background) */
 #define DISP_CHAR_NORMAL_MASK 0x7F
 
-/** \brief Clear the text screen
+/** @brief Clear the text screen
  *  \ingroup display
  * 
  * Clear the current text content and the screen.
@@ -32,7 +32,7 @@ extern char full_screen_text[DISP_CHAR_ROWS * DISP_CHAR_COLS];
 */
 void disp_clear(bool paint);
 
-/** \brief Display a character on the text screen
+/** @brief Display a character on the text screen
  *  \ingroup display
  *
  * Display an ASCII character (plus some special characters).
@@ -45,7 +45,7 @@ void disp_clear(bool paint);
  */
 void disp_char(unsigned short int row, unsigned short int col, const char c, bool paint);
 
-/** \brief Test the fonts by displaying all of the characters
+/** @brief Test the fonts by displaying all of the characters
  *  \ingroup display
  *
  * Display all of the font characters a page at a time. Pause between pages and overlap 
@@ -54,7 +54,7 @@ void disp_char(unsigned short int row, unsigned short int col, const char c, boo
  */
 void disp_font_test(void);
 
-/** \brief Initialize the display
+/** @brief Initialize the display
  *  \ingroup display
  * 
  * This must be called before using the display.
@@ -62,7 +62,7 @@ void disp_font_test(void);
  */
 void disp_init(void);
 
-/** \brief Paint the actual display screen
+/** @brief Paint the actual display screen
  *  \ingroup display
  *
  * To improve performance and the look of the display, most changes can be made without 
@@ -71,7 +71,7 @@ void disp_init(void);
  */
 void disp_paint(void);
 
-/** \brief Clear the character row.
+/** @brief Clear the character row.
  *  \ingroup display
  *
  *  \param row The 0-based row to clear.
@@ -79,7 +79,7 @@ void disp_paint(void);
 */
 void disp_row_clear(unsigned short int row, bool paint);
 
-/** \brief Paint the portion of the screen containing the given character row.
+/** @brief Paint the portion of the screen containing the given character row.
  *  \ingroup display
  *
  *  This 'paints' the screen from the display buffer. To paint the buffer 
@@ -89,7 +89,7 @@ void disp_row_clear(unsigned short int row, bool paint);
 */
 void disp_row_paint(unsigned short int row);
 
-/** \brief Scroll 2 or more rows up.
+/** @brief Scroll 2 or more rows up.
  *  \ingroup display
  *
  *  Scroll the character rows up, removing the top row and 
@@ -101,7 +101,7 @@ void disp_row_paint(unsigned short int row);
 */
 void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, bool paint);
 
-/** \brief Display a string
+/** @brief Display a string
  *  \ingroup display
  *
  * Display a string of ASCII characters (plus some special characters)
@@ -114,7 +114,7 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
  */
 void disp_string(unsigned short int row, unsigned short int col, const char *pString, bool invert, bool paint);
 
-/** \brief Update the display (graphics) buffer from the row data. Optionally paint the screen 
+/** @brief Update the display (graphics) buffer from the row data. Optionally paint the screen 
  *  \ingroup display
  * 
  *  \param paint True to paint the screen after the operation.

@@ -1,9 +1,9 @@
 /**
  * ILI9341 320x240 Color LCD functionaly interface through SPI
- * 
+ *
  * Copyright 2023 AESilky
  * SPDX-License-Identifier: MIT License
- * 
+ *
  */
 #ifndef ILI9341_SPI_H
 #define ILI9341_SPI_H
@@ -11,8 +11,10 @@
  extern "C" {
 #endif
 
-#define ILI9341_WIDTH 320    // -  ILI9341 display width
-#define ILI9341_HEIGHT 240   // -  ILI9341 display height
+#include <stdint.h>
+
+#define ILI9341_WIDTH 240    // -  ILI9341 display width
+#define ILI9341_HEIGHT 320   // -  ILI9341 display height
 
 // Command descriptions start on page 83 of the datasheet
 
@@ -46,11 +48,12 @@
 #define ILI9341_CASET       0x2A    // -  Column Address Set
 #define ILI9341_PASET       0x2B    // -  Page Address Set
 #define ILI9341_RAMWR       0x2C    // -  Memory Write
+#define ILI9341_CLRSET      0x2D    // -  Color Set
 #define ILI9341_RAMRD       0x2E    // -  Memory Read
 
 #define ILI9341_PTLAR       0x30    // -  Partial Area
 #define ILI9341_VSCRDEF     0x33    // -  Vertical Scrolling Definition
-#define ILI9341_MADCTL      0x36    // -  Memory Access Control
+#define ILI9341_MACTL       0x36    // -  Memory Access Control
 #define ILI9341_VSCRSADD    0x37    // -  Vertical Scrolling Start Address
 #define ILI9341_PIXFMT      0x3A    // -  COLMOD: Pixel Format Set
 
@@ -73,37 +76,57 @@
 #define ILI9341_PWCTL6      0xFC    // -  Power Control
 
 
-// 24-bit Color Mode to Basic 16 Colors (match original PC VGA system)
+// 24-bit RGB Color to Basic 16 Colors (match original PC VGA system)
 //                                      NUM :   R    G    B
 //                                      --- : ---  ---  ---
-#define ILI9341_BLACK       0x000000  //  0 :   0,   0,   0
-#define ILI9341_BLUE        0x0000AA  //  1 :   0,   0, 170
-#define ILI9341_GREEN       0x4E9100  //  2 :  78, 145,   0
-#define ILI9341_CYAN        0x00FAFF  //  3 :   0, 250, 255
-#define ILI9341_RED         0xAA0000  //  4 : 170,   0,   0
-#define ILI9341_MAGENTA     0xFF40FF  //  5 : 255,  64, 255
-#define ILI9341_BROWN       0x641100  //  6 : 100,  17,   0
-#define ILI9341_WHITE       0xD0D0D0  //  7 : 208, 208, 208
-#define ILI9341_GREY        0x79795A  //  8 : 121, 121,  90
-#define ILI9341_LT_BLUE     0x0064FF  //  9 :   0, 100, 255
-#define ILI9341_LT_GREEN    0x00F900  // 10 :   0, 249,   0
-#define ILI9341_LT_CYAN     0x73FDFF  // 11 : 115, 253, 255
-#define ILI9341_ORANGE      0xFF4B02  // 12 : 255,  75,   2
-#define ILI9341_LT_MAGENTA  0xFF8AD8  // 13 : 255, 138, 218
-#define ILI9341_YELLOW      0xFF9300  // 12 : 255, 147,   0
-#define ILI9341_BR_WHITE    0xFFFFFF  // 15 : 255, 255, 255
+// #define ILI9341_BLACK       0x000000  //  0 :   0,   0,   0
+// #define ILI9341_BLUE        0x0000AA  //  1 :   0,   0, 170
+// #define ILI9341_GREEN       0x4E9100  //  2 :  78, 145,   0
+// #define ILI9341_CYAN        0x00FAFF  //  3 :   0, 250, 255
+// #define ILI9341_RED         0xAA0000  //  4 : 170,   0,   0
+// #define ILI9341_MAGENTA     0xFF40FF  //  5 : 255,  64, 255
+// #define ILI9341_BROWN       0x641100  //  6 : 100,  17,   0
+// #define ILI9341_WHITE       0xD0D0D0  //  7 : 208, 208, 208
+// #define ILI9341_GREY        0x79795A  //  8 : 121, 121,  90
+// #define ILI9341_LT_BLUE     0x0064FF  //  9 :   0, 100, 255
+// #define ILI9341_LT_GREEN    0x00F900  // 10 :   0, 249,   0
+// #define ILI9341_LT_CYAN     0x73FDFF  // 11 : 115, 253, 255
+// #define ILI9341_ORANGE      0xFF4B02  // 12 : 255,  75,   2
+// #define ILI9341_LT_MAGENTA  0xFF8AD8  // 13 : 255, 138, 218
+// #define ILI9341_YELLOW      0xFF9300  // 12 : 255, 147,   0
+// #define ILI9341_BR_WHITE    0xFFFFFF  // 15 : 255, 255, 255
 
-/*! \brief RED/GREEN/BLUE */
-typedef struct rgb {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-} rgb_t;
+// 16-bit Color Mode to Basic 16 Colors (similar to PC CGA/EGA/VGA)
+//
+// 16-bit is R5G6B5 (RGB-16)
+// 16-bit from RGB = (R/8)<<11 + (G/4)<<5 + (B/8)
+// 16-bit from R5G6B5 = R5*2048 + G6*32 + B5
+//
+//                                      NUM :   R    G    B  R5 G6 B5
+//                                      --- : ---  ---  ---  -- -- --
+#define ILI9341_BLACK       0x0000    //  0 :   0,   0,   0   0  0  0
+#define ILI9341_BLUE        0x0011    //  1 :   0,   0, 136   0  0 17
+#define ILI9341_GREEN       0x4C80    //  2 :  78, 145,   0   9 36  0
+#define ILI9341_CYAN        0x079E    //  3 :   0, 240, 240   0 60 30
+#define ILI9341_RED         0xE000    //  4 : 224,   0,   0  28  0  0
+#define ILI9341_MAGENTA     0xFA1F    //  5 : 255,  64, 255  31 16 31
+#define ILI9341_BROWN       0x6080    //  6 : 100,  17,   0  12  4  0
+#define ILI9341_WHITE       0xB5D2    //  7 : 180, 190, 150  22 46 18
+#define ILI9341_GREY        0x6B49    //  8 : 104, 104,  72  13 26  9
+#define ILI9341_LT_BLUE     0x033F    //  9 :   0, 100, 255   0 25 31
+#define ILI9341_LT_GREEN    0x07E0    // 10 :   0, 255,   0   0 63  0
+#define ILI9341_LT_CYAN     0x77FF    // 11 : 115, 253, 255  14 63 31
+#define ILI9341_ORANGE      0xFA40    // 12 : 255,  75,   2  31 18  0
+#define ILI9341_LT_MAGENTA  0xFC5B    // 13 : 255, 138, 218  31 34 27
+#define ILI9341_YELLOW      0xFFEA    // 12 : 255, 255,  85  31 63 10
+#define ILI9341_BR_WHITE    0xFFFF    // 15 : 255, 255, 255  31 63 31
+
+typedef unsigned short rgb16_t; // R5G6B5
 
 /**
  * Display information.
  */
-typedef struct ili9341_disp_info {
+typedef struct ili9341_disp_info_ {
     // ID (CMD 0x04)
     uint8_t lcd_mfg_id;
     uint8_t lcd_version;
@@ -138,75 +161,142 @@ typedef struct ili9341_disp_info {
 } ili9341_disp_info_t;
 
 /**
- * \brief Get a pointer to a buffer large enough to hold 
+ * @brief Send a command byte to the controller.
+ * @ingroup display
+ * 
+ * Sends a single byte command to the controller.
+ * Care should be taken to avoid putting the controller into 
+ * an invalid/unknown state.
+ * 
+ * @see ILI9341 datasheet section 8 for command descriptions.
+ * 
+ * @param cmd The command byte to send (@see ILI9341_xxx defines)
+ */
+void ili9341_command(uint8_t cmd);
+
+/**
+ * @brief Send a command byte and argument data to the controller.
+ * @ingroup display
+ * 
+ * Sends a command and additional argument data to the controller.
+ * Care should be taken to avoid putting the controller into
+ * an invalid/unknown state.
+
+ * @see ILI9341 datasheet section 8 for command descriptions.
+ *
+ * @param cmd The command byte to send (@see ILI9341_xxx defines)
+ * @param data A pointer to a byte buffer of argument data
+ * @param count The number of data bytes to send from the buffer
+ */
+void ili9341_command_wd(uint8_t cmd, uint8_t *data, size_t count);
+
+/**
+ * @brief Display all of the colors in the palette
+ * @ingroup display
+ *
+ * Run through all of the colors. First do red, then green, then blue.
+ * Second, run through all 64k colors, going from 0 to 65,535.
+ */
+void ili9341_colors_show();
+
+/**
+ * @brief Get a pointer to a buffer large enough to hold
  * one scan line for the ILI9341 display.
- * 
- * This can be used to put RGB data into to be written to the 
- * screen. The `ili9341_line_paint` can be called to put the 
+ *
+ * This can be used to put RGB data into to be written to the
+ * screen. The `ili9341_line_paint` can be called to put the
  * line on the screen.
- * 
+ *
  * The buffer holds `ILI9341_WIDTH` rgb_t values.
-*/
-rgb_t* ili9341_get_line_buf();
+ */
+rgb16_t* ili9341_get_line_buf();
 
 /**
- * \brief Paint a buffer of rgb_t values to one horizontal line 
- * of the screen. The buffer passed in must be at least `ILI9341_WIDTH` 
- * rgb_t values in size.
- * \ingroup display
- * 
- * \param line 0-based line number to paint (must be less than `ILI9341_WIDTH`).
- * \param buf pointer to a rgb_t buffer of data (must be at least 'ILI9341_WIDTH`)
-*/
-void ili9341_line_paint(uint16_t line, rgb_t *buf);
+ * @brief Paint a buffer of rgb16_t values to one horizontal line
+ * of the screen. The buffer passed in must be at least `ILI9341_WIDTH`
+ * rgb16_t values in size.
+ * @ingroup display
+ *
+ * @param line 0-based line number to paint (must be less than `ILI9341_WIDTH`).
+ * @param buf pointer to a rgb16_t buffer of data (must be at least 'ILI9341_WIDTH`)
+ */
+void ili9341_line_paint(uint16_t line, rgb16_t *buf);
 
 /**
- * \brief Initialize the display.
- * \ingroup display
-*/
-void ili9341_spi_init(void);
+ * @brief Clear the entire screen.
+ * @ingroup display
+ *
+ * @param force True to force a write to the screen. Otherwise, the screen is writen
+ *              to only if the screen is thought to be 'dirty'.
+ */
+void ili9341_screen_clr(bool force);
 
 /**
- * \brief Get information about the display hardare & configuration.
- * \ingroup display
+ * @brief Paint the screen with the RGB-12 contents of a buffer.
+ * @ingroup display
+ *
+ * Uses the buffer of RGB data to paint the screen into the screen window.
+ * Set the screen window using `ili9341_window_set_area`.
+ *
+ * @param data RGB-12 pixel data buffer (1 rgb value for each pixel to paint)
+ * @param pixels Number of pixels (size of the data buffer in rgb_t's)
+ */
+void ili9341_screen_paint(const rgb16_t* rgb_pixel_data, uint16_t pixels);
+
+/**
+ * @brief Exit scroll mode to normal mode.
+ * @ingroup display
+ *
+ * This puts the screen back into normal display mode (no scroll area) and
+ * sets the window to full screen.
+ */
+void ili9341_scroll_exit(void);
+
+/**
+ * @brief Set the scroll area. It is between the top area and the bottom area.
+ * @ingroup display
+ *
+ * @param top_fixed_lines Number of fixed lines at the top of the screen
+ * @param bottom_fixed_lines Number of fixed lines at the bottom of the screen
+ */
+void ili9341_scroll_set_area(uint16_t top_fixed_lines, uint16_t bottom_fixed_lines);
+
+/**
+ * @brief Set the scroll memory start line.
+ *
+ * @param line The line within the screen memory to display at the top.
+ */
+void ili9341_scroll_set_start(uint16_t line);
+
+/**
+ * @brief Set the screen update window and position the start at x,y.
+ * @ingroup display
+ *
+ * Sets the update window area on the screen. This is the area that RGB data
+ * will be updated into using `ili9341_screen_paint`.
+ */
+void ili9341_window_set_area(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+
+/**
+ * @brief Set the screen update window to the full screen, and position the
+ * start at 0,0.
+ * @ingroup display
+ *
+ * Sets the update window to the full screen and positions the start at 0,0.
+*/
+void ili9341_window_set_fullscreen(void);
+
+/**
+ * @brief Get information about the display hardare & configuration.
+ * @ingroup display
 */
 ili9341_disp_info_t* ili9341_spi_info(void);
 
 /**
- * \brief Clear the entire screen.
- * \ingroup display
+ * @brief Initialize the display.
+ * @ingroup display
 */
-void ili9341_screen_clr(void);
-
-/**
- * \brief Paint the screen with the RGB contents of a buffer.
- * \ingroup display
- * 
- * Uses the buffer of RGB data to paint the screen into the screen window.
- * Set the screen window using `ili9341_set_window`.
- * 
- * \param data RGB pixel data buffer (1 rgb value for each pixel to paint)
- * \param pixels Number of pixels (size of the data buffer in rgb_t's)
-*/
-void ili9341_screen_paint(const rgb_t *rgb_pixel_data, uint16_t pixels);
-
-/**
- * \brief Set the screen update window and position the start at x,y.
- * \ingroup display
- * 
- * Sets the update window area on the screen. This is the area that RGB data 
- * will be updated into using `ili9341_screen_paint`.
-*/
-void ili9341_set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-
-/**
- * \brief Set the screen update window to the full screen, and position the 
- * start at 0,0.
- * \ingroup display
- * 
- * Sets the update window to the full screen and positions the start at 0,0.
-*/
-void ili9341_set_window_fullscreen(void);
+void ili9341_spi_init(void);
 
 #ifdef __cplusplus
  }

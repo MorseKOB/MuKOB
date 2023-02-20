@@ -45,16 +45,16 @@ void spi_dma_isr();
 // Note: multiple SD cards can be driven by one SPI if they use different slave selects.
 static spi_t spis[] = {  // One for each SPI.
     {
-        .hw_inst = SPI_DEVICE,      // SPI component
-        .miso_gpio = SPI_MISO,      // GPIO number (not pin number)
-        .mosi_gpio = SPI_MOSI,
-        .sck_gpio = SPI_SCK,
+        .hw_inst = SPI_TSD_DEVICE,      // SPI component
+        .miso_gpio = SPI_TSD_MISO,      // GPIO number (not pin number)
+        .mosi_gpio = SPI_TSD_MOSI,
+        .sck_gpio = SPI_TSD_SCK,
         .set_drive_strength = true,
         .mosi_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
         .sck_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
 
-        //.baud_rate = 1000 * 1000,   // Very conservative, given the small amount of data being used
-        .baud_rate = 20000 * 1000,  // The limitation here is SPI slew rate.
+        //.baud_rate = 1000 * 1000, // Very conservative. Probably fine given the small amount of data being used.
+        .baud_rate = 8000 * 1000,   // 8Mhz. The limitation here is SPI slew rate.
 
         .dma_isr = spi_dma_isr,
         .initialized = false,

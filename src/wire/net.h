@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT License
  *
  */
-#ifndef __KOB_NET_H
-#define __KOB_NET_H
+#ifndef _KOB_NET_H
+#define _KOB_NET_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -27,7 +27,7 @@
 #define NET_PASSWORD_MAX_LEN 128
 
 /*!
- * \brief Function prototype for UDP Bind response handler.
+ * @brief Function prototype for UDP Bind response handler.
  * \ingroup wire
  * \param status The statuc from the operation.
  * \param udp_pcb The udp_pcb that was bound, or NULL if an error occurred.
@@ -35,7 +35,7 @@
      typedef void (*udp_bind_handler_fn)(err_enum_t status, struct udp_pcb* udp_pcb);
 
 /*!
- * \brief Function prototype for UDP single operation result handler.
+ * @brief Function prototype for UDP single operation result handler.
  * \ingroup wire
  *
  * \param status The status from the operation.
@@ -44,7 +44,7 @@
 typedef void (*udp_sop_result_handler_fn)(err_enum_t status, struct pbuf* p);
 
 /*!
- * \brief Connect to WiFi (if needed).
+ * @brief Connect to WiFi (if needed).
  * \ingroup wire
  *
  * \returns true if connected, false if failed to connect.
@@ -52,7 +52,7 @@ typedef void (*udp_sop_result_handler_fn)(err_enum_t status, struct pbuf* p);
 bool wifi_connect();
 
 /*!
- * \brief Status of WiFi connection.
+ * @brief Status of WiFi connection.
  * \ingroup wire
  *
  * This returns the stored state. It does not try to connect.
@@ -62,7 +62,7 @@ bool wifi_connect();
 bool wifi_connected();
 
 /*!
- * \brief Set the ssid and password for the WiFi connection.
+ * @brief Set the ssid and password for the WiFi connection.
  * \ingroup wire
  *
  * \param ssid WiFi name.
@@ -71,7 +71,7 @@ bool wifi_connected();
 void wifi_set_creds(const char* ssid, const char* pw);
 
 /*!
- * \brief Make a NTP network call and use the result to update the board's RTC.
+ * @brief Make a NTP network call and use the result to update the board's RTC.
  * \ingroup wire
  *
  * \returns ERR_OK (0) on success
@@ -79,7 +79,7 @@ void wifi_set_creds(const char* ssid, const char* pw);
 err_enum_t network_update_rtc();
 
 /*!
- * \brief Send a UDP message and process the response message.
+ * @brief Send a UDP message and process the response message.
  * \ingroup wire
  *
  * \param hostname The fully qualified name of the host. This will be used to do a DNS lookup to obtain an IP address.
@@ -91,7 +91,7 @@ err_enum_t network_update_rtc();
 err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler_fn bind_handler);
 
 /*!
- * \brief Perform a single UDP operation, consisting of sending a message and getting a response message.
+ * @brief Perform a single UDP operation, consisting of sending a message and getting a response message.
  * \ingroup wire
  *
  * \param hostname The fully qualified name of the host. This will be used to do a DNS lookup to obtain an IP address.
@@ -107,4 +107,4 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
 #ifdef __cplusplus
 }
 #endif
-#endif // __KOB_NET_H
+#endif // _KOB_NET_H

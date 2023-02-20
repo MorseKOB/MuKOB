@@ -16,10 +16,12 @@
  * 4. Beep the buzzer a number of times
  *
 */
-#include <stdio.h>
-#include <time.h>
+//#include <stdio.h>
+//#include <time.h>
 
+#include "pico/stdio.h"
 #include "pico/stdlib.h"
+#include "pico/printf.h"
 #include "pico/time.h"
 #include "pico/types.h"
 #include "pico/util/datetime.h"
@@ -34,12 +36,14 @@
 #include "mukboard.h"
 #include "net.h"
 #include "config.h"
-#include "display_ili9341.h"
+#include "display.h"
 
-uint8_t __options_value = 0;
+#include "creds.private.h"
+
+uint8_t _options_value = 0;
 
 /**
- * \brief Initialize the board
+ * @brief Initialize the board
  *
  * This sets up the GPIO for the proper direction (IN/OUT), pull-ups, etc.
  * This calls the init for each of the devices/subsystems.
@@ -85,11 +89,16 @@ int board_init() {
     }
     cyw43_arch_enable_sta_mode();
 
-    // SPI initialisation. Use SPI at 20MHz.
-    spi_init(SPI_DEVICE, 20000 * 1000);
-    gpio_set_function(SPI_MOSI, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(SPI_MOSI, GPIO_FUNC_SPI);
+    // SPI 0 initialization for the touch and SD card. Use SPI at 8MHz.
+    spi_init(SPI_TSD_DEVICE, 8000 * 1000);
+    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
+    // SPI 1 initialization for the display. Use SPI at 25MHz.
+    spi_init(SPI_DISPLAY_DEVICE, 25000 * 1000);
+    gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
+    gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
     // Chip selects for the SPI paripherals
     gpio_set_function(SPI_CS_DISPLAY,   GPIO_FUNC_SIO);
     gpio_set_function(SPI_DC_DISPLAY,   GPIO_FUNC_SIO);  // Data/Command
@@ -101,15 +110,17 @@ int board_init() {
     gpio_set_dir(SPI_CS_SDCARD, GPIO_OUT);
     gpio_set_dir(SPI_CS_TOUCH, GPIO_OUT);
     // Signal drive strengths
-    gpio_set_drive_strength(SPI_SCK, GPIO_DRIVE_STRENGTH_4MA);          // Multiple devices connected
-    gpio_set_drive_strength(SPI_MOSI, GPIO_DRIVE_STRENGTH_4MA);         // Multiple devices connected
+    gpio_set_drive_strength(SPI_TSD_SCK, GPIO_DRIVE_STRENGTH_4MA);      // Multiple devices connected
+    gpio_set_drive_strength(SPI_TSD_MOSI, GPIO_DRIVE_STRENGTH_4MA);     // Multiple devices connected
+    gpio_set_drive_strength(SPI_DISPLAY_SCK, GPIO_DRIVE_STRENGTH_2MA);  // SPI Display is a single device
+    gpio_set_drive_strength(SPI_DISPLAY_MOSI, GPIO_DRIVE_STRENGTH_2MA); // SPI Display is a single device
     gpio_set_drive_strength(SPI_CS_DISPLAY, GPIO_DRIVE_STRENGTH_2MA);   // CS goes to a single device
     gpio_set_drive_strength(SPI_DC_DISPLAY, GPIO_DRIVE_STRENGTH_2MA);   // DC goes to a single device
     gpio_set_drive_strength(SPI_CS_SDCARD, GPIO_DRIVE_STRENGTH_2MA);    // CS goes to a single device
     gpio_set_drive_strength(SPI_CS_TOUCH, GPIO_DRIVE_STRENGTH_2MA);     // CS goes to a single device
     // Initial output state
     gpio_put(SPI_CS_DISPLAY, SPI_CS_DISABLE);
-    gpio_put(SPI_DC_DISPLAY, ILI9341_DC_DATA);
+    gpio_put(SPI_DC_DISPLAY, DISPLAY_DC_DATA);
     gpio_put(SPI_CS_SDCARD, SPI_CS_DISABLE);
     gpio_put(SPI_CS_TOUCH, SPI_CS_DISABLE);
 
@@ -124,15 +135,15 @@ int board_init() {
     // gpio_pull_up(I2C_SCL);
 
     // GPIO Outputs (other than chip-selects)
-    gpio_set_function(ILI9341_RESET_OUT,   GPIO_FUNC_SIO);
-    gpio_set_dir(ILI9341_RESET_OUT, GPIO_OUT);
-    gpio_put(ILI9341_RESET_OUT, ILI9341_HW_RESET_OFF);
-    gpio_set_function(ILI9341_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
-    gpio_set_dir(ILI9341_BACKLIGHT_OUT, GPIO_OUT);
-    gpio_put(ILI9341_BACKLIGHT_OUT, ILI9341_BACKLIGHT_OFF);
-    gpio_set_function(BUZZER_OUT,   GPIO_FUNC_SIO);
-    gpio_set_dir(BUZZER_OUT, GPIO_OUT);
-    gpio_put(BUZZER_OUT, BUZZER_OFF);
+    gpio_set_function(DISPLAY_RESET_OUT,   GPIO_FUNC_SIO);
+    gpio_set_dir(DISPLAY_RESET_OUT, GPIO_OUT);
+    gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
+    gpio_set_function(DISPLAY_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
+    gpio_set_dir(DISPLAY_BACKLIGHT_OUT, GPIO_OUT);
+    gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);
+    gpio_set_function(SPKR_DRIVE,   GPIO_FUNC_SIO);
+    gpio_set_dir(SPKR_DRIVE, GPIO_OUT);
+    gpio_put(SPKR_DRIVE, BUZZER_OFF);
     gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
     gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
@@ -160,7 +171,7 @@ int board_init() {
     config_init();
 
     // Make an NTP call to get the actual time and set the RTC correctly
-    wifi_set_creds("marconi", "Tacotia1");  // ZZZ!
+    wifi_set_creds(NET_NAME, NET_PW);  // ZZZ!
     network_update_rtc();  // This also initializes the network subsystem
     sleep_ms(3000);  // Give it time to make a NTP call
     // Now read the RTC and print it
@@ -183,7 +194,7 @@ void buzzer_beep(int ms) {
 }
 
 void buzzer_on(bool on) {
-    gpio_put(BUZZER_OUT, on);
+    gpio_put(SPKR_DRIVE, on);
 }
 
 void buzzer_on_off(int pattern[]) {
@@ -286,14 +297,73 @@ uint8_t options_read(void) {
     opt_bit = gpio_get(OPTIONS_1_IN);
     opt_value |= opt_bit;
     opt_value ^= 0x0F;  // Invert the final value (the switches are tied to GND)
-    __options_value = opt_value;
+    _options_value = opt_value;
 
     return (opt_value);
 }
 
 bool option_value(uint opt) {
-    if (__options_value & opt) {
+    if (_options_value & opt) {
         return true;
     }
     return false;
 }
+
+void format_current_datetime(char* buf, size_t len) {
+    datetime_t t;
+    rtc_get_datetime(&t);
+    snprintf(buf, len, "%02d-%02d-%04d %02d:%02d:%02d", t.month, t.day, t.year, t.hour, t.min, t.sec);
+}
+
+void debug_printf(const char* format, ...) {
+    if (option_value(OPTION_DEBUG)) {
+        char buf[1024];
+        format_current_datetime(buf, sizeof(buf));
+        printf(buf);
+        printf(" DEBUG: ");
+        va_list xArgs;
+        va_start(xArgs, format);
+        vsnprintf(buf, sizeof(buf), format, xArgs);
+        printf(buf);
+        va_end(xArgs);
+    }
+}
+
+void error_printf(const char* format, ...) {
+    char buf[1024];
+    format_current_datetime(buf, sizeof(buf));
+    printf("\033[91m");
+    printf(buf);
+    printf(" ERROR: ");
+    va_list xArgs;
+    va_start(xArgs, format);
+    vsnprintf(buf, sizeof(buf), format, xArgs);
+    printf(buf);
+    va_end(xArgs);
+    printf("\033[0m");
+}
+
+void info_printf(const char* format, ...) {
+    char buf[1024];
+    format_current_datetime(buf, sizeof(buf));
+    printf(buf);
+    printf(" INFO: ");
+    va_list xArgs;
+    va_start(xArgs, format);
+    vsnprintf(buf, sizeof(buf), format, xArgs);
+    printf(buf);
+    va_end(xArgs);
+}
+
+void warn_printf(const char* format, ...) {
+    char buf[1024];
+    format_current_datetime(buf, sizeof(buf));
+    printf(buf);
+    printf(" WARN: ");
+    va_list xArgs;
+    va_start(xArgs, format);
+    vsnprintf(buf, sizeof(buf), format, xArgs);
+    printf(buf);
+    va_end(xArgs);
+}
+

@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-# Initialise pico_sdk from installed location
+# Initialize pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
 set(PICO_SDK_PATH "/home/ed/code/pico/pico-sdk")
 set(PICO_BOARD pico_w CACHE STRING "Board type")
@@ -53,6 +53,7 @@ pico_enable_stdio_usb(MuKOB 0)
 # Add the required include file paths to the build
 include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
+  ${PICO_SDK_PATH}/lib/lwip/src/include
   ${PICO_SDK_PATH}/src/common/pico_stdlib/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_dma/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_spi/include
@@ -61,6 +62,7 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   config
+  ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
   wire
@@ -72,6 +74,7 @@ include_directories(
 target_link_libraries(MuKOB
   config
   display
+  ili9341_spi
   wire
   hardware_spi
   hardware_i2c
