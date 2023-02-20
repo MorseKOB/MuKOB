@@ -13,7 +13,7 @@
 #include "sd_card.h"
 #include "ff.h"
 
-const char* __cfg_filename = "MuKOB.cfg";
+const char* _cfg_filename = "MuKOB.cfg";
 
 int config_init(void) {
     // See if we can read the config from the '.cfg' file...
@@ -36,7 +36,7 @@ int config_init(void) {
             }
 
             // Open file for reading
-            fr = f_open(&fil, __cfg_filename, FA_READ);
+            fr = f_open(&fil, _cfg_filename, FA_READ);
             if (fr != FR_OK) {
                 ret = 2;
                 printf("ERROR: Could not open file (%d)\r\n", fr);
@@ -44,7 +44,7 @@ int config_init(void) {
             }
 
             // Print every line in file over serial
-            printf("Reading from file '%s':\r\n", __cfg_filename);
+            printf("Reading from file '%s':\r\n", _cfg_filename);
             printf("---\r\n");
             while (f_gets(buf, sizeof(buf), &fil)) {
                 printf(buf);

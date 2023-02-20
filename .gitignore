@@ -1,8 +1,5 @@
 # IDE files
 .DS_Store
-.eclipse
-.idea
-.vscode
 
 # Build and Output
 build/
@@ -18,4 +15,6 @@ build/
 
 # Local info
 *.private
+*.private.c
+*.private.h
 *.private.cmake

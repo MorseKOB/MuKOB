@@ -1,31 +1,33 @@
 {
-  "cmake.configureOnOpen": false,
+  "cmake.configureOnOpen": true,
   "cmake.statusbar.advanced": {
     "debug" : {
       "visibility": "hidden"
-              },    "launch" : {
+    },
+    "launch" : {
       "visibility": "hidden"
-               },
+    },
     "build" : {
-      "visibility": "hidden"
-               },
+    },
     "buildTarget" : {
       "visibility": "hidden"
-               },
     },
-    "files.associations": {
-      "stdlib.h": "c",
-      "stdbool.h": "c",
-      "net.h": "c",
-      "system-defs.h": "c",
-      "rtc.h": "c",
-      "ctime": "c",
-      "udp.h": "c",
-      "system_defs.h": "c"
-    },
-    "cmake.buildBeforeRun": true,
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-    "cortex-debug.openocdPath": "/home/ed/code/openocd/src/openocd",
-    "cortex-debug.variableUseNaturalFormat": false,
-    "cmake.sourceDirectory": "${workspaceFolder}/src"
+  },
+  "files.associations": {
+    "stdlib.h": "c",
+    "stdbool.h": "c",
+    "net.h": "c",
+    "system-defs.h": "c",
+    "rtc.h": "c",
+    "ctime": "c",
+    "udp.h": "c",
+    "system_defs.h": "c",
+    "printf.h": "c",
+    "stdio.h": "c"
+  },
+  "cmake.buildBeforeRun": true,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "cortex-debug.openocdPath": "/home/ed/code/openocd/src/openocd",
+  "cortex-debug.variableUseNaturalFormat": false,
+  "cmake.sourceDirectory": "${workspaceFolder}/src"
 }

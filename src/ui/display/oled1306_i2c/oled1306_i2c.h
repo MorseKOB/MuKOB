@@ -68,9 +68,9 @@ struct render_area {
     int buflen;
 };
 
-/*! \brief Memory area for the screen data pixel-bytes */
+/*! @brief Memory area for the screen data pixel-bytes */
 extern uint8_t oled_disp_buf[];
-/*! \brief Render area for the full oled display screen */
+/*! @brief Render area for the full oled display screen */
 extern struct render_area display_full_area;
 
 void oled_disp_fill(uint8_t buf[], uint8_t fill);
@@ -87,7 +87,7 @@ void oled_init();
 
 void oled_disp_render(uint8_t *buf, struct render_area *area);
 
-/*! \brief Scroll display horizontally
+/*! @brief Scroll display horizontally
  *  \ingroup oled1306_i2c
  *
  *  Scroll the full display from right to left.

@@ -6,7 +6,7 @@
  *
  */
 #include <stddef.h>
-#include <stdio.h>
+//#include <stdio.h>
 
 #include "mkwire.h"
 #include "net.h"
@@ -64,7 +64,7 @@ void _send_id();
 void _start_keep_alive();
 void _stop_keep_alive();
 
-const char* _mks_commands[] = {
+const char* _mks_commands[6] = {
     "*UNDEFINED*",
     "*UNDEFINED*",
     "DISCONNECT",
@@ -225,7 +225,7 @@ void mkwire_set_office_id(char* office_id) {
 // *** Local functions ***
 
 /*!
- * \brief Called by `udp_socket_bind` when the UDP socket has been bound locally
+ * @brief Called by `udp_socket_bind` when the UDP socket has been bound locally
  * and connected to the MKServer.
  */
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {

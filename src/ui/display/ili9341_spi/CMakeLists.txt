@@ -1,12 +1,11 @@
 # Library: display (obj only)
-add_library(display INTERFACE)
+add_library(ili9341_spi INTERFACE)
 
-target_sources(display INTERFACE
+target_sources(ili9341_spi INTERFACE
   display_ili9341.c
-  font_10_16.c
   ili9341_spi.c
 )
 
-target_link_libraries(display INTERFACE
+target_link_libraries(ili9341_spi INTERFACE
   pico_stdlib
 )

@@ -56,7 +56,7 @@ __attribute__((__noreturn__)) static inline void system_reset() {
 }
 
 /**
-  \brief   Disable IRQ Interrupts
+  @brief   Disable IRQ Interrupts
   \details Disables IRQ interrupts by setting the I-bit in the CPSR.
            Can only be executed in Privileged modes.
  */

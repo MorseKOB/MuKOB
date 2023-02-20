@@ -14,10 +14,10 @@
  */
 #include "oled1306_i2c.h"
 
-/*! \brief Memory area for the screen data pixel-bytes */
+/*! @brief Memory area for the screen data pixel-bytes */
 uint8_t oled_disp_buf[OLED_BUF_LEN];
 
-/*! \brief Memory area for the screen data pixel-bytes */
+/*! @brief Memory area for the screen data pixel-bytes */
 struct render_area display_full_area = {start_col: 0, end_col : OLED_WIDTH - 1, start_page : 0, end_page : OLED_NUM_PAGES - 1};
 
 void oled_disp_fill(uint8_t buf[], uint8_t oled_disp_fill) {
@@ -160,7 +160,7 @@ void oled_disp_render(uint8_t *buf, struct render_area *area) {
     oled_send_buf(buf, area->buflen);
 }
 
-/*! \brief Scroll display horizontally
+/*! @brief Scroll display horizontally
  *  \ingroup oled1306_i2c
  *
  *  Scroll the full display from right to left.
