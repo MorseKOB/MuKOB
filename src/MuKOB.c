@@ -24,14 +24,9 @@
 #include "display_ili9341.h"
 #include "font.h"
 #include "mkwire.h"
+#include "test.h"
 
-int say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
-
-int64_t alarm_callback(alarm_id_t id, void *user_data) {
-    // Put your timeout handler code in here
-    puts("Alarm occurred.");
-    return 0;
-}
+static int say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
 
 int main()
 {
@@ -40,18 +35,44 @@ int main()
     // bi_decl(bi_program_description("Micro version of MorseKOB"));
     board_init();
 
-    error_printf("Test of printing an error.\n");
-
     if (option_value(OPTION_DEBUG)) {
         buzzer_beep(250);
     }
+    led_on_off(say_hi);
 
     // Try to connect to the MKOB Server wire 108
     // mkwire_init("192.168.68.85", MKOBSERVER_PORT_DEFAULT, "ES, Ed, WA (MuKOB)");
     // mkwire_connect(90); // Test wire
     // sleep_ms(15000);
 
-    uint8_t color = 0;
+    // Obtain current time
+    // `time()` returns the current time of the system as a `time_t` value
+    time_t now;
+    time(&now);
+    // Convert to local time format and print to stdout
+    printf("Today is %s", ctime(&now));
+
+    disp_clear(Paint);
+    disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
+
+    // disp_font_test();
+    // sleep_ms(2000);
+
+    // ili9341_colors_show();
+    // sleep_ms(2000);
+
+    // disp_c16_color_chart();
+    // sleep_ms(2000);
+    // disp_clear(Paint);
+
+    cursor_show(false);
+    cursor_home();
+    printf_disp(Paint, "This text is on the main\n(base) screen.\n");
+    time(&now);
+    printf_disp(Paint, "This was printed at: %s", ctime(&now));
+    sleep_ms(1000);
+
+    colorbyte_t color = 0;
     while(true) {
         options_read();  // Re-read the option switches
         color++;
@@ -60,57 +81,34 @@ int main()
         if (fgc == bgc) {
             continue;
         }
-        // Obtain current time
-        // `time()` returns the current time of the system as a `time_t` value
-        time_t now;
-        time(&now);
-        // Convert to local time format and print to stdout
-        printf("Today is %s", ctime(&now));
+        screen_new();
+        disp_set_text_colors(fgc, bgc);
+        disp_clear(Paint);
+        cursor_set(19,0);
+        test_show_full_scroll_barberpoll();
 
-        disp_clear(true);
-        sleep_ms(500);
-        disp_set_text_colors(fg_from_cb(color), bg_from_cb(color));
-        disp_printf(true, "`disp_printf(%b, \"%s\")`\n", true, "some string");
-        disp_font_test();
-        //led_on_off(say_hi);
-
-        // ili9341_colors_show();
-        // sleep_ms(2000);
-
-        disp_c16_color_chart();
+        // Test creating a new (sub) screen and writing to it
+        screen_new();
+        printf_disp(No_Paint, "This is on a new (sub)\nscreen!\n\n");
+        printf_disp(Paint, "Then it will delay. At\nthe end, pop the\nsub-screen off -\nrestoring the previous screen.");
         sleep_ms(2000);
 
-        disp_clear(true);
-        margins_set(0, 0, DISP_CHAR_LINES - 1, DISP_CHAR_COLS - 1);
-        char ca = 0;
-        for (int i = 0; i < 22; i++) {
-            for (int col = 0; col < DISP_CHAR_COLS; col++) {
-                char c = '@' + ca + col;
-                c &= 0x1F;
-                c |= 0x40;
-                printc(c, false);
-            }
-            disp_paint();
-            ca++;
-        }
-        sleep_ms(2000);
-
-        // Leave the text on the screen and test ili9341 scroll
-        disp_string(0, 0,  "\024\025W:108 S:25 \022\023 \016 \002 \012\013\014\015", true, true);
-        disp_string(1, 0,  "                        ", true, true);
+        test_show_mukob_head_foot();
+        disp_set_text_colors(C16_LT_GREEN, C16_BLACK);
         disp_string(12, 0, "098765432109876543210987", false, true);
-        disp_string(17, 0, "A 1 B 2 C 3 D 4 E 5 F 6 ", false, true);
-        disp_string(18, 0, " A 1 B 2 C 3 D 4 E 5 F 6", false, true);
-        disp_string(DISP_CHAR_LINES - 1, 0, " KOB      10:31      AES", true, true);
-        disp_char(DISP_CHAR_LINES - 1, 0, '\200', true);
-        ili9341_scroll_set_area(2 * FONT_HEIGHT, 3 * FONT_HEIGHT);
-        for (unsigned char i = 0; i < 64; i++) {
-            sleep_ms(20);
-            ili9341_scroll_set_start((2 * FONT_HEIGHT) + (i * FONT_HEIGHT) % (ILI9341_HEIGHT - (5 * FONT_HEIGHT)));
-            disp_char((i % DISP_CHAR_LINES), 0, i, true);
-        }
-        sleep_ms(3000);
-        ili9341_scroll_exit();
+        disp_string(13, 0, "A 1 B 2 C 3 D 4 E 5 F 6 ", false, true);
+        disp_string(14, 0, " A 1 B 2 C 3 D 4 E 5 F 6", false, true);
+        sleep_ms(1000);
+        cursor_home();
+        // void test_show_ili9341_scroll();
+        test_show_half_width_scroll_barberpoll();
+        sleep_ms(1000);
+        disp_clear(Paint);
+        screen_close();
+        sleep_ms(1000);
+        disp_clear(Paint);
+        screen_close();
+        sleep_ms(1000);
     }
 
     return 0;

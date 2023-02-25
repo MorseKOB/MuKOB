@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT License
  *
  */
-#ifndef ILI9341_SPI_H
-#define ILI9341_SPI_H
+#ifndef _ILI9341_SPI_H_
+#define _ILI9341_SPI_H_
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -53,7 +53,7 @@
 
 #define ILI9341_PTLAR       0x30    // -  Partial Area
 #define ILI9341_VSCRDEF     0x33    // -  Vertical Scrolling Definition
-#define ILI9341_MACTL       0x36    // -  Memory Access Control
+#define ILI9341_MADCTL      0x36    // -  Memory Access Control
 #define ILI9341_VSCRSADD    0x37    // -  Vertical Scrolling Start Address
 #define ILI9341_PIXFMT      0x3A    // -  COLMOD: Pixel Format Set
 
@@ -163,13 +163,13 @@ typedef struct ili9341_disp_info_ {
 /**
  * @brief Send a command byte to the controller.
  * @ingroup display
- * 
+ *
  * Sends a single byte command to the controller.
- * Care should be taken to avoid putting the controller into 
+ * Care should be taken to avoid putting the controller into
  * an invalid/unknown state.
- * 
+ *
  * @see ILI9341 datasheet section 8 for command descriptions.
- * 
+ *
  * @param cmd The command byte to send (@see ILI9341_xxx defines)
  */
 void ili9341_command(uint8_t cmd);
@@ -177,7 +177,7 @@ void ili9341_command(uint8_t cmd);
 /**
  * @brief Send a command byte and argument data to the controller.
  * @ingroup display
- * 
+ *
  * Sends a command and additional argument data to the controller.
  * Care should be taken to avoid putting the controller into
  * an invalid/unknown state.
@@ -202,6 +202,7 @@ void ili9341_colors_show();
 /**
  * @brief Get a pointer to a buffer large enough to hold
  * one scan line for the ILI9341 display.
+ * @ingroup display
  *
  * This can be used to put RGB data into to be written to the
  * screen. The `ili9341_line_paint` can be called to put the
@@ -210,6 +211,18 @@ void ili9341_colors_show();
  * The buffer holds `ILI9341_WIDTH` rgb_t values.
  */
 rgb16_t* ili9341_get_line_buf();
+
+/**
+ * @brief Get information about the display hardare & configuration.
+ * @ingroup display
+*/
+ili9341_disp_info_t* ili9341_info(void);
+
+/**
+ * @brief Initialize the display.
+ * @ingroup display
+*/
+void ili9341_init(void);
 
 /**
  * @brief Paint a buffer of rgb16_t values to one horizontal line
@@ -229,7 +242,15 @@ void ili9341_line_paint(uint16_t line, rgb16_t *buf);
  * @param force True to force a write to the screen. Otherwise, the screen is writen
  *              to only if the screen is thought to be 'dirty'.
  */
-void ili9341_screen_clr(bool force);
+void ili9341_screen_clr(rgb16_t color, bool force);
+
+/**
+ * @brief Turn the screen (display) on/off.
+ * @ingroup display
+ *
+ * @param on True to turn on, false to turn off
+ */
+void ili9341_screen_on(bool on);
 
 /**
  * @brief Paint the screen with the RGB-12 contents of a buffer.
@@ -253,8 +274,14 @@ void ili9341_screen_paint(const rgb16_t* rgb_pixel_data, uint16_t pixels);
 void ili9341_scroll_exit(void);
 
 /**
- * @brief Set the scroll area. It is between the top area and the bottom area.
+ * @brief Set the scroll area. It is between the top fixed area and the
+ * bottom fixed area.
  * @ingroup display
+ *
+ * NOTE: Hardware scrolling only works when the display is in portrait mode
+ * (MADCTL MV (bit 5) = 0)
+ *
+ * @see ili9341_scroll_set_start
  *
  * @param top_fixed_lines Number of fixed lines at the top of the screen
  * @param bottom_fixed_lines Number of fixed lines at the bottom of the screen
@@ -262,9 +289,24 @@ void ili9341_scroll_exit(void);
 void ili9341_scroll_set_area(uint16_t top_fixed_lines, uint16_t bottom_fixed_lines);
 
 /**
- * @brief Set the scroll memory start line.
+ * @brief Set the frame memory start line for the scroll area.
+ * @ingroup display
  *
- * @param line The line within the screen memory to display at the top.
+ * The ILI9341 datasheet doesn't do a great job of describing the scroll functionality
+ * and this value, as there is only an example for when the top and bottom fixed areas
+ * are 0. For that case, this value needs to range from 0 to 319 (the display height
+ * in portrait mode (MADCTL-MV (bit 5) = 0) a requirement of the ILI9341)),
+ * and it defines the frame memory line that is displayed at the top of the
+ * display (line 0 of the display).
+ *
+ * When the top, and/or bottom fixed areas are non-zero, the scroll start needs to be
+ * greater than the top fixed line and less than the bottom fixed line. If it is set
+ * within either the top or bottom fixed areas it is the same as being set at the
+ * minimum or maximum limit.
+ *
+ * @see ili9341_scroll_set_area
+ *
+ * @param line The line within the frame memory to display at the top of the scroll area.
  */
 void ili9341_scroll_set_start(uint16_t line);
 
@@ -286,19 +328,7 @@ void ili9341_window_set_area(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 */
 void ili9341_window_set_fullscreen(void);
 
-/**
- * @brief Get information about the display hardare & configuration.
- * @ingroup display
-*/
-ili9341_disp_info_t* ili9341_spi_info(void);
-
-/**
- * @brief Initialize the display.
- * @ingroup display
-*/
-void ili9341_spi_init(void);
-
 #ifdef __cplusplus
  }
 #endif
-#endif  // ILI9341_SPI_H
+#endif  // _ILI9341_SPI_H_

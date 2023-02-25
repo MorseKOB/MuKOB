@@ -1,5 +1,8 @@
-#ifndef _SYSTEM_DEFS_H
-#define _SYSTEM_DEFS_H
+#ifndef _SYSTEM_DEFS_H_
+#define _SYSTEM_DEFS_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "pico/stdlib.h"
 
@@ -60,8 +63,8 @@
 #define OPTIONS_4_IN            21  // DP-27 - Dip switch for options is 1234 - 1 ON = Debug logging
 
 // Buzzer support
-#define BUZZER_OFF 0
-#define BUZZER_ON 1
+#define SPEAKER_OFF 0
+#define SPEAKER_ON 1
 
 // Display
 // Hardware driven values (writes to GPIO)
@@ -88,4 +91,7 @@ enum option_t {
 /** @brief Macro to get the size of a structure member */
 #define member_size(type, member) sizeof(((type *)0)->member)
 
+#ifdef __cplusplus
+}
 #endif
+#endif // _SYSTEM_DEFS_H_

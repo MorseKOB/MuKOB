@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef _FONTS_H
-#define _FONTS_H
+#ifndef _FONT_9_10_H_H_
+#define _FONT_9_10_H_H_
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -23,4 +23,4 @@ extern const uint16_t Font_Table[];
 #ifdef __cplusplus
 }
 #endif
-#endif // _FONTS_H
+#endif // _FONT_9_10_H_H_

@@ -4,8 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef _FONT_H
-#define _FONT_H
+#ifndef _FONT_H_
+#define _FONT_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#include <stdbool.h>
+#include <stdint.h>
 
 // 'Special' characters
 
@@ -46,4 +53,18 @@
 
 #define PARAGRAPH_CHR                   0x7Fu   // \177
 
+typedef struct font_info_ {
+    const char *name;
+    const int8_t width;
+    const int8_t height;
+    const int8_t bytes_per_glyph_line;
+    const int8_t suggested_cursor_line;
+    const uint32_t bitmask;
+    const bool has_lowercase;
+    const uint8_t *glyphs;
+} font_info_t;
+
+#ifdef __cplusplus
+}
+#endif
 #endif // _FONT_H

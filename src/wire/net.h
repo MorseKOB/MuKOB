@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT License
  *
  */
-#ifndef _KOB_NET_H
-#define _KOB_NET_H
+#ifndef _KOB_NET_H_
+#define _KOB_NET_H_
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -107,4 +107,4 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
 #ifdef __cplusplus
 }
 #endif
-#endif // _KOB_NET_H
+#endif // _KOB_NET_H_

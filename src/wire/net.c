@@ -7,6 +7,7 @@
  */
 #include "net.h"
 #include "hardware/rtc.h"
+#include "mukboard.h"
 
 static char _wifi_ssid[NET_SSID_MAX_LEN];
 static char _wifi_password[NET_PASSWORD_MAX_LEN];

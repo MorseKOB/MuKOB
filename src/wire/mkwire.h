@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT License
  *
  */
-#ifndef _MUKOB_MKWIRE_H
-#define _MUKOB_MKWIRE_H
+#ifndef _MUKOB_MKWIRE_H_
+#define _MUKOB_MKWIRE_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,4 +57,4 @@ void mkwire_set_office_id(char *office_id);
 #ifdef __cplusplus
 }
 #endif
-#endif // _MUKOB_MKWIRE_H
+#endif // _MUKOB_MKWIRE_H_

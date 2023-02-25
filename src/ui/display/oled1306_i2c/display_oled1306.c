@@ -13,7 +13,7 @@
 #include <string.h>
 
 /*! @brief Memory display_full_area for a screen of text (characters) */
-char full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
+char o1306_full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
 
 /*
  * This must be called before using the display.
@@ -30,7 +30,7 @@ void disp_init(void) {
  *  \param paint Set true to paint the actual display. Otherwise, only buffers will be cleared.
 */
 void disp_clear(bool paint) {
-    memset(full_screen_text, 0x00, sizeof(full_screen_text));
+    memset(o1306_full_screen_text, 0x00, sizeof(o1306_full_screen_text));
     oled_disp_fill(oled_disp_buf, 0x00);
     if (paint) {
         disp_paint();
@@ -129,7 +129,7 @@ void disp_char(unsigned short int row, unsigned short int col, const char c, boo
     if (row >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {
         return;  // Invalid row or column
     }
-    *(full_screen_text + (row * DISP_CHAR_COLS) + col) = c;
+    *(o1306_full_screen_text + (row * DISP_CHAR_COLS) + col) = c;
     unsigned char cl = c & 0x7F;
     // Calculate the display pages the character falls into,
     // the font data shift, and the mask required.
@@ -178,7 +178,7 @@ void disp_row_clear(unsigned short int row, bool paint) {
     if (row >= DISP_CHAR_LINES) {
         return;  // Invalid row or column
     }
-    memset((full_screen_text + (row * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
+    memset((o1306_full_screen_text + (row * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
     // Calculate the display pages the character falls into
     // and the mask required.
     uint8_t pagel = (row * FONT_HIEGHT) / (OLED_PAGE_HEIGHT);
@@ -228,8 +228,8 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
     if (row_b <= row_t || row_b >= DISP_CHAR_LINES) {
         return;  // Invalid row value
     }
-    memmove((full_screen_text + (row_t * DISP_CHAR_COLS)), (full_screen_text + ((row_t + 1) * DISP_CHAR_COLS)), (row_b - row_t) * DISP_CHAR_COLS);
-    memset((full_screen_text + (row_b * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
+    memmove((o1306_full_screen_text + (row_t * DISP_CHAR_COLS)), (o1306_full_screen_text + ((row_t + 1) * DISP_CHAR_COLS)), (row_b - row_t) * DISP_CHAR_COLS);
+    memset((o1306_full_screen_text + (row_b * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
     disp_update(paint);
 }
 
@@ -275,7 +275,7 @@ void disp_update(bool paint) {
     // TODO: More efficient way to do this...
     for (unsigned int r = 0; r < DISP_CHAR_LINES; r++) {
         for (unsigned int c = 0; c < DISP_CHAR_COLS; c++) {
-            unsigned char d = *(full_screen_text + (r * DISP_CHAR_COLS) + c);
+            unsigned char d = *(o1306_full_screen_text + (r * DISP_CHAR_COLS) + c);
             disp_char(r, c, d, false);
         }
         if (paint) {

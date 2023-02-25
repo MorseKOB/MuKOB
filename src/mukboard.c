@@ -58,7 +58,7 @@ int board_init() {
 
     stdio_init_all();
 
-    sleep_ms(100);
+    sleep_ms(50);
 
     // Initialize the board RTC. It will be set correctly later when we 
     // have WiFi and can make a NTP call.
@@ -94,8 +94,8 @@ int board_init() {
     gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    // SPI 1 initialization for the display. Use SPI at 25MHz.
-    spi_init(SPI_DISPLAY_DEVICE, 25000 * 1000);
+    // SPI 1 initialization for the display. Use SPI at 30MHz.
+    spi_init(SPI_DISPLAY_DEVICE, 30000 * 1000);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
@@ -137,13 +137,13 @@ int board_init() {
     // GPIO Outputs (other than chip-selects)
     gpio_set_function(DISPLAY_RESET_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_RESET_OUT, GPIO_OUT);
-    gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
+    gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_ON);           // Hold reset on until rest of board is initialized
     gpio_set_function(DISPLAY_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_BACKLIGHT_OUT, GPIO_OUT);
-    gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);
+    gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);     // No backlight until the display is initialized
     gpio_set_function(SPKR_DRIVE,   GPIO_FUNC_SIO);
     gpio_set_dir(SPKR_DRIVE, GPIO_OUT);
-    gpio_put(SPKR_DRIVE, BUZZER_OFF);
+    gpio_put(SPKR_DRIVE, SPEAKER_OFF);
     gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
     gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
@@ -161,11 +161,14 @@ int board_init() {
     gpio_set_function(OPTIONS_4_IN,   GPIO_FUNC_SIO);
     gpio_set_dir(OPTIONS_4_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_4_IN);
+    gpio_set_function(ROTORY_SW_IN, GPIO_FUNC_SIO);
+    gpio_set_dir(ROTORY_SW_IN, GPIO_IN);
+    gpio_set_function(ROTORY_A_IN, GPIO_FUNC_SIO);
+    gpio_set_dir(ROTORY_A_IN, GPIO_IN);
+    gpio_set_function(ROTORY_B_IN, GPIO_FUNC_SIO);
+    gpio_set_dir(ROTORY_B_IN, GPIO_IN);
 
     options_read(); // Read and cache the option switch value
-
-    // Timer example code - This example fires off the callback after 2000ms
-    //add_alarm_in_ms(2000, alarm_callback, NULL, false);
 
     // Get the configuration
     config_init();
@@ -173,16 +176,19 @@ int board_init() {
     // Make an NTP call to get the actual time and set the RTC correctly
     wifi_set_creds(NET_NAME, NET_PW);  // ZZZ!
     network_update_rtc();  // This also initializes the network subsystem
-    sleep_ms(3000);  // Give it time to make a NTP call
+    sleep_ms(1000);  // Give it time to make a NTP call
     // Now read the RTC and print it
     rtc_get_datetime(&t);
     datetime_to_str(datetime_buf, sizeof(datetime_buf), &t);
     printf("%s\n", datetime_buf);
 
     // Initialize the display
+    display_reset_on(false);
+    sleep_ms(100);
     disp_init();
+    display_backlight_on(true);
 
-    puts("MuKOB says hello!");
+    puts("\033[32mMuKOB says hello!\033[0m");
 
     return(true);
 }
@@ -205,6 +211,24 @@ void buzzer_on_off(int pattern[]) {
             return;
         }
         sleep_ms(off_time);
+    }
+}
+
+void display_backlight_on(bool on) {
+    if (on) {
+        gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_ON);
+    }
+    else {
+        gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);
+    }
+}
+
+void display_reset_on(bool on) {
+    if (on) {
+        gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_ON);
+    }
+    else {
+        gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
     }
 }
 
