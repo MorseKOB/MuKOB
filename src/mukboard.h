@@ -15,8 +15,11 @@
  * 4. Beep the buzzer a number of times
  *
 */
-#ifndef _MuKBOARD_H
-#define _MuKBOARD_H
+#ifndef _MuKBOARD_H_
+#define _MuKBOARD_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdbool.h>
 
@@ -52,6 +55,20 @@ void buzzer_on(bool on);
  *      The last element of the array must be 0.
 */
 void buzzer_on_off(int pattern[]);
+
+/**
+ * @brief Turn the hardware backlight on or off.
+ *
+ * @param on True to turn on, false to turn off
+ */
+void display_backlight_on(bool on);
+
+/**
+ * @brief Enable/disable the hardware reset on the display.
+ *
+ * @param on True to enable, false to disable
+ */
+void display_reset_on(bool on);
 
 /**
  * @brief Flash the LED on/off
@@ -121,4 +138,7 @@ void error_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)
 void info_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 void warn_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 
-#endif // _MuKBOARD_H
+#ifdef __cplusplus
+}
+#endif
+#endif // _MuKBOARD_H_

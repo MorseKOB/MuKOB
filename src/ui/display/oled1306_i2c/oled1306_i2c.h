@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#ifndef OLED1306_I2C_H
-#define OLED1306_I2C_H
+#ifndef _OLED1306_I2C_H_
+#define _OLED1306_I2C_H_
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -107,4 +107,4 @@ void oled_disp_print_buf_area(uint8_t *buf, struct render_area *area);
 #ifdef __cplusplus
 }
 #endif
-#endif // OLED1306_I2C_H
+#endif // _OLED1306_I2C_H_

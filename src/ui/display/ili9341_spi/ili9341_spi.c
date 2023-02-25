@@ -9,7 +9,7 @@
  */
 #include "pico/stdlib.h"
 
-#include "system_defs.h"
+#include "system_defs.h"    // This would need to change for general purpose use
 #include "ili9341_spi.h"
 #include "spi_ops.h"
 
@@ -36,7 +36,7 @@ static const uint8_t _ili9341_initcmd[] = {
     ILI9341_PWCTL2  , 1, 0x13,              // AVDD=VCIx2 VGH=VCIx6 VGL=-VCIx3
     ILI9341_VMCTL1  , 2, 0x3e, 0x28,        // VCOM Voltage: VCH=4.25v VCL:-1.5v
     ILI9341_VMCTL2  , 1, 0x86,              // VCOM Offset: Enabled, VMH-58, VML-58
-    ILI9341_MACTL   , 1, 0x98,  //0xE8,              // Memory Access Control: YX=Invert, Landscape, BGR, Vnorm, Hnorm
+    ILI9341_MADCTL   , 1, 0x98,  //0xE8,              // Memory Access Control: YX=Invert, Landscape, BGR, Vnorm, Hnorm
     ILI9341_VSCRSADD, 2, 0x00, 0x00,        // Vertical Scroll Start: 0x0000
     ILI9341_PIXFMT  , 1, 0x55,              // Pixel Format: 16 RGB 5,6,5 bits
     ILI9341_FRMCTL1 , 2, 0x00, 0x1B,        // Frame Ctl (Normal Mode): fosc/1, rate=70Hz
@@ -169,7 +169,7 @@ static void _write_area(const rgb16_t* rgb_pixel_data, uint16_t pixels) {
  * Show all of the colors.
  */
 void ili9341_colors_show() {
-    ili9341_screen_clr(false);
+    ili9341_screen_clr(0, false);
     _op_begin();
     {
         // Do each color 4x4
@@ -233,54 +233,10 @@ rgb16_t* ili9341_get_line_buf() {
     return (_ili9341_line_buf);
 }
 
-void ili9341_line_paint(uint16_t line, rgb16_t *buf) {
-    if (line >= ILI9341_HEIGHT) {
-        return;
-    }
-    _op_begin();
-    {
-        _set_window(0, line, ILI9341_WIDTH, 1);
-        _write_area(buf, ILI9341_WIDTH);
-    }
-    _op_end();
-}
-
-void ili9341_screen_clr(bool force) {
-    if (force || _screen_dirty) {
-        memset(_ili9341_line_buf, 0, sizeof(_ili9341_line_buf));
-        _op_begin();
-        {
-            _set_window_fullscreen();
-            for (int i = 0; i < ILI9341_HEIGHT; i++) {
-                _write_area(_ili9341_line_buf, ILI9341_WIDTH);
-            }
-        }
-        _op_end();
-        _screen_dirty = false;
-    }
-    else {
-        // The screen wasn't dirty, so we didn't clear it,
-        // but people expect a call to clear to set the
-        // window to the full screen. Check and set if needed.
-        if (_old_x1 != 0 || _old_y1 != 0 || _old_x2 != (ILI9341_WIDTH - 1) || _old_y2 != (ILI9341_HEIGHT - 1)) {
-            ili9341_window_set_fullscreen();
-        }
-    }
-}
-
-void ili9341_screen_paint(const rgb16_t* rgb_pixel_data, uint16_t pixels) {
-    _op_begin();
-    {
-        _write_area(rgb_pixel_data, pixels);
-    }
-    _op_end();
-    _screen_dirty = true;
-}
-
 /**
  * Read information about the display status and the current configuration.
 */
-ili9341_disp_info_t* ili9341_spi_info(void) {
+ili9341_disp_info_t* ili9341_info(void) {
     // The info/status reads require that a command be sent,
     // then a 'dummy' byte read, then one or more data reads.
     //
@@ -329,7 +285,7 @@ ili9341_disp_info_t* ili9341_spi_info(void) {
         _ili9341_disp_info.lcd_id3_drv = data[0];
         // ID 4 (IC)
         _read_controller_values(ILI9341_RDID4, data, 4);
-        _ili9341_disp_info.lcd_id4_icv  = data[0];
+        _ili9341_disp_info.lcd_id4_icv = data[0];
         _ili9341_disp_info.lcd_id4_icm1 = data[1];
         _ili9341_disp_info.lcd_id4_icm2 = data[2];
     }
@@ -338,7 +294,7 @@ ili9341_disp_info_t* ili9341_spi_info(void) {
     return (&_ili9341_disp_info);
 }
 
-void ili9341_spi_init(void) {
+void ili9341_init(void) {
     // Take reset low, then high
     gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
     sleep_ms(20);
@@ -362,6 +318,63 @@ void ili9341_spi_init(void) {
         }
     }
     _op_end();
+}
+
+void ili9341_line_paint(uint16_t line, rgb16_t *buf) {
+    if (line >= ILI9341_HEIGHT) {
+        return;
+    }
+    _op_begin();
+    {
+        _set_window(0, line, ILI9341_WIDTH, 1);
+        _write_area(buf, ILI9341_WIDTH);
+    }
+    _op_end();
+}
+
+void ili9341_screen_clr(rgb16_t color, bool force) {
+    if (force || _screen_dirty) {
+        memset(_ili9341_line_buf, color, sizeof(_ili9341_line_buf));
+        _op_begin();
+        {
+            _set_window_fullscreen();
+            for (int i = 0; i < ILI9341_HEIGHT; i++) {
+                _write_area(_ili9341_line_buf, ILI9341_WIDTH);
+            }
+        }
+        _op_end();
+        _screen_dirty = false;
+    }
+    else {
+        // The screen wasn't dirty, so we didn't clear it,
+        // but people expect a call to clear to set the
+        // window to the full screen. Check and set if needed.
+        if (_old_x1 != 0 || _old_y1 != 0 || _old_x2 != (ILI9341_WIDTH - 1) || _old_y2 != (ILI9341_HEIGHT - 1)) {
+            ili9341_window_set_fullscreen();
+        }
+    }
+}
+
+void ili9341_screen_on(bool on) {
+    _op_begin();
+    {
+        if (on) {
+            _send_command(ILI9341_DISPON);
+        }
+        else {
+            _send_command(ILI9341_DISPOFF);
+        }
+    }
+    _op_end();
+}
+
+void ili9341_screen_paint(const rgb16_t* rgb_pixel_data, uint16_t pixels) {
+    _op_begin();
+    {
+        _write_area(rgb_pixel_data, pixels);
+    }
+    _op_end();
+    _screen_dirty = true;
 }
 
 void ili9341_scroll_exit(void) {

@@ -3,12 +3,22 @@
  *
  * SPDX-License-Identifier: MIT
  */
+#include <stdlib.h>
 #include "system_defs.h"
 #include "mukboard.h"
 #include "display_ili9341.h"
-#include "display.h"
+#include "display_i.h"
 #include "font.h"
+#include "font_10_16.h"
 #include "string.h"
+
+static void _disp_char(uint16_t aline, uint16_t col, char c, paint_control_t paint);
+static void _disp_char_colorbyte(uint16_t aline, uint16_t col, char c, uint8_t color, paint_control_t paint);
+static void _disp_line_clear(uint16_t aline, paint_control_t paint);
+static void _disp_line_paint(uint16_t aline);
+static void _fill_rgb16_buf(rgb16_t* buf, rgb16_t rgb16, size_t bufsize);
+static uint16_t _translate_cursor_line(uint16_t curline);
+static uint16_t _translate_line(uint16_t line);
 
 /*! @brief Map of Color24 (RGB) values indexed by Color16 numbers. */
 rgb16_t _color16_map[] = {
@@ -30,55 +40,229 @@ rgb16_t _color16_map[] = {
     ILI9341_BR_WHITE
 };
 
-/* Dirty text rows */
-static bool _dirty_text_lines[DISP_CHAR_LINES];
-/* Default forground color */
-static uint8_t _fg;
-/* Default background color */
-static uint8_t _bg;
+/** @brief The current/active screen context */
+static scr_context_t* _scr_ctx = NULL;
 
-/* Cursor position */
-static scr_position_t _cursor_pos;
+// ======================================================================================
+// Internal functions
+// ======================================================================================
 
-/* Margin boundaries */
-static unsigned int _margin_bottom;
-static unsigned int _margin_left;
-static unsigned int _margin_right;
-static unsigned int _margin_top;
+/**
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static void _disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint) {
+    _disp_char_colorbyte(line, col, c, colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), paint);
+}
 
-/** @brief Memory display_full_area for a screen of text (characters) */
-uint8_t full_screen_text[DISP_CHAR_COLS * DISP_CHAR_LINES];
-/** @brief Memory display_full_area for a screen of text (colors) */
-colorbyte_t full_screen_color[DISP_CHAR_COLS * DISP_CHAR_LINES];
+/*
+ * Display an ASCII character (plus some special characters)
+ * If the top bit is set (c>127) the character is inverse (black on white background).
+ *
+ * Getting the glyph data for the font character is similar to `disp_line_paint`,
+ * but the difference is that here we are rendering one single complete charcter.
+ *
+ * NOTE: This does not perform text line translation, nor bounds check.
+ *
+ */
+static void _disp_char_colorbyte(uint16_t aline, uint16_t col, char c, uint8_t color, paint_control_t paint) {
+    *(_scr_ctx->full_screen_text + (aline * _scr_ctx->cols) + col) = c;
+    *(_scr_ctx->full_screen_color + (aline * _scr_ctx->cols) + col) = color;
+    if (paint) {
+        // Actually render the characher glyph onto the screen.
+        bool invert = c & DISP_CHAR_INVERT_BIT;
+        unsigned char cl = c & 0x7F;
+        uint8_t fg = (invert ? bg_from_cb(color) : fg_from_cb(color));
+        uint8_t bg = (invert ? fg_from_cb(color) : bg_from_cb(color));
+        rgb16_t fgrgb = rgb16_from_color16(fg);
+        rgb16_t bgrgb = rgb16_from_color16(bg);
+        const font_info_t* fi = _scr_ctx->font_info;
+        int8_t font_height = fi->height;
+        int8_t font_width = fi->width;
+        int8_t bpgl = fi->bytes_per_glyph_line;
+        rgb16_t* rbuf = _scr_ctx->render_buf;
+        uint16_t glyphindex = (cl * font_height * bpgl);
+        // See if we need to show the cursor
+        bool show_a_cursor = (_scr_ctx->show_cursor && col == _scr_ctx->cursor_pos.column && aline == _translate_cursor_line(_scr_ctx->cursor_pos.line));
+        rgb16_t cursor_color = _scr_ctx->cursor_color;
+        for (int glyph_line = 0; glyph_line < font_height; glyph_line++) {
+            if (show_a_cursor && glyph_line == _scr_ctx->font_info->suggested_cursor_line) {
+                for (int c = 0; c < font_width; c++) {
+                    *rbuf++ = cursor_color;
+                }
+            }
+            else {
+                // Get each glyph row for the character (each line of the font char height).
+                uint32_t cgr = 0;
+                uint32_t mask = 1u << (font_width - 1u);
+                for (int byte = 0; byte < bpgl; byte++) {
+                    cgr |= (fi->glyphs[glyphindex + byte + (glyph_line * bpgl)]) << (8u * byte);
+                }
+                for (int c = 0; c < font_width; c++) {
+                    // For each glyph column bit that is set, set the forground color in the character buffer.
+                    if (cgr & mask) {
+                        *rbuf = fgrgb;
+                    }
+                    else {
+                        *rbuf = bgrgb;
+                    }
+                    mask >>= 1u;
+                    rbuf++;
+                }
+            }
+        }
+        // Set a window into the right part of the screen
+        uint16_t x = col * font_width;
+        uint16_t y = aline * font_height;
+        uint16_t w = font_width;
+        uint16_t h = font_height;
+        ili9341_window_set_area(x, y, w, h);
+        ili9341_screen_paint(_scr_ctx->render_buf, (font_width * font_height));
+    }
+    else {
+        _scr_ctx->dirty_text_lines[aline] = true;
+    }
+}
 
-/** @brief Buffer to render 1 line of text into */
-rgb16_t text_line_render_buf[(DISP_CHAR_COLS * FONT_WIDTH) * FONT_HEIGHT];
+/*
+ * Clear a line of text.
+ *
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static void _disp_line_clear(uint16_t aline, paint_control_t paint) {
+    memset((_scr_ctx->full_screen_text + (aline * _scr_ctx->cols)), SPACE_CHR, _scr_ctx->cols);
+    memset((_scr_ctx->full_screen_color + (aline * _scr_ctx->cols)), colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), _scr_ctx->cols);
+    if (paint) {
+        _disp_line_paint(aline);
+    }
+    else {
+        _scr_ctx->dirty_text_lines[aline] = true;
+    }
+}
+
+/*
+ * Update the portion of the screen containing the given character line.
+ *
+ * Getting the glyph data for the font character is similar to `disp_char_colorbyte`,
+ * but the difference is that here we are rendering a complete line of characters one
+ * glyph line at a time, and repeating that for all of the glyph lines.
+ *
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static void _disp_line_paint(uint16_t aline) {
+    const font_info_t* fi = _scr_ctx->font_info;
+    int8_t font_height = fi->height;
+    int8_t font_width = fi->width;
+    int8_t bpgl = fi->bytes_per_glyph_line;
+    bool show_cursor = (_scr_ctx->show_cursor && aline == _translate_cursor_line(_scr_ctx->cursor_pos.line));
+    int8_t cursor_show_row = fi->suggested_cursor_line;
+    uint16_t screen_line = aline * font_height;
+    rgb16_t* rbuf = _scr_ctx->render_buf;
+    for (int glyph_line = 0; glyph_line < font_height; glyph_line++) {
+        for (uint16_t textcol = 0; textcol < _scr_ctx->cols; textcol++) {
+            uint16_t index = (aline * _scr_ctx->cols) + textcol;
+            unsigned char c = _scr_ctx->full_screen_text[index];
+            bool invert = c & DISP_CHAR_INVERT_BIT;
+            unsigned char cl = c & 0x7F;
+            uint8_t color = _scr_ctx->full_screen_color[index];
+            uint8_t fg = (invert ? bg_from_cb(color) : fg_from_cb(color));
+            uint8_t bg = (invert ? fg_from_cb(color) : bg_from_cb(color));
+            rgb16_t fgrgb = rgb16_from_color16(fg);
+            rgb16_t bgrgb = rgb16_from_color16(bg);
+            // Get the glyph row for the character (a line of the font char height).
+            uint16_t glyphindex = (cl * font_height * bpgl);
+            uint32_t cgr = 0;
+            for (int byte = 0; byte < bpgl; byte++) {
+                cgr |= (fi->glyphs[glyphindex + byte + (glyph_line * bpgl)]) << (8u * byte);
+            }
+            for (uint32_t mask = (1u << (font_width - 1u)); mask; mask >>= 1u) {
+                if (show_cursor && textcol == _scr_ctx->cursor_pos.column && glyph_line == cursor_show_row) {
+                    // Draw a cursor line
+                    *rbuf++ = _scr_ctx->cursor_color;
+                }
+                else if (cgr & mask) {
+                    // set the fg color
+                    *rbuf++ = fgrgb;
+                }
+                else {
+                    // set the bg color
+                    *rbuf++ = bgrgb;
+                }
+            }
+        }
+    }
+    // Write the pixel screen row to the display
+    ili9341_window_set_area(0, screen_line, _scr_ctx->cols * font_width, font_height);
+    ili9341_screen_paint(_scr_ctx->render_buf, _scr_ctx->cols * font_width * font_height);
+}
+
+/*! @brief Fill an RGB-16 buffer with an RGB-16 value. */
+static void _fill_rgb16_buf(rgb16_t* buf, rgb16_t rgb16, size_t bufsize) {
+    for (int i = 0; i < bufsize; i++) {
+        *buf++ = rgb16;
+    }
+}
+
+/**
+ * @brief Get the absolute text line index for the current cursor position, accounting for scroll.
+ *
+ * @return uint16_t The absolute text line number for the cursor
+ */
+static uint16_t _translate_cursor_line(uint16_t curline) {
+    // Cursor line is relative to the scroll area. For example, cursor line 1 is the
+    // 2nd line within the scroll area.
+    uint16_t aline = curline + _scr_ctx->scroll_start;
+    if (aline >= _scr_ctx->lines - _scr_ctx->fixed_area_bottom_size) {
+        aline -= _scr_ctx->scroll_size;
+    }
+
+    return (aline);
+}
+
+/**
+ * @brief Get the absolute text line index for the requested line, accounting for scroll.
+ *
+ * @return uint16_t The absolute text line number
+ */
+static uint16_t _translate_line(uint16_t line) {
+    // A bit more work is needed than with the cursor, since `line` can be outside
+    // of the scroll area and is from the top of the screen (absolute line 0).
+    if (line < _scr_ctx->fixed_area_top_size || line >= (_scr_ctx->lines - _scr_ctx->fixed_area_bottom_size)) {
+        return (line);
+    }
+    // The line is within the scroll area, so adjust it and translate it the same as the cursor.
+    line -= _scr_ctx->fixed_area_top_size;
+    return (_translate_cursor_line(line));
+}
+
+// ======================================================================================
+// Public functions
+// ======================================================================================
 
 inline rgb16_t rgb16_from_color16(colorn16_t c16) {
     return (_color16_map[c16 & 0x0f]);
 }
 
 inline scr_position_t cursor_get(void) {
-    return _cursor_pos;
+    return _scr_ctx->cursor_pos;
 }
 
 void cursor_home(void) {
-    _cursor_pos.line = _margin_top;
-    _cursor_pos.column = _margin_left;
+    cursor_set(0, 0);
 }
 
-void cursor_set(unsigned short line, unsigned short col) {
-    if (line > DISP_CHAR_LINES || col > DISP_CHAR_COLS) {
-        return;
-    }
-    _cursor_pos = (scr_position_t){line, col};
+void cursor_show(bool show) {
+    _scr_ctx->show_cursor = show;
+}
+
+void cursor_set(uint16_t line, uint16_t col) {
+    cursor_set_sp((scr_position_t){line, col});
 }
 
 void cursor_set_sp(scr_position_t pos) {
-    if (pos.line > DISP_CHAR_LINES || pos.column > DISP_CHAR_COLS) {
+    if (pos.line >= _scr_ctx->scroll_size || pos.column >= _scr_ctx->cols) {
         return;
     }
-    _cursor_pos = pos;
+    _scr_ctx->cursor_pos = pos;
 }
 
 /*! @brief Create 'color-byte number' from forground & background color numbers */
@@ -96,24 +280,98 @@ inline colorn16_t bg_from_cb(colorbyte_t cb) {
     return ((cb & 0xf0) >> 4u);
 }
 
-/*! @brief Fill an RGB-16 buffer with an RGB-16 value. */
-void fill_rgb16_buf(rgb16_t *buf, rgb16_t rgb16, size_t bufsize) {
-    for (int i = 0; i < bufsize; i++) {
-        *buf++ = rgb16;
+/*
+ * Clear the current text content and the screen.
+*/
+void disp_clear(paint_control_t paint) {
+    size_t chars = _scr_ctx->lines * _scr_ctx->cols;
+    memset(_scr_ctx->full_screen_text, SPACE_CHR, chars);
+    memset(_scr_ctx->full_screen_color, colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), chars);
+    memset(_scr_ctx->dirty_text_lines, false, _scr_ctx->lines);
+    cursor_home();
+    if (paint) {
+        display_backlight_on(false);    // Turning off the backlight helps this from being distracting
+        ili9341_screen_clr(_scr_ctx->color_bg_default, false);
+        display_backlight_on(true);
     }
 }
 
-#define DISP_BUF_SIZE (DISP_CHAR_COLS * CHAR_WIDTH) * CHAR_HIEGHT * sizeof(rgb16_t) // 1 line of RGB-16 characters
+void disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint) {
+    if (line >= _scr_ctx->lines || col >= _scr_ctx->cols) {
+        return;  // Invalid line or column
+    }
+    uint16_t aline = _translate_line(line); // Adjust for scroll
+    _disp_char(aline, col, c, paint);
+}
+
+void disp_char_color(uint16_t line, uint16_t col, char c, colorn16_t fg, colorn16_t bg, paint_control_t paint) {
+    disp_char_colorbyte(line, col, c, colorbyte(fg, bg), paint);
+}
+
+/*
+ * Display an ASCII character (plus some special characters)
+ * If the top bit is set (c>127) the character is inverse (black on white background).
+ *
+ * Getting the glyph data for the font character is similar to `disp_line_paint`,
+ * but the difference is that here we are rendering one single complete charcter.
+ *
+ */
+void disp_char_colorbyte(uint16_t line, uint16_t col, char c, colorbyte_t color, paint_control_t paint) {
+    if (line >= _scr_ctx->lines || col >= _scr_ctx->cols) {
+        return;  // Invalid line or column
+    }
+    uint16_t aline = _translate_line(line); // Adjust for scroll
+    _disp_char_colorbyte(aline, col, c, color, paint);
+}
+
+/*
+ * Display all of the font characters. Wrap the characters until the full
+ * screen is filled.
+ */
+void disp_font_test(void) {
+    disp_clear(true);
+    // test font display 1
+    char c = 0;
+    int16_t lines = _scr_ctx->lines;
+    int16_t cols = _scr_ctx->cols;
+    for (unsigned int line = 0; line < lines; line++) {
+        for (unsigned int col = 0; col < cols; col++) {
+            _disp_char(line, col, c, true);
+            c++;
+        }
+    }
+}
+
+uint16_t disp_info_columns() {
+    return (_scr_ctx->cols);
+}
+
+uint16_t disp_info_lines() {
+    return (_scr_ctx->lines);
+}
+
+uint16_t disp_info_fixed_top_lines() {
+    return (_scr_ctx->fixed_area_top_size);
+}
+
+uint16_t disp_info_fixed_bottom_lines() {
+    return (_scr_ctx->fixed_area_bottom_size);
+}
+
+uint16_t disp_info_scroll_lines() {
+    return (_scr_ctx->scroll_size);
+}
 
 /*! @brief Initialize the display
  *  \ingroup display
  *
- * This must be called before using the display.
+ * This must be called before using the display, but should only be called once.
  */
 void disp_init(void) {
     // run through the complete initialization process
-    ili9341_spi_init();
-    ili9341_disp_info_t *disp_info = ili9341_spi_info();
+
+    ili9341_init();
+    ili9341_disp_info_t* disp_info = ili9341_info();
 
     // If in debug mode, print info about the display...
     if (option_value(OPTION_DEBUG)) {
@@ -132,103 +390,31 @@ void disp_init(void) {
         debug_printf("Display Selftest:    %02hhx\n", disp_info->selftest);
     }
 
-    _bg = C16_BLACK;
-    _fg = C16_WHITE;
-    disp_clear(true);
-    margins_set(0, 0, DISP_CHAR_LINES - 1, DISP_CHAR_COLS - 1);
-}
-
-/*
- * Clear the current text content and the screen.
-*/
-void disp_clear(bool paint) {
-    memset(full_screen_text, 0x20, sizeof(full_screen_text));
-    memset(full_screen_color, 0x00, sizeof(full_screen_color));
-    memset(_dirty_text_lines, 0, sizeof(_dirty_text_lines));
-    if (paint) {
-        ili9341_screen_clr(false);
+    if (_scr_ctx != NULL) {
+        warn_printf("`disp_init` called multiple times!\n");
+        return;
     }
-}
 
-void disp_char(unsigned short int line, unsigned short int col, char c, bool paint) {
-    disp_char_colorbyte(line, col, c, colorbyte(_fg, _bg), paint);
-}
-
-void disp_char_color(unsigned short int line, unsigned short int col, char c, uint8_t fg, uint8_t bg, bool paint) {
-    disp_char_colorbyte(line, col, c, colorbyte(fg, bg), paint);
-}
-
-/*
- * Display an ASCII character (plus some special characters)
- * If the top bit is set (c>127) the character is inverse (black on white background).
- */
-void disp_char_colorbyte(unsigned short int line, unsigned short int col, char c, uint8_t color, bool paint) {
-    if (line >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {
-        return;  // Invalid line or column
-    }
-    *(full_screen_text + (line * DISP_CHAR_COLS) + col) = c;
-    *(full_screen_color + (line * DISP_CHAR_COLS) + col) = color;
-    unsigned char cl = c & 0x7F;
-    if (paint) {
-        // Actually render the characher glyph onto the screen.
-        bool inverse = c & DISP_CHAR_INVERT_BIT;
-        uint8_t fg = (inverse ? bg_from_cb(color) : fg_from_cb(color));
-        uint8_t bg = (inverse ? fg_from_cb(color) : bg_from_cb(color));
-        rgb16_t fgrgb = rgb16_from_color16(fg);
-        rgb16_t buf[FONT_WIDTH * FONT_HEIGHT];
-        rgb16_t *pbuf = buf;
-        int glyphindex = (cl * FONT_HEIGHT);
-        fill_rgb16_buf(buf, rgb16_from_color16(bg), (FONT_WIDTH * FONT_HEIGHT));
-        for (int r = 0; r < FONT_HEIGHT; r++) {
-            // Get the glyph row for the character.
-            uint16_t cgr = Font_Table[glyphindex++];
-            uint16_t mask = 1u << (FONT_WIDTH - 1);
-            for (int c = 0; c < FONT_WIDTH; c++) {
-                // For each glyph column bit that is set, set the forground color in the character buffer.
-                if (cgr & mask) {
-                    *pbuf = fgrgb;
-                }
-                mask >>= 1u;
-                pbuf++;
-            }
-        }
-        // Set a window into the right part of the screen
-        unsigned short int x = col * FONT_WIDTH;
-        unsigned short int y = line * FONT_HEIGHT;
-        unsigned short int w = FONT_WIDTH;
-        unsigned short int h = FONT_HEIGHT;
-        ili9341_window_set_area(x, y, w, h);
-        ili9341_screen_paint(buf, (FONT_WIDTH * FONT_HEIGHT));
-    }
-    else {
-        _dirty_text_lines[line] = true;
-    }
-}
-
-/*
- * Display all of the font characters. Wrap the characters until the full
- * screen is filled.
- */
-void disp_font_test(void) {
-    disp_clear(true);
-    // test font display 1
-    char c = 0;
-    for (unsigned int line = 0; line < DISP_CHAR_LINES; line++) {
-        for (unsigned int col = 0; col < DISP_CHAR_COLS; col++) {
-            disp_char(line, col, c, true);
-            c++;
-        }
-    }
+    screen_new();
 }
 
 /*
  * Paint the physical screen from the text.
  */
 void disp_paint(void) {
-    for (unsigned short int line = 0; line < DISP_CHAR_LINES; line++) {
-        if (_dirty_text_lines[line]) {
-            disp_line_paint(line);
-            _dirty_text_lines[line] = false; // The text line has been painted, mark it 'not dirty'
+    int16_t lines = _scr_ctx->lines;
+    uint16_t aline;
+    bool some_lines_dirty = false;
+    for (uint16_t i = 0; i < lines && !some_lines_dirty; i++) {
+        some_lines_dirty |= _scr_ctx->dirty_text_lines[i];
+    }
+    if (some_lines_dirty) {
+        for (uint16_t line = 0; line < lines; line++) {
+            aline = _translate_line(line);
+            if (_scr_ctx->dirty_text_lines[aline]) {
+                _disp_line_paint(aline);
+                _scr_ctx->dirty_text_lines[aline] = false; // The text line has been painted, mark it 'not dirty'
+            }
         }
     }
 }
@@ -236,84 +422,37 @@ void disp_paint(void) {
 /*
  * Clear a line of text.
  */
-void disp_line_clear(unsigned short int line, bool paint) {
-    if (line >= DISP_CHAR_LINES) {
+void disp_line_clear(uint16_t line, paint_control_t paint) {
+    if (line >= _scr_ctx->lines) {
         return;  // Invalid line or column
     }
-    memset((full_screen_text + (line * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
-    memset((full_screen_color + (line * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
-    if (paint) {
-        disp_line_paint(line);
-    }
-    else {
-        _dirty_text_lines[line] = true;
-    }
+    uint16_t aline = _translate_line(line); // Adjust for scroll
+    _disp_line_clear(aline, paint);
 }
 
 /*
  * Update the portion of the screen containing the given character line.
+ *
+ * Getting the glyph data for the font character is similar to `disp_char_colorbyte`,
+ * but the difference is that here we are rendering a complete line of characters one
+ * glyph line at a time, and repeating that for all of the glyph lines.
  */
-void disp_line_paint(unsigned short int line) {
-    if (line >= DISP_CHAR_LINES) {
+void disp_line_paint(uint16_t line) {
+    if (line >= _scr_ctx->lines) {
         return; // invalid line number
     }
-    // Need to render this line.
-    uint16_t scrnline = line * FONT_HEIGHT;
-    rgb16_t *rbuf = text_line_render_buf;
-    for (int fontline = 0; fontline < FONT_HEIGHT; fontline++) {
-        for (int textcol = 0; textcol < DISP_CHAR_COLS; textcol++) {
-            int index = (line * DISP_CHAR_COLS) + textcol;
-            unsigned char c = full_screen_text[index];
-            bool invert = (c & DISP_CHAR_INVERT_BIT);
-            c = c & DISP_CHAR_NORMAL_MASK;
-            uint8_t color = full_screen_color[index];
-            rgb16_t fgrgb = rgb16_from_color16(fg_from_cb(color));
-            rgb16_t bgrgb = rgb16_from_color16(bg_from_cb(color));
-            if (invert) {
-                rgb16_t tmp = fgrgb;
-                fgrgb = bgrgb;
-                bgrgb = tmp;
-            }
-            uint16_t glyphline = *(Font_Table + (c * FONT_HEIGHT) + fontline);
-            for (uint16_t mask = (1u << (FONT_WIDTH-1)); mask; mask >>= 1u) {
-                if (glyphline & mask) {
-                    // set the fg color
-                    *rbuf++ = fgrgb;
-                }
-                else {
-                    // set the bg color
-                    *rbuf++ = bgrgb;
-                }
-            }
-        }
-    }
-    // Write the pixel screen row to the display
-    ili9341_window_set_area(0, scrnline, DISP_CHAR_COLS * FONT_WIDTH, FONT_HEIGHT);
-    ili9341_screen_paint(text_line_render_buf, DISP_CHAR_COLS * FONT_WIDTH * FONT_HEIGHT);
+    line = _translate_line(line);
+    _disp_line_paint(line);
 }
 
-/*
- * Scroll 2 or more rows up.
- */
-void disp_rows_scroll_up(unsigned short int line_t, unsigned short int line_b, bool paint) {
-    if (line_b <= line_t || line_b >= DISP_CHAR_LINES) {
-        return;  // Invalid line value
-    }
-    memmove((full_screen_text + (line_t * DISP_CHAR_COLS)), (full_screen_text + ((line_t + 1) * DISP_CHAR_COLS)), (line_b - line_t) * DISP_CHAR_COLS);
-    memmove((full_screen_color + (line_t * DISP_CHAR_COLS)), (full_screen_color + ((line_t + 1) * DISP_CHAR_COLS)), (line_b - line_t) * DISP_CHAR_COLS);
-    memset((full_screen_text + (line_b * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
-    memset((full_screen_color + (line_b * DISP_CHAR_COLS)), 0x00, DISP_CHAR_COLS);
-    disp_update(paint);
-}
-
-void disp_set_text_colors(uint8_t fg, uint8_t bg) {
+void disp_set_text_colors(colorn16_t fg, colorn16_t bg) {
     // force them to 0-15
-    _fg = fg & 0x0f;
-    _bg = bg & 0x0f;
+    _scr_ctx->color_fg_default = fg & 0x0f;
+    _scr_ctx->color_bg_default = bg & 0x0f;
 }
 
-void disp_string(unsigned short int line, unsigned short int col, const char *pString, bool invert, bool paint) {
-    if (line >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {
+void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint) {
+    if (line >= _scr_ctx->lines || col >= _scr_ctx->cols) {
         return;  // Invalid line or column
     }
     for (unsigned char c = *pString; c != 0; c = *(++pString)) {
@@ -322,11 +461,11 @@ void disp_string(unsigned short int line, unsigned short int col, const char *pS
         }
         disp_char(line, col, c, false);
         col++;
-        if (col == DISP_CHAR_COLS) {
+        if (col == _scr_ctx->cols) {
             col = 0;
             line++;
-            if (line == DISP_CHAR_LINES) {
-                break;  // ZZZ option to scroll
+            if (line == _scr_ctx->lines) {
+                line = 0;
             }
         }
     }
@@ -335,8 +474,9 @@ void disp_string(unsigned short int line, unsigned short int col, const char *pS
     }
 }
 
-void disp_update(bool paint) {
-    memset(_dirty_text_lines, true, sizeof(_dirty_text_lines));
+void disp_update(paint_control_t paint) {
+    // Mark all lines as 'dirty' so they will be re-rendered during a `paint` operation.
+    memset(_scr_ctx->dirty_text_lines, true, _scr_ctx->lines * sizeof(bool));
     if (paint) {
         disp_paint();
     }
@@ -359,87 +499,57 @@ void disp_c16_color_chart() {
     }
 }
 
-void margins_set(unsigned short top, unsigned short left, unsigned short bottom, unsigned short right) {
-    if (left > DISP_CHAR_COLS || right > DISP_CHAR_COLS || left > right
-        || top > DISP_CHAR_LINES || bottom > DISP_CHAR_LINES || top > bottom) {
-        return;
+void print_crlf(int16_t add_lines, paint_control_t paint) {
+    int16_t total_scroll_lines = add_lines;
+    uint16_t ss = _scr_ctx->scroll_start;  // Scroll start line
+    uint16_t scroll_lines = _scr_ctx->scroll_size;  // Screen scroll lines
+    uint16_t scroll_cap = _scr_ctx->lines - _scr_ctx->fixed_area_bottom_size - 1;
+    uint16_t cursor_cap = scroll_lines - 1;
+    scr_position_t new_cp = { _scr_ctx->cursor_pos.line + 1, 0 };
+    uint16_t aline;
+    if (new_cp.line > cursor_cap) {
+        total_scroll_lines += (new_cp.line - cursor_cap);
+        new_cp.line = cursor_cap;
     }
-    _margin_left = left;
-    _margin_right = right;
-    _margin_top = top;
-    _margin_bottom = bottom;
-}
-
-void print_crlf(short add_lines, bool paint) {
-    short scroll_lines = add_lines;
-    if (scroll_lines > _margin_bottom - _margin_top) {
-        scroll_lines = _margin_bottom - _margin_top;
+    if (total_scroll_lines > scroll_lines) {
+        total_scroll_lines = scroll_lines;
     }
-    _cursor_pos.line++;
-    if (_cursor_pos.line > _margin_bottom) {
-        scroll_lines++;
-        _cursor_pos.line = _margin_bottom;
-    }
-    _cursor_pos.column = _margin_left;
-    if (scroll_lines) {
-        short to_index = (_margin_top * DISP_CHAR_COLS) + _margin_left;
-        short from_index = ((_margin_top + scroll_lines) * DISP_CHAR_COLS) + _margin_left;
-        short lines = (_margin_bottom - _margin_top) - (scroll_lines - 1);
-        for (short l = 0; l < lines; l++) {
-            for (short c = 0; c < ((_margin_right - _margin_left) + 1); c++) {
-                unsigned char d = full_screen_text[from_index + c];
-                colorbyte_t colors = full_screen_color[from_index + c];
-                full_screen_text[to_index + c] = d;
-                full_screen_color[to_index + c] = colors;
-            }
-            _dirty_text_lines[_margin_top + l] = true;
-            to_index += DISP_CHAR_COLS;
-            from_index += DISP_CHAR_COLS;
+    if (total_scroll_lines > 0) {
+        // Advance the Scroll-Start
+        ss++;
+        if (ss > scroll_cap) {
+            ss = _scr_ctx->fixed_area_top_size;
         }
+        _scr_ctx->scroll_start = ss;
+        // blank out what will be the cursor line
+        aline = _translate_cursor_line(new_cp.line);
+        _disp_line_clear(aline, paint);
+        ili9341_scroll_set_start(ss * _scr_ctx->font_info->height);
     }
-    // blank out the cursor line
-    short index_base = (_cursor_pos.line * DISP_CHAR_COLS) + _margin_left;
-    colorbyte_t colors = colorbyte(_fg, _bg);
-    _dirty_text_lines[_cursor_pos.line] = true;
-    for (short i = 0; i < ((_margin_right - _margin_left) + 1); i++) {
-        full_screen_text[index_base + i] = SPACE_CHR;
-        full_screen_color[index_base + i] = colors;
+    else {
+        // blank out what will be the cursor line
+        aline = _translate_cursor_line(new_cp.line);
+        _disp_line_clear(aline, paint);
     }
-    if (paint) {
-        // ZZZ for now, paint the dirty lines (full screen width).
-        // ZZZ performance improvement would be to just paint the window.
-        disp_paint();
-    }
+    _scr_ctx->cursor_pos = new_cp;
 }
 
-void printc(char c, bool paint) {
+void printc(char c, paint_control_t paint) {
     // Since the line doesn't wrap right when the last column is written to,
-    // and also, for the margins to get set between print operations, we need
-    // to check the current cursor position against the current margins and
+    // we need to check the current cursor position against the current margins and
     // wrap/scroll if needed before printing the character.
     //
     // Also, this allows printing a NL ('\n') character, so nothing special is
-    // done for it. If
+    // done for it.
     //
-    if (_cursor_pos.column < _margin_left) {
-        _cursor_pos.column = _margin_left;
+    if (_scr_ctx->cursor_pos.column >= _scr_ctx->cols) {
+        print_crlf(0, paint);
     }
-    if (_cursor_pos.line < _margin_top) {
-        _cursor_pos.line = _margin_top;
-    }
-    unsigned short scroll_lines = 0;
-    if (_cursor_pos.line > _margin_bottom) {
-        scroll_lines = _cursor_pos.line - _margin_bottom;
-        _cursor_pos.line = _margin_bottom;
-    }
-    if (_cursor_pos.column > _margin_right) {
-        print_crlf(scroll_lines, paint);
-    }
-    disp_char(_cursor_pos.line, _cursor_pos.column, c, paint);
-    _cursor_pos.column++;
+    uint16_t aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+    _disp_char(aline, _scr_ctx->cursor_pos.column++, c, paint);
 }
 
-void prints(char* str, bool paint) {
+void prints(char* str, paint_control_t paint) {
     unsigned char c;
     while ((c = *str++) != 0) {
         if (c == '\n') {
@@ -453,3 +563,96 @@ void prints(char* str, bool paint) {
         disp_paint();
     }
 }
+
+void screen_close() {
+    if (!_has_scr_context()) {
+        warn_printf("Display - Trying to close main screen context. Ignoring `screen_close()` call.");
+        return;
+    }
+    // Free the buffers from the current context...
+    free(_scr_ctx->full_screen_text);
+    free(_scr_ctx->full_screen_color);
+    free(_scr_ctx->dirty_text_lines);
+    free(_scr_ctx->render_buf);
+    // Now free the current context
+    free(_scr_ctx);
+
+    // Get the top context and make it current
+    _scr_ctx = _pop_scr_context();
+    // This will re-configure the ILI9341 for correct scrolling
+    scroll_area_define(_scr_ctx->fixed_area_top_size, _scr_ctx->fixed_area_bottom_size);
+    disp_update(Paint);
+}
+
+bool screen_new() {
+    // First thing is to see if we can push the current screen context if there is one
+    if (_scr_ctx) {
+        if (!_push_scr_context(_scr_ctx)) {
+            return false;
+        }
+    }
+    scr_context_t* scr_context = malloc(sizeof(scr_context_t));
+    if (scr_context == NULL) {
+        error_printf("Display - Could not allocate a screen context.");
+        return false;
+    }
+    // For now, we only have one font - get its info
+    const font_info_t* fi = &font_10_16;
+    info_printf("Display font: %s.\n", fi->name);
+    scr_context->font_info = fi;
+    scr_context->color_bg_default = C16_BLACK;
+    scr_context->color_fg_default = C16_WHITE;
+    // Figure out how many lines and columns we have
+    int16_t cols = ILI9341_WIDTH / fi->width;
+    int16_t lines = ILI9341_HEIGHT / fi->height;
+    info_printf("Display size: %hdx%hd (cols x lines)\n", cols, lines);
+    size_t chars = lines * cols;
+    scr_context->cols = cols;
+    scr_context->lines = lines;
+    // Allocate buffers
+    scr_context->full_screen_text = (uint8_t*)malloc(chars);
+    scr_context->full_screen_color = (colorbyte_t*)malloc(chars);
+    scr_context->dirty_text_lines = (bool*)calloc(lines, sizeof(bool));
+    scr_context->render_buf = (rgb16_t*)malloc(fi->width * fi->height * cols * sizeof(rgb16_t));
+    // Default scroll area to the full screen
+    scr_context->fixed_area_top_size = 0;
+    scr_context->fixed_area_bottom_size = 0;
+    scr_context->scroll_size = lines;
+    scr_context->scroll_start = 0;
+    scr_context->cursor_pos = (scr_position_t){ 0, 0 };
+    scr_context->show_cursor = false; // Start with the cursor off (typical for dialogs)
+    // 16-bit from R5G6B5 = R5*2048 + G6*32 + B5
+    scr_context->cursor_color = (rgb16_t)0x05A0;    // Custom Green so it doesn't match any of the 16 (0 45 0)
+    // Set this as the current context before calling other 'screen' functions.
+    _scr_ctx = scr_context;
+    scroll_area_define(0, 0);   // This will configure the ILI9341 for scrolling
+    disp_clear(Paint);
+
+    return (true);
+}
+
+void scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size) {
+    uint16_t screen_lines = _scr_ctx->lines;
+    uint16_t fixed_lines = top_fixed_size + bottom_fixed_size;
+    int16_t scroll_lines = screen_lines - fixed_lines;
+    if (scroll_lines < 0) {
+        error_printf("Display - Attempting to set fixed regions of screen larger than total screen lines.");
+        return;
+    }
+    else if (scroll_lines == 0) {
+        // To keep the `print...` functions working, while avoiding a bunch of special
+        // case code, we treat this setting the same as full screen scroll.
+        // If we find a use case that truly requires the whole screen to be fixed, 
+        // we will address this.
+        top_fixed_size = 0;
+        bottom_fixed_size = 0;
+    }
+    _scr_ctx->scroll_start = top_fixed_size;
+    _scr_ctx->fixed_area_top_size = top_fixed_size;
+    _scr_ctx->fixed_area_bottom_size = bottom_fixed_size;
+    _scr_ctx->scroll_size = screen_lines - (top_fixed_size + bottom_fixed_size);
+    ili9341_scroll_set_area(top_fixed_size * _scr_ctx->font_info->height, bottom_fixed_size * _scr_ctx->font_info->height);
+    ili9341_scroll_set_start(_scr_ctx->scroll_start);
+    cursor_home();
+}
+

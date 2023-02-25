@@ -1,23 +1,23 @@
 /**
  * MuKOB SPI operations.
- * 
+ *
  * The SPI is used by 3 devices:
  *  Display (on one of the HW SPIs)
  *  Touch (on HW SPI with SD Card)
  *  SD Card (on HW SPI with Touch)
- * 
- * The Display and Touch are on different HW SPI so the touch can be read indepentent 
+ *
+ * The Display and Touch are on different HW SPI so the touch can be read indepentent
  * of the display being updated.
- * 
- * These functions allow the SPIs 
+ *
+ * These functions allow the SPIs
  * to be read/writen in a coordinated way.
- * 
+ *
  * Copyright 2023 AESilky
  * SPDX-License-Identifier: MIT License
- * 
+ *
 */
-#ifndef SPI_OPS_H
-#define SPI_OPS_H
+#ifndef _SPI_OPS_H_
+#define _SPI_OPS_H_
 #ifdef __cplusplus
  "C" {
 #endif
@@ -48,4 +48,4 @@ int spi_tsd_write16(const uint16_t* data, size_t len);
 #ifdef __cplusplus
  }
 #endif
-#endif // SPI_OPS_H
+#endif // _SPI_OPS_H_

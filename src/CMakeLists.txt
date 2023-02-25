@@ -21,17 +21,19 @@ pico_sdk_init()
 
 project(MuKOB C CXX ASM)
 
-add_compile_options(-Wall
-        -Wno-format                     # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
-        -Wno-unused-function            # we have some for the docs that aren't called
-        -Wno-maybe-uninitialized
-        #-H                              # list include header paths
-        )
+add_compile_options(
+  -Wall
+  -Wno-format                     # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
+  -Wno-unused-function            # we have some for the docs that aren't called
+  -Wno-maybe-uninitialized
+  #-H                              # list include header paths
+)
 
 # External libraries
 add_subdirectory(lib/sd_card)
 # Local libraries (additional sources)
 add_subdirectory(config)
+add_subdirectory(test)
 add_subdirectory(wire)
 add_subdirectory(ui)
 
@@ -62,6 +64,7 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   config
+  test
   ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
@@ -70,11 +73,19 @@ include_directories(
   lib/sd_card/ff15/source
 )
 
+# ZZZ Figure out how to set `PICO_DEBUG_MALLOC` only if 'debug build'
+add_compile_definitions(
+  PICO_USE_MALLOC_MUTEX
+  PICO_DEBUG_MALLOC
+)
+
+
 # Add the libraries required by the system to the build
 target_link_libraries(MuKOB
   config
   display
   ili9341_spi
+  mukob_test
   wire
   hardware_spi
   hardware_i2c
