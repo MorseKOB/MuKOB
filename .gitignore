@@ -13,6 +13,9 @@ build/
 **/install_manifest.txt
 **/compie_commands.json
 
+# Word temporary
+~$*.docx
+
 # Local info
 *.private
 *.private.c
