@@ -25,6 +25,10 @@
 #include "font.h"
 #include "mkwire.h"
 #include "test.h"
+#include "term.h"
+
+#undef putc
+#undef putchar
 
 static int say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
 
@@ -51,6 +55,15 @@ int main()
     time(&now);
     // Convert to local time format and print to stdout
     printf("Today is %s", ctime(&now));
+    sleep_ms(1000);
+
+    // Some terminal tests
+    for (int i = 0; i < 5; i++) {
+        test_term_color_chart();
+        sleep_ms(1000);
+    }
+    test_term_screen_page_size();
+    sleep_ms(10000);
 
     disp_clear(Paint);
     disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
@@ -75,6 +88,26 @@ int main()
     colorbyte_t color = 0;
     while(true) {
         options_read();  // Re-read the option switches
+        bool input_overflow = false;
+        while (term_input_available()) {
+            int i = term_getc();
+            if (i < 0) {
+                printf("term_input_available() was true, but term_getc() said not.\n");
+            }
+            else {
+                if (i == '0') {
+                    printf("Set color back to 0.\n");
+                    color = 0;
+                }
+                else {
+                    putchar_raw(i);
+                }
+            }
+            input_overflow |= term_input_overflow();
+        }
+        if (input_overflow) {
+            warn_printf("\nInput data from the terminal was lost.\n");
+        }
         color++;
         uint8_t fgc = fg_from_cb(color);
         uint8_t bgc = bg_from_cb(color);
@@ -85,7 +118,7 @@ int main()
         disp_set_text_colors(fgc, bgc);
         disp_clear(Paint);
         cursor_set(19,0);
-        test_show_full_scroll_barberpoll();
+        test_disp_show_full_scroll_barberpoll();
 
         // Test creating a new (sub) screen and writing to it
         screen_new();
@@ -93,15 +126,15 @@ int main()
         printf_disp(Paint, "Then it will delay. At\nthe end, pop the\nsub-screen off -\nrestoring the previous screen.");
         sleep_ms(2000);
 
-        test_show_mukob_head_foot();
+        test_disp_show_mukob_head_foot();
         disp_set_text_colors(C16_LT_GREEN, C16_BLACK);
         disp_string(12, 0, "098765432109876543210987", false, true);
         disp_string(13, 0, "A 1 B 2 C 3 D 4 E 5 F 6 ", false, true);
         disp_string(14, 0, " A 1 B 2 C 3 D 4 E 5 F 6", false, true);
         sleep_ms(1000);
         cursor_home();
-        // void test_show_ili9341_scroll();
-        test_show_half_width_scroll_barberpoll();
+        // void test_ili9341_show_scroll();
+        test_disp_show_half_width_scroll_barberpoll();
         sleep_ms(1000);
         disp_clear(Paint);
         screen_close();

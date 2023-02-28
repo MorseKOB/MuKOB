@@ -29,18 +29,18 @@ void test_error_printf();
 /**
  * @brief Show a full screen scrolling barber pole (font pattern)
  */
-void test_show_full_scroll_barberpoll();
+void test_disp_show_full_scroll_barberpoll();
 
 /**
  * @brief Show a half width scrolling barber pole (font pattern)
  *
  */
-void test_show_half_width_scroll_barberpoll();
+void test_disp_show_half_width_scroll_barberpoll();
 
 /**
  * @brief Fill a screen with a pattern and then use the ILI9341 scroll
  */
-void test_show_ili9341_scroll();
+void test_ili9341_show_scroll();
 
 /**
  * @brief Show the MuKOB header and footer (mock)
@@ -48,7 +48,19 @@ void test_show_ili9341_scroll();
  * Also sets the scroll window to lines 2-18.
  *
  */
-void test_show_mukob_head_foot();
+void test_disp_show_mukob_head_foot();
+
+/**
+ * @brief Send a color chart to the terminal.
+ *
+ */
+void test_term_color_chart();
+
+/**
+ * @brief Set the screen & page size to 132 x 48 and print a diagonal.
+ * 
+ */
+void test_term_screen_page_size();
 
 #ifdef __cplusplus
 }
