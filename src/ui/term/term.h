@@ -114,6 +114,15 @@ typedef enum _VT_TERM_ID_SPECIFIER_ {
 } vt_term_id_spec_t;
 
 /**
+ * @brief Function prototype for UDP Bind response handler.
+ * \ingroup wire
+ *
+ * \param status The statuc from the operation.
+ * \param udp_pcb The udp_pcb that was bound, or NULL if an error occurred.
+ */
+typedef void (*term_notify_on_input_fn)(void);
+
+/**
  * @brief Clear the full screen
  *
  */
@@ -346,6 +355,17 @@ extern void term_input_buf_clear(void);
  * @return false No input has been lost since the last time this was called.
  */
 extern bool term_input_overflow(void);
+
+/**
+ * @brief Register a function to be called when input data becomes available.
+ *
+ * The function will be called when input data becomes available, including if
+ * data is currently available. This is a one-time operation. Once it is called,
+ * the function is de-registered.
+ *
+ * @param fn A `void funcion(void)` function to be called, or `NULL` to remove a registered function.
+ */
+extern void term_notify_on_input(term_notify_on_input_fn notify_fn);
 
 /**
  * @brief Terminal ID returned upon power-up.

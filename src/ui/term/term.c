@@ -69,6 +69,7 @@ static uint16_t _input_buf_in = 0;
 static uint16_t _input_buf_out = 0;
 static char _term_info[_TERM_INFO_MAX_ + 1]; // Holds the terminal device attributes 1
 static char _term_name[_TERM_NAME_MAX_ + 1]; // Holds the terminal name
+static term_notify_on_input_fn _term_notify_on_input; // Holds a function pointer to be called when input is available
 
 static int _read_from_term(char* buf, int maxlen, char term_char, int max_wait) {
     int c;
@@ -124,6 +125,13 @@ static void _stdio_chars_available(void *param) {
         _input_buf[_input_buf_in] = (char)i;
         _input_buf_in = (_input_buf_in + 1) % _INPUT_BUF_SIZE_;
     } while (true);
+    if (_term_notify_on_input != NULL) {
+        // Clear out the function pointer. This is a one-shot function call.
+        term_notify_on_input_fn fn = _term_notify_on_input;
+        _term_notify_on_input = NULL;
+        // Call it.
+        fn();
+    }
 }
 
 inline void term_clear() {
@@ -232,14 +240,6 @@ int term_get_id_info(vt_term_id_spec_t id_spec, char* buf, int maxlen) {
     return (_read_from_term(buf, maxlen, 'c', 80));
 }
 
-inline const char* term_pu_id(void) {
-    return (_term_info);
-}
-
-inline const char* term_pu_name(void) {
-    return (_term_name);
-}
-
 int term_get_screen_info(char* buf, int maxlen) {
     printf("%s6n", CSI); //  "CSI 6 n" = CPR (Cursor Position Report)
     return (_read_from_term(buf, maxlen, 'R', 80));
@@ -295,6 +295,18 @@ bool term_input_overflow() {
     _input_buf_overflow = false;
 
     return (retval);
+}
+
+void term_notify_on_input(term_notify_on_input_fn notify_fn) {
+    _term_notify_on_input = notify_fn;
+}
+
+inline const char* term_pu_id(void) {
+    return (_term_info);
+}
+
+inline const char* term_pu_name(void) {
+    return (_term_name);
 }
 
 inline void term_reset() {

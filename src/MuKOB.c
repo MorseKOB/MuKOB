@@ -76,6 +76,17 @@ int main()
     time(&now);
     printf_disp(Paint, "This was printed at: %s", ctime(&now));
     sleep_ms(1000);
+    // Test terminal input callback
+    printf("Testing terminal input and notification. Type a character: ");
+    char tti = test_term_notify_on_input(10000); // Wait up to 10 seconds for a character
+    if (tti >= 0) {
+        printf("\n You typed '%c'\n", tti);
+    }
+    else {
+        printf("\n Either you didn't type anything, or the input chain didn't work.\n");
+    }
+    term_input_buf_clear();
+    sleep_ms(3000);
 
     colorbyte_t color = 0;
     while(true) {

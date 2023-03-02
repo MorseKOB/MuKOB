@@ -57,6 +57,15 @@ void test_disp_show_mukob_head_foot();
 void test_term_color_chart();
 
 /**
+ * @brief Register a `term_notify_on_input` function and read input when called.
+ *
+ * @param timeout Maximum time in milliseconds to wait for input.
+ *
+ * @return char The character read or '\000' if nothing was read within `n` seconds.
+ */
+char test_term_notify_on_input(uint32_t timeout);
+
+/**
  * @brief Set a top fixed area and a middle scroll area, leaving a bottom fixed area.
  *        Put some text in the top and bottom by positioning the cursor, then scroll
  *        some lines of text.
