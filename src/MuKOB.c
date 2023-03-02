@@ -57,14 +57,6 @@ int main()
     printf("Today is %s", ctime(&now));
     sleep_ms(1000);
 
-    // Some terminal tests
-    for (int i = 0; i < 5; i++) {
-        test_term_color_chart();
-        sleep_ms(1000);
-    }
-    test_term_screen_page_size();
-    sleep_ms(10000);
-
     disp_clear(Paint);
     disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
 
@@ -88,6 +80,18 @@ int main()
     colorbyte_t color = 0;
     while(true) {
         options_read();  // Re-read the option switches
+
+        // Some terminal tests
+        for (int i = 0; i < 3; i++) {
+            test_term_color_chart();
+            sleep_ms(200);
+        }
+        sleep_ms(1000);
+        test_term_screen_page_size();
+        sleep_ms(3000);
+        test_term_scroll_area();
+        sleep_ms(5000);
+
         bool input_overflow = false;
         while (term_input_available()) {
             int i = term_getc();

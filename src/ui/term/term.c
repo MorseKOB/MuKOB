@@ -18,6 +18,8 @@
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/printf.h"
+#include "mukboard.h"
+#include <string.h>
 
 /*
  * The following are from the Dec VT-510 programmer's manual.
@@ -57,12 +59,48 @@
 #undef putc     // Use the function, not the macro
 #undef putchar  // Use the function, not the macro
 
-#define _INPUT_BUF_SIZE_ 32 // Make this a power of 2
+#define _INPUT_BUF_SIZE_ 256 // Make this a power of 2
+#define _TERM_INFO_MAX_ 31 // Maximum term info string response read
+#define _TERM_NAME_MAX_ 31 // Maximum size of term name response read
 
 static char _input_buf[_INPUT_BUF_SIZE_];
 static bool _input_buf_overflow = false;
 static uint16_t _input_buf_in = 0;
 static uint16_t _input_buf_out = 0;
+static char _term_info[_TERM_INFO_MAX_ + 1]; // Holds the terminal device attributes 1
+static char _term_name[_TERM_NAME_MAX_ + 1]; // Holds the terminal name
+
+static int _read_from_term(char* buf, int maxlen, char term_char, int max_wait) {
+    int c;
+    int chars = 0;
+    int delay = 0;
+    bool timeout = false;
+
+    for (int i = 0; i < (maxlen - 1); i++) {
+        do {
+            if (term_input_available()) {
+                break;
+            }
+            sleep_ms(1);
+            if (++delay >= max_wait) {
+                timeout = true;
+                break;
+            }
+        } while(true); // will break out if a character is available or we time out
+        if (timeout) {
+            break;
+        }
+        c = term_getc();
+        *buf++ = (char)c;
+        chars++;
+        if (c == term_char) {
+            break;
+        }
+    }
+    *buf = '\000';
+
+    return (chars);
+}
 
 /**
  * @brief Callback function that is registered with the STDIO handler to be notified when characters become available.
@@ -104,21 +142,65 @@ inline void term_color_fg(term_color_t colorn) {
     printf("%s38;5;%dm", CSI, colorn);
 }
 
+inline void term_cursor_down(uint16_t n) {
+    printf("%s%hdB", CSI, n); // Also 'E'
+}
+
+inline void term_cursor_down_1(void) {
+    printf("%s", NEL);
+}
+
+inline void term_cursor_left(uint16_t n) {
+    printf("%s%hdD", CSI, n);
+}
+
+inline void term_cursor_left_1(void) {
+    putchar(BS);
+}
+
 inline void term_cursor_moveto(uint16_t line, uint16_t column) {
     printf("%s%hd;%hdH", CSI, line, column);
+}
+
+void term_cursor_on(bool on) {
+    char onoff = (on ? 'h' : 'l');
+    printf("%s?25%c", CSI, onoff); // VT220
 }
 
 inline void term_cursor_restore() {
     printf("%c8", ESC);
 }
 
+inline void term_cursor_right(uint16_t n) {
+    printf("%s%hdC", CSI, n);
+}
+
+inline void term_cursor_right_1(void) {
+    printf("%sC", CSI);
+}
+
 inline void term_cursor_save() {
     printf("%c7", ESC);
 }
 
-void term_cursor_on(bool on) {
-    char onoff = (on ? 'h' : 'l');
-    printf("%s?25%c", CSI, onoff); // VT220
+inline void term_cursor_up(uint16_t n) {
+    printf("%s%hdA", CSI, n); // Also 'F'
+}
+
+inline void term_cursor_up_1(void) {
+    printf("%s", RI);
+}
+
+inline void term_erase_bol() {
+    printf("%s0K", CSI);
+}
+
+inline void term_erase_eol() {
+    printf("%s1K", CSI);
+}
+
+inline void term_erase_line() {
+    printf("%s2K", CSI);
 }
 
 int term_getc(void) {
@@ -131,18 +213,72 @@ int term_getc(void) {
     return (c);
 }
 
+scr_position_t term_get_cursor_position(void) {
+    char buf[16];
+    scr_position_t pos = {-1,-1};
+
+    printf("%s6n", CSI); //  "CSI 6 n" = CPR (Cursor Position Report)
+    if (_read_from_term(buf, 15, 'R', 80) > 0) {
+        // Response should be ESC[rn;cnR
+        char *rcn = buf+2; // Skip the leading ESC[ (CSI)
+        sscanf(rcn, "%hd;%hdR", &pos.line, &pos.column);
+    }
+
+    return (pos);
+}
+
+int term_get_id_info(vt_term_id_spec_t id_spec, char* buf, int maxlen) {
+    printf("%s%hd,q", CSI, id_spec);
+    return (_read_from_term(buf, maxlen, 'c', 80));
+}
+
+inline const char* term_pu_id(void) {
+    return (_term_info);
+}
+
+inline const char* term_pu_name(void) {
+    return (_term_name);
+}
+
+int term_get_screen_info(char* buf, int maxlen) {
+    printf("%s6n", CSI); //  "CSI 6 n" = CPR (Cursor Position Report)
+    return (_read_from_term(buf, maxlen, 'R', 80));
+}
+
+int term_get_name(char* buf, int maxlen) {
+    printf("%c", ENQ);
+    return (_read_from_term(buf, maxlen, '\000', 80));
+}
+
+int term_get_type_info(char* buf, int maxlen) {
+    printf("%s0c", CSI); //  "ESC Z" = DECID, "CSI 0 c" = DA1 (Device Attributes 1)
+    return (_read_from_term(buf, maxlen, 'c', 80));
+}
+
 void term_init() {
+    // Input handler...
+    stdio_set_chars_available_callback(_stdio_chars_available, NULL);   // We can pass a parameter if we want
     // Terminal type and screen size...
     term_reset();
     sleep_ms(100); // Allow the terminal to reset
-    term_set_type_vt(VT_510_TYPE_SPEC);
-    term_set_size(48, 132);
-    term_clear();
+    // Ask for the terminal ID and see what we got
+    if (term_get_type_info(_term_info, _TERM_INFO_MAX_) < 2) {
+        error_printf("Term - Terminal did not respond with info.\n");
+    }
+    // Maybe process the response? For now, just store it and print it.
+    info_printf("Term - Info/ID: %s\n", (_term_info + 1)); // Skip the ESC
+    // Ask for the terminal name and see what we got
+    if (term_get_name(_term_name, _TERM_NAME_MAX_) < 1) {
+        error_printf("Term - Terminal did not respond with a name.\n");
+    }
+    // Maybe process the response? For now, just store it and print it.
+    info_printf("Term - Name: %s\n", (_term_name));
+    // Set the terminal type to one we want
+    term_set_type(VT_510_TYPE_SPEC, VT_510_ID_SPEC);
+    term_set_size(25, 80);
+    //term_clear();
     term_color_default();
     term_cursor_on(true);
-
-    // Input handler...
-    stdio_set_chars_available_callback(_stdio_chars_available, NULL);   // We can pass a parameter if we want
 }
 
 inline bool term_input_available() {
@@ -163,6 +299,21 @@ bool term_input_overflow() {
 
 inline void term_reset() {
     printf("%cc", ESC);
+}
+
+void term_set_margin_top_bottom(uint16_t top_line, uint16_t bottom_line) {
+    if (bottom_line - top_line > 0) {
+        term_set_origin_mode(TERM_OM_IN_MARGINS); // Non-zero scroll area - set origin mode within margins
+    }
+    else {
+        term_set_origin_mode(TERM_OM_UPPER_LEFT); // No scroll area - set orinin mode to full screen
+    }
+    printf("%s%hd;%hdr", CSI, top_line, bottom_line);
+}
+
+void term_set_origin_mode(term_om_t mode) {
+    char om = (mode == TERM_OM_IN_MARGINS ? 'h' : 'l');
+    printf("%s?6%c", CSI, om);
 }
 
 void term_set_size(uint16_t lines, uint16_t columns) {
@@ -204,12 +355,30 @@ void term_set_size(uint16_t lines, uint16_t columns) {
     }
 
     // Send the terminal the commands to set the screen and the page size...
-    printf("%s?3%c%s%hd$|", CSI, colind, CSI, columns); // Columns: Screen size | Page size
-    printf("%s%hd*|%s%hdt", CSI, lines, CSI, lines); // Lines: Screen size | Page size
+    printf("%s?3%c", CSI, colind); // Columns: Screen size
+    sleep_ms(15);
+    printf("%s%hd", CSI, columns); // Columns: Page size
+    sleep_ms(15);
+    printf("%s%hd*|", CSI, lines); // Lines: Screen size
+    sleep_ms(15);
+    printf("%s%hdt", CSI, lines); // Lines: Page size
+    sleep_ms(20);
+    term_clear();
 }
 
-inline void term_set_type_vt(vt_term_type_spec_t type) {
+inline void term_set_title(const char* title) {
+    printf("%s0;%s%s", OSC, title, ST);
+}
+
+void term_set_type(vt_term_type_spec_t type, vt_term_id_spec_t id_type) {
     printf("%s6%d;1;\"p", CSI, type); // The ;1 specifies using 7-bit control mode
     // printf("%s41;1;\"p", CSI); // Set to PuTTY mode ('41' is PuTTY only value)
     // printf("%s42;1;\"p", CSI); // Set to SCO-ANSI mode ('42' is PuTTY only value)
+    printf("%s%hd,q", CSI, id_type);
+    // Read terminal response until there isn't any
+    sleep_ms(100);
+    while (term_input_available()) {
+        term_input_buf_clear();
+        sleep_ms(50);
+    }
 }

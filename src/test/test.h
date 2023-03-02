@@ -57,8 +57,16 @@ void test_disp_show_mukob_head_foot();
 void test_term_color_chart();
 
 /**
+ * @brief Set a top fixed area and a middle scroll area, leaving a bottom fixed area.
+ *        Put some text in the top and bottom by positioning the cursor, then scroll
+ *        some lines of text.
+ *
+ */
+void test_term_scroll_area();
+
+/**
  * @brief Set the screen & page size to 132 x 48 and print a diagonal.
- * 
+ *
  */
 void test_term_screen_page_size();
 
