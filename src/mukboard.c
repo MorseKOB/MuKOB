@@ -37,6 +37,7 @@
 #include "net.h"
 #include "config.h"
 #include "display.h"
+#include "term.h"
 
 #include "creds.private.h"
 
@@ -60,7 +61,10 @@ int board_init() {
 
     sleep_ms(50);
 
-    // Initialize the board RTC. It will be set correctly later when we 
+    // Initialize the terminal library
+    term_init();
+
+    // Initialize the board RTC. It will be set correctly later when we
     // have WiFi and can make a NTP call.
     // Start on Sunday the 1st of January 2023 00:00:01
     datetime_t t = {
@@ -168,7 +172,8 @@ int board_init() {
     gpio_set_function(ROTORY_B_IN, GPIO_FUNC_SIO);
     gpio_set_dir(ROTORY_B_IN, GPIO_IN);
 
-    options_read(); // Read and cache the option switch value
+    // Read and cache the option switch value
+    options_read();
 
     // Get the configuration
     config_init();

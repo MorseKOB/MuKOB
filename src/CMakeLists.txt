@@ -68,6 +68,7 @@ include_directories(
   ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
+  ui/term
   wire
   lib/sd_card/sd_driver
   lib/sd_card/ff15/source
@@ -76,7 +77,7 @@ include_directories(
 # ZZZ Figure out how to set `PICO_DEBUG_MALLOC` only if 'debug build'
 add_compile_definitions(
   PICO_USE_MALLOC_MUTEX
-  PICO_DEBUG_MALLOC
+#  PICO_DEBUG_MALLOC
 )
 
 
@@ -86,6 +87,7 @@ target_link_libraries(MuKOB
   display
   ili9341_spi
   mukob_test
+  term
   wire
   hardware_spi
   hardware_i2c
