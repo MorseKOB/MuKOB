@@ -134,6 +134,50 @@ void test_term_color_chart() {
     printf("\nBRIGHT WHITE: "); term_color_fg(TERM_CHR_COLOR_BR_WHITE); printf("The quick brown fox...");
 }
 
+alarm_id_t _test_term_notify_on_input_to_id;
+static char _input;
+static volatile bool _test_term_notify_on_input_called;
+static void _test_term_notify_on_input(void) {
+    // Function that is registered.
+    _input = '\000';
+    if (term_input_available()) {
+        _input = term_getc();
+    }
+    _test_term_notify_on_input_called = true;
+}
+static int64_t _test_term_notify_on_input_to(alarm_id_t id, void* not_used) {
+    cancel_alarm(id);
+    _test_term_notify_on_input_to_id = 0;
+    error_printf("\nTEST - test_term_notify_on_input timed out.\n");
+    _input = -1;
+    term_notify_on_input(NULL);
+    _test_term_notify_on_input_called = true; // Say this was called, but the char is '-1'
+
+    return (0); // Don't reschedule this timer
+}
+char test_term_notify_on_input(uint32_t timeout) {
+    uint32_t time_waited = 0; // A secondary timeout
+    _test_term_notify_on_input_called = false;
+    _input = -1; // Return -1 if we timeout
+    _test_term_notify_on_input_to_id = add_alarm_in_ms(timeout, _test_term_notify_on_input_to, NULL, true);
+    // Register our callback and wait...
+    term_notify_on_input(_test_term_notify_on_input);
+
+    while (!_test_term_notify_on_input_called && time_waited < timeout + 250) {
+        sleep_ms(10);
+        time_waited += 10;
+        if (time_waited % 500 == 0) {
+            putchar('.');
+        }
+    }
+    if (_test_term_notify_on_input_to_id != 0) {
+        cancel_alarm(_test_term_notify_on_input_to_id);
+    }
+    term_notify_on_input(NULL);
+
+    return (_input);
+}
+
 void test_term_scroll_area() {
     term_reset();
     term_set_type(VT_510_TYPE_SPEC, VT_510_ID_SPEC);
