@@ -13,7 +13,7 @@
 #include "sd_card.h"
 #include "string.h"
 #include "ff.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "net.h"
 #include "util.h"
 

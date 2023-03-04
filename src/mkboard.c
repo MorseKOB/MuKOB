@@ -31,7 +31,7 @@
 #include "pico/cyw43_arch.h"
 
 #include "system_defs.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "config.h"
 #include "display.h"
 #include "kob.h"

@@ -42,7 +42,7 @@ add_subdirectory(ui)
 # Add executable.
 add_executable(MuKOB
   MuKOB.c
-  mukboard.c
+  mkboard.c
   spi_ops.c
 )
 

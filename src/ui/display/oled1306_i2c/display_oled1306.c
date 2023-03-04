@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include "system_defs.h"
-#include "mukboard.h"
+#include "mkboard.h"
 
 #include "font_9_10_h.h"
 #include "display_oled1306.h"

@@ -16,7 +16,7 @@
 #include "config.h"
 #include "display.h"
 #include "ili9341_spi.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "term.h"
 #include "util.h"
 #include "hardware/rtc.h"

@@ -5,7 +5,7 @@
  */
 #include <stdlib.h>
 #include "system_defs.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "display_ili9341.h"
 #include "display_i.h"
 #include "font.h"

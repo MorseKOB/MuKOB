@@ -7,9 +7,7 @@
 */
 //#include <stdio.h>
 //#include <stdarg.h>
-
-#include "system_defs.h"
-// (some defines in the above are used in the following, so must be included first)
+#include "pico/binary_info.h"
 #include "hardware/rtc.h"
 #include "pico.h"
 #include "pico/stdio.h"
@@ -18,12 +16,15 @@
 #include "pico/time.h"
 #include "pico/types.h"
 #include "pico/util/datetime.h"
-#include "net.h"
-#include "mukboard.h"
+
+#include "system_defs.h"
+// (some defines in the above are used in the following, so must be included first)
 #include "display.h"
 #include "display_ili9341.h"
 #include "font.h"
 #include "mkwire.h"
+#include "mkboard.h"
+#include "net.h"
 #include "test.h"
 #include "term.h"
 #include "util.h"

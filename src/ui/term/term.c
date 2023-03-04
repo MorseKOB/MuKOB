@@ -18,7 +18,7 @@
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/printf.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include <string.h>
 
 /*
