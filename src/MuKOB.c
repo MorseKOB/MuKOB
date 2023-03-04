@@ -26,14 +26,18 @@
 #include "mkwire.h"
 #include "test.h"
 #include "term.h"
+#include "util.h"
 
 #undef putc
 #undef putchar
 
-static int say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
+static int32_t say_hi[] = {100,100,100,100,100,100,100,100,250,100,100,100,0}; // 'H' (....) 'I' (..)
 
 int main()
 {
+    char buf[128];
+    datetime_t now;
+
     // // useful information for picotool
     // bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
     // bi_decl(bi_program_description("Micro version of MorseKOB"));
@@ -49,14 +53,14 @@ int main()
     // mkwire_connect(90); // Test wire
     // sleep_ms(15000);
 
-    // Obtain current time
-    // `time()` returns the current time of the system as a `time_t` value
-    time_t now;
-    time(&now);
-    // Convert to local time format and print to stdout
-    printf("Today is %s", ctime(&now));
-    sleep_ms(1000);
+    // Show (test) the RTC datetime to string function
+    test_strdatetime();
+    sleep_ms(3000);
 
+    // Test the config new & free
+    test_config_new_free();
+
+    // Set up the display
     disp_clear(Paint);
     disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
 
@@ -73,8 +77,10 @@ int main()
     cursor_show(false);
     cursor_home();
     printf_disp(Paint, "This text is on the main\n(base) screen.\n");
-    time(&now);
-    printf_disp(Paint, "This was printed at: %s", ctime(&now));
+
+    rtc_get_datetime(&now);
+    strdatetime(buf, 127, &now, SDTC_LONG_TXT_ON | SDTC_DATE | SDTC_TIME);
+    printf_disp(Paint, "This was printed at: %s", buf);
     sleep_ms(1000);
     // Test terminal input callback
     printf("Testing terminal input and notification. Type a character: ");
@@ -91,6 +97,8 @@ int main()
     colorbyte_t color = 0;
     while(true) {
         options_read();  // Re-read the option switches
+
+        led_on_off(say_hi);
 
         // Some terminal tests
         for (int i = 0; i < 3; i++) {

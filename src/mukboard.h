@@ -92,7 +92,7 @@ void led_on(bool on);
  * \param pattern Array of millisend values to turn the LED on, off, on, etc.
  *      The last element of the array must be 0.
 */
-void led_on_off(int pattern[]);
+void led_on_off(int32_t pattern[]);
 
 /**
  * @brief Turn the LED on/off based on MorseKOB code array...

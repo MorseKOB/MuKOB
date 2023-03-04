@@ -33,7 +33,9 @@ add_compile_options(
 add_subdirectory(lib/sd_card)
 # Local libraries (additional sources)
 add_subdirectory(config)
+add_subdirectory(kob)
 add_subdirectory(test)
+add_subdirectory(util)
 add_subdirectory(wire)
 add_subdirectory(ui)
 
@@ -64,11 +66,13 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   config
+  kob
   test
   ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
   ui/term
+  util
   wire
   lib/sd_card/sd_driver
   lib/sd_card/ff15/source
@@ -80,14 +84,15 @@ add_compile_definitions(
 #  PICO_DEBUG_MALLOC
 )
 
-
 # Add the libraries required by the system to the build
 target_link_libraries(MuKOB
   config
   display
   ili9341_spi
+  kob
   mukob_test
   term
+  util
   wire
   hardware_spi
   hardware_i2c
