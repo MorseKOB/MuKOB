@@ -16,15 +16,12 @@
  * 4. Beep the buzzer a number of times
  *
 */
-//#include <stdio.h>
-//#include <time.h>
 
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/printf.h"
 #include "pico/time.h"
 #include "pico/types.h"
-#include "pico/util/datetime.h"
 #include "hardware/spi.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
@@ -32,16 +29,17 @@
 #include "hardware/clocks.h"
 #include "hardware/rtc.h"
 #include "pico/cyw43_arch.h"
+
 #include "system_defs.h"
 #include "mukboard.h"
-#include "net.h"
 #include "config.h"
 #include "display.h"
+#include "kob.h"
+#include "net.h"
 #include "term.h"
+#include "util.h"
 
-#include "creds.private.h"
-
-uint8_t _options_value = 0;
+static uint8_t _options_value = 0;
 
 /**
  * @brief Initialize the board
@@ -56,6 +54,7 @@ uint8_t _options_value = 0;
 */
 int board_init() {
     int retval = 0;
+    const config_t* cfg;
 
     stdio_init_all();
 
@@ -83,8 +82,8 @@ int board_init() {
     sleep_us(100);
     char datetime_buf[256];
     rtc_get_datetime(&t);
-    datetime_to_str(datetime_buf, sizeof(datetime_buf), &t);
-    printf("%s\n", datetime_buf);
+    strdatetime(datetime_buf, sizeof(datetime_buf), &t, SDTC_LONG_TXT_ON | SDTC_TIME_24HOUR);
+    printf("It is %s\n", datetime_buf);
 
     retval = cyw43_arch_init();
     if (retval) {
@@ -150,6 +149,7 @@ int board_init() {
     gpio_put(SPKR_DRIVE, SPEAKER_OFF);
     gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
+    gpio_set_drive_strength(KOB_SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
 
     // GPIO Inputs
@@ -177,21 +177,27 @@ int board_init() {
 
     // Get the configuration
     config_init();
+    cfg = config_current();
 
     // Make an NTP call to get the actual time and set the RTC correctly
-    wifi_set_creds(NET_NAME, NET_PW);  // ZZZ!
-    network_update_rtc();  // This also initializes the network subsystem
+    // This also initializes the network subsystem
+    wifi_set_creds(cfg->wifi_ssid, cfg->wifi_password);
+    network_update_rtc();
     sleep_ms(1000);  // Give it time to make a NTP call
+
     // Now read the RTC and print it
     rtc_get_datetime(&t);
-    datetime_to_str(datetime_buf, sizeof(datetime_buf), &t);
-    printf("%s\n", datetime_buf);
+    strdatetime(datetime_buf, sizeof(datetime_buf), &t, SDTC_LONG_TXT_ON | SDTC_TIME_24HOUR);
+    printf("RTC set from NTP call - it is %s\n", datetime_buf);
 
     // Initialize the display
     display_reset_on(false);
     sleep_ms(100);
     disp_init();
     display_backlight_on(true);
+
+    // Initialize the KOB module
+    kob_init(config_current());
 
     puts("\033[32mMuKOB says hello!\033[0m");
 
@@ -239,15 +245,19 @@ void display_reset_on(bool on) {
 
 void led_flash(int ms) {
     led_on(true);
+    // ZZZ - Temp fire sounder too
+    kob_sounder_energize(true);
     sleep_ms(ms);
     led_on(false);
+    // ZZZ - Temp fire sounder too
+    kob_sounder_energize(false);
 }
 
 void led_on(bool on) {
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, on);
 }
 
-void led_on_off(int pattern[]) {
+void led_on_off(int32_t pattern[]) {
     for (int i = 0; pattern[i] != 0; i++) {
         led_flash(pattern[i++]);
         int off_time = pattern[i];

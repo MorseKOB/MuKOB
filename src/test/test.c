@@ -13,10 +13,12 @@
  */
 #include "test.h"
 #include "system_defs.h"
+#include "config.h"
 #include "display.h"
 #include "ili9341_spi.h"
 #include "mukboard.h"
 #include "term.h"
+#include "util.h"
 #include "hardware/rtc.h"
 #include "pico.h"
 #include "pico/stdio.h"
@@ -25,10 +27,64 @@
 #include "pico/time.h"
 #include "pico/types.h"
 #include "pico/util/datetime.h"
+#include <string.h>
 
-void test_error_printf() {
-    error_printf("Test of printing an error: %d.\n", 15u);
+// The following are from 'config.c' to be used in
+// `test_config_new_free()`
+#define _TEST_CFG_MEM_MARKER_ 3224
+struct _TEST_CFG_W_MARKER {
+    uint16_t marker;
+    config_t config;
+};
+
+int test_config_new_free(){
+    int errors = 0;
+    config_t* cfg = config_new(NULL);
+    if (NULL == cfg) {
+        errors++;
+        error_printf("Test - Config: config_new returned NULL.\n");
+        return (errors);
+    }
+    cfg->cfg_version = 9876;
+    cfg->wifi_password = config_value_create("abracadabra");
+    cfg->wifi_ssid = config_value_create("Houdini");
+    // Create a copy
+    config_t* cfg_copy = config_new(cfg);
+    if (NULL == cfg_copy) {
+        errors++;
+        error_printf("Test - Config: config_new returned NULL when creating copy.\n");
+        config_free(cfg);
+        return (errors);
+    }
+    if (cfg_copy->cfg_version != cfg->cfg_version) {
+        errors++;
+        error_printf("Test - Config: config copy cfg_version not correct.\n");
+    }
+    if (strcmp(cfg_copy->wifi_password, cfg->wifi_password) != 0) {
+        errors++;
+        error_printf("Test - Config: config copy wifi_password not correct.\n");
+    }
+    if (strcmp(cfg_copy->wifi_ssid, cfg->wifi_ssid) != 0) {
+        errors++;
+        error_printf("Test - Config: config copy wifi_ssid not correct.\n");
+    }
+    struct _TEST_CFG_W_MARKER* cfgwm = (struct _TEST_CFG_W_MARKER*)((uint8_t*)cfg - (sizeof(struct _TEST_CFG_W_MARKER) - sizeof(config_t)));
+    if (cfgwm->marker != _TEST_CFG_MEM_MARKER_) {
+        errors++;
+        error_printf("Test - Config: Config structure memory marker not found.\n");
+    }
+    config_free(cfg_copy);
+    config_free(cfg);
+    if (errors == 0) {
+        debug_printf("Test - Config: No errors running `test_config_new_free`\n");
+    }
+    else {
+        error_printf("Test - Config: %d errors running `test_config_new_free`\n");
+    }
+
+    return (errors);
 }
+
 
 void test_disp_show_full_scroll_barberpoll() {
     scroll_area_define(0, 0);
@@ -57,6 +113,10 @@ void test_disp_show_half_width_scroll_barberpoll() {
         print_crlf(0, Paint);
         ca++;
     }
+}
+
+void test_error_printf() {
+    error_printf("Test of printing an error: %d.\n", 15u);
 }
 
 void test_ili9341_show_scroll() {
@@ -97,6 +157,44 @@ void test_disp_show_mukob_head_foot() {
     disp_string(0, 0, "\024\025W:108 S:25 \022\023 \016 \002 \012\013\014\015", false, true);
     disp_set_text_colors(C16_BLUE, C16_YELLOW);
     disp_string(1, 0, "ES, Ed, WA 1234567890123", false, true);
+}
+
+void test_strdatetime() {
+    char buf[128];
+    datetime_t now;
+
+    rtc_get_datetime(&now);
+
+    strdatetime(buf, 127, &now, SDTC_TIME);
+    printf("Time (h:mm): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_TIME_SECONDS);
+    printf("Time (h:mm:ss): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_TIME_2DIGITS | SDTC_TIME_SECONDS);
+    printf("Time (hh:mm:ss): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_TIME_24HOUR);
+    printf("Time (24 hour): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_TIME_AMPM);
+    printf("Time (AM/PM): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE);
+    printf("Date: %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE_SLASH);
+    printf("Date ('/'): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE_2DIGITS | SDTC_YEAR_2DIGITS);
+    printf("Date (mm-dd-yy): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE_2DIGITS | SDTC_DATE_ORDER_DM);
+    printf("Date (dd-mm-yyyy): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE | SDTC_TIME);
+    printf("Date Time: %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_TIME_BEFORE_DATE);
+    printf("Time Date: %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_LONG_TXT);
+    printf("Date (string): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_DATE_SHORT_DM);
+    printf("Date (short day/month): %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_LONG_TXT_AT);
+    printf("Text date 'at' time: %s\n", buf);
+    strdatetime(buf, 127, &now, SDTC_LONG_TXT_ON);
+    printf("Time 'on' text date: %s\n", buf);
 }
 
 void test_term_color_chart() {
