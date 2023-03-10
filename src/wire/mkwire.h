@@ -18,39 +18,39 @@ extern "C" {
 
 /*!
  * @brief Connect to a MorseKOB Wire.
- * \ingroup wire
+ * @ingroup wire
  *
- * \param wire_no The wire number to connect to (1-999)
+ * @param wire_no The wire number to connect to (1-999)
  */
 void mkwire_connect(unsigned short wire_no);
 
 /*!
  * @brief Disconnect from the currently connected MorseKOB Wire.
- * \ingroup wire
+ * @ingroup wire
  */
 void mkwire_disconnect();
 
 /*!
  * @brief Initialize the MorseKOB Wire subsystem.
- * \ingroup wire
+ * @ingroup wire
  *
- * \param mkobs_url MorseKOB Server URL.
- * \param office_id The local Station/Office ID.
+ * @param mkobs_url MorseKOB Server URL.
+ * @param office_id The local Station/Office ID.
  */
 void mkwire_init(char *mkobs_url, unsigned short port, char *office_id);
 
 /*!
  * @brief Connected to KOB Server status.
- * \ingroup wire
+ * @ingroup wire
  * 
- * \returns True if currently connected to a KOB Server wire.
+ * @returns True if currently connected to a KOB Server wire.
  */
 bool mkwire_is_connected();
 
 /*!
  * @brief Set the local Station/Office ID.
  *
- * \param office_id The local Station/Office ID.
+ * @param office_id The local Station/Office ID.
  */
 void mkwire_set_office_id(char *office_id);
 

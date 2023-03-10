@@ -31,15 +31,21 @@
 #include "pico/cyw43_arch.h"
 
 #include "system_defs.h"
-#include "mkboard.h"
+
 #include "config.h"
 #include "display.h"
 #include "kob.h"
+#include "mkboard.h"
+#include "multicore.h"
 #include "net.h"
 #include "term.h"
 #include "util.h"
 
 static uint8_t _options_value = 0;
+
+// Internal function declarations
+
+static int _format_printf_datetime(char* buf, size_t len);
 
 /**
  * @brief Initialize the board
@@ -80,10 +86,6 @@ int board_init() {
     // clk_sys is >2000x faster than clk_rtc, so datetime is not updated immediately when rtc_set_datetime() is called.
     // tbe delay is up to 3 RTC clock cycles (which is 64us with the default clock settings)
     sleep_us(100);
-    char datetime_buf[256];
-    rtc_get_datetime(&t);
-    strdatetime(datetime_buf, sizeof(datetime_buf), &t, SDTC_LONG_TXT_ON | SDTC_TIME_24HOUR);
-    printf("It is %s\n", datetime_buf);
 
     retval = cyw43_arch_init();
     if (retval) {
@@ -177,15 +179,17 @@ int board_init() {
 
     // Get the configuration
     config_init();
-    cfg = config_current();
+    const config_sys_t* system_cfg = config_sys();
 
-    // Make an NTP call to get the actual time and set the RTC correctly
-    // This also initializes the network subsystem
-    wifi_set_creds(cfg->wifi_ssid, cfg->wifi_password);
-    network_update_rtc();
-    sleep_ms(1000);  // Give it time to make a NTP call
-
+    if (system_cfg->is_set) {
+        // Make an NTP call to get the actual time and set the RTC correctly
+        // This also initializes the network subsystem
+        wifi_set_creds(system_cfg->wifi_ssid, system_cfg->wifi_password);
+        network_update_rtc(system_cfg->tz_offset);
+        sleep_ms(1000);  // Give it time to make a NTP call
+    }
     // Now read the RTC and print it
+    char datetime_buf[256];
     rtc_get_datetime(&t);
     strdatetime(datetime_buf, sizeof(datetime_buf), &t, SDTC_LONG_TXT_ON | SDTC_TIME_24HOUR);
     printf("RTC set from NTP call - it is %s\n", datetime_buf);
@@ -198,6 +202,9 @@ int board_init() {
 
     // Initialize the KOB module
     kob_init(config_current());
+
+    // Initialize the multicore subsystem
+    multicore_init();
 
     puts("\033[32mMuKOB says hello!\033[0m");
 
@@ -245,16 +252,21 @@ void display_reset_on(bool on) {
 
 void led_flash(int ms) {
     led_on(true);
-    // ZZZ - Temp fire sounder too
-    kob_sounder_energize(true);
     sleep_ms(ms);
     led_on(false);
-    // ZZZ - Temp fire sounder too
-    kob_sounder_energize(false);
 }
 
 void led_on(bool on) {
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, on);
+    // ZZZ - Temp energize sounder too
+    kob_sounder_energize(on);
+    // ZZZ - Temp tone if debug on
+    if (option_value(OPTION_DEBUG)) {
+        buzzer_on(on);
+    }
+    else {
+        buzzer_on(false);
+    }
 }
 
 void led_on_off(int32_t pattern[]) {
@@ -348,61 +360,55 @@ bool option_value(uint opt) {
     return false;
 }
 
-void format_current_datetime(char* buf, size_t len) {
+int _format_printf_datetime(char* buf, size_t len) {
     datetime_t t;
     rtc_get_datetime(&t);
-    snprintf(buf, len, "%02d-%02d-%04d %02d:%02d:%02d", t.month, t.day, t.year, t.hour, t.min, t.sec);
+    return (snprintf(buf, len, "%02d-%02d-%04d %02d:%02d:%02d", t.month, t.day, t.year, t.hour, t.min, t.sec));
 }
 
 void debug_printf(const char* format, ...) {
     if (option_value(OPTION_DEBUG)) {
-        char buf[1024];
-        format_current_datetime(buf, sizeof(buf));
-        printf(buf);
-        printf(" DEBUG: ");
+        char buf[512];
+        int index = _format_printf_datetime(buf, sizeof(buf));
+        index += snprintf(&buf[index], sizeof(buf) - index, " DEBUG: ");
         va_list xArgs;
         va_start(xArgs, format);
-        vsnprintf(buf, sizeof(buf), format, xArgs);
+        index += vsnprintf(&buf[index], sizeof(buf) - index, format, xArgs);
         printf(buf);
         va_end(xArgs);
     }
 }
 
 void error_printf(const char* format, ...) {
-    char buf[1024];
-    format_current_datetime(buf, sizeof(buf));
-    printf("\033[91m");
-    printf(buf);
-    printf(" ERROR: ");
+    char buf[512];
+    int index = _format_printf_datetime(buf, sizeof(buf));
+    index += snprintf(&buf[index], sizeof(buf) - index, "\033[91m ERROR: ");
     va_list xArgs;
     va_start(xArgs, format);
-    vsnprintf(buf, sizeof(buf), format, xArgs);
-    printf(buf);
+    index += vsnprintf(&buf[index], sizeof(buf) - index, format, xArgs);
     va_end(xArgs);
-    printf("\033[0m");
+    printf("%s\033[0m", buf);
 }
 
 void info_printf(const char* format, ...) {
-    char buf[1024];
-    format_current_datetime(buf, sizeof(buf));
-    printf(buf);
-    printf(" INFO: ");
+    char buf[512];
+    int index = _format_printf_datetime(buf, sizeof(buf));
+    index += snprintf(&buf[index], sizeof(buf) - index, " INFO: ");
     va_list xArgs;
     va_start(xArgs, format);
-    vsnprintf(buf, sizeof(buf), format, xArgs);
-    printf(buf);
+    index += vsnprintf(&buf[index], sizeof(buf) - index, format, xArgs);
     va_end(xArgs);
+    printf(buf);
 }
 
 void warn_printf(const char* format, ...) {
-    char buf[1024];
-    format_current_datetime(buf, sizeof(buf));
-    printf(buf);
-    printf(" WARN: ");
+    char buf[512];
+    int index = _format_printf_datetime(buf, sizeof(buf));
+    index += snprintf(&buf[index], sizeof(buf) - index, " WARN: ");
     va_list xArgs;
     va_start(xArgs, format);
-    vsnprintf(buf, sizeof(buf), format, xArgs);
-    printf(buf);
+    index += vsnprintf(&buf[index], sizeof(buf) - index, format, xArgs);
     va_end(xArgs);
+    printf(buf);
 }
 

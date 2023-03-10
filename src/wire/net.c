@@ -6,8 +6,9 @@
  *
  */
 #include "net.h"
-#include "hardware/rtc.h"
 #include "mkboard.h"
+#include "hardware/rtc.h"
+#include "pico/time.h"
 
 static char _wifi_ssid[NET_SSID_MAX_LEN];
 static char _wifi_password[NET_PASSWORD_MAX_LEN];
@@ -15,14 +16,14 @@ static char _wifi_password[NET_PASSWORD_MAX_LEN];
 static bool _wifi_connected = false;
 
 // Forward definitions...
-static void _ntp_response_handler(err_enum_t status, struct pbuf* p);
+static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handler_data);
 static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg);
 static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state);
 static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg);
 static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
 static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state);
 
-struct _udp_op_context {
+typedef struct _udp_op_context {
     err_enum_t status;
     ip_addr_t ipaddr;
     uint16_t port;
@@ -31,8 +32,10 @@ struct _udp_op_context {
     alarm_id_t timeout_alarm_id;
     struct pbuf* p;
     udp_sop_result_handler_fn op_result_handler;
+    void* result_handler_data;
     udp_bind_handler_fn bind_handler;
-};
+} udp_op_context_t;
+
 #define ANY_LOCAL_PORT 0 // Used in udp_bind
 
 #define DNS_TIMEOUT (5 * 1000)
@@ -43,6 +46,9 @@ struct _udp_op_context {
 #define NTP_TIMEOUT (10 * 1000)
 #define NTP_MSG_LEN 48
 #define NTP_DELTA 2208988800 // seconds between 1 Jan 1900 and 1 Jan 1970
+typedef struct _ntp_handler_data {
+    double tz_offset;
+} ntp_handler_data_t;
 
 
 // Public functions...
@@ -67,14 +73,16 @@ void wifi_set_creds(const char* ssid, const char* pw) {
     strncpy(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
 }
 
-err_enum_t network_update_rtc() {
+err_enum_t network_update_rtc(double tz_offset) {
     // Build the NTP request message...
     struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_RAM);
     uint8_t* req = (uint8_t*)p->payload;
     memset(req, 0, NTP_MSG_LEN);
     req[0] = 0x1b; // NTP Request: Version=3 Mode=3 (client)
+    ntp_handler_data_t* handler_data = (ntp_handler_data_t*)malloc(sizeof(ntp_handler_data_t));
+    handler_data->tz_offset = tz_offset;
 
-    err_enum_t status = udp_single_operation(NTP_SERVER, NTP_PORT, p, NTP_TIMEOUT, _ntp_response_handler);
+    err_enum_t status = udp_single_operation(NTP_SERVER, NTP_PORT, p, NTP_TIMEOUT, _ntp_response_handler, (void*)handler_data);
     if (status != ERR_OK && status != ERR_INPROGRESS) {
         // Operation initialization failed. Need to free the PBUF we created...
         pbuf_free(p);
@@ -88,7 +96,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
     if (!wifi_connect()) {
         return ERR_CONN;
     }
-    struct _udp_op_context* op_context = malloc(sizeof(struct _udp_op_context));
+    udp_op_context_t* op_context = malloc(sizeof(udp_op_context_t));
     if (!op_context) {
         error_printf("UDP Single Operation - failed to allocate context\n");
         return ERR_MEM;
@@ -119,13 +127,13 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
     return (status);
 }
 
-err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf* p, uint32_t timeout_ms, udp_sop_result_handler_fn result_handler) {
+err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf* p, uint32_t timeout_ms, udp_sop_result_handler_fn result_handler, void* handler_data) {
     err_enum_t status = ERR_INPROGRESS;
 
     if (!wifi_connect()) {
         return ERR_CONN;
     }
-    struct _udp_op_context* op_context = malloc(sizeof(struct _udp_op_context));
+    udp_op_context_t* op_context = malloc(sizeof(udp_op_context_t));
     if (!op_context) {
         error_printf("UDP Single Operation - failed to allocate context\n");
         return ERR_MEM;
@@ -135,6 +143,7 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
     op_context->timeout_ms = timeout_ms;
     op_context->p = p;
     op_context->op_result_handler = result_handler;
+    op_context->result_handler_data = handler_data;
 
     cyw43_arch_lwip_begin();
     {
@@ -156,12 +165,13 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
 }
 
 // Called with pre-processed results of NTP operation
-static void _ntp_set_datetime(err_enum_t status, time_t* result) {
-    if (status == ERR_OK && result) {
-        struct tm* utc = gmtime(result);
-        debug_printf("NTP response: %02d/%02d/%04d %02d:%02d:%02d\n", utc->tm_mon + 1,
-            utc->tm_mday, utc->tm_year + 1900, utc->tm_hour, utc->tm_min,
-            utc->tm_sec);
+static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, double tz_offset) {
+    if (status == ERR_OK && seconds_from_epoch) {
+        // Adjust by the tz_offset - hours from GMT
+        time_t offset = (time_t)(3600.0 * tz_offset);
+        *seconds_from_epoch += offset;
+        // Get a UTC structure time
+        struct tm* utc = gmtime(seconds_from_epoch);
         // Set the board's time
         datetime_t tm;
         tm.day = utc->tm_mday;
@@ -171,36 +181,41 @@ static void _ntp_set_datetime(err_enum_t status, time_t* result) {
         tm.hour = utc->tm_hour;
         tm.min = utc->tm_min;
         tm.sec = utc->tm_sec;
+        // Adjust for timezone
+
         rtc_set_datetime(&tm);
     }
 }
 
 // NTP data received (udp_incoming_data_handler_fn)
-static void _ntp_response_handler(err_enum_t status, struct pbuf* p) {
+static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handler_data) {
     uint8_t mode = pbuf_get_at(p, 0) & 0x7;
     uint8_t stratum = pbuf_get_at(p, 1);
+    ntp_handler_data_t* ntp_handler_data = (ntp_handler_data_t*)handler_data;
+    double tz_offset = ntp_handler_data->tz_offset;
+    free(ntp_handler_data);
 
     if (status != ERR_OK) {
-        _ntp_set_datetime(status, NULL);
+        _ntp_set_datetime(status, NULL, tz_offset);
     }
     else if (status == ERR_OK && mode == 0x4 && stratum != 0) {
         uint8_t seconds_buf[4] = { 0 };
         pbuf_copy_partial(p, seconds_buf, sizeof(seconds_buf), 40);
         uint32_t seconds_since_1900 = seconds_buf[0] << 24 | seconds_buf[1] << 16 | seconds_buf[2] << 8 | seconds_buf[3];
         uint32_t seconds_since_1970 = seconds_since_1900 - NTP_DELTA;
-        time_t epoch = seconds_since_1970;
-        _ntp_set_datetime(status, &epoch);
+        time_t seconds_from_epoch = seconds_since_1970;
+        _ntp_set_datetime(status, &seconds_from_epoch, tz_offset);
     }
     else {
         error_printf("invalid NTP response\n");
-        _ntp_set_datetime(ERR_VAL, NULL);
+        _ntp_set_datetime(ERR_VAL, NULL, tz_offset);
     }
     pbuf_free(p);
 }
 
 // Called back with a DNS result (dns_found_callback)
 static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg) {
-    struct _udp_op_context* op_context = (struct _udp_op_context*)arg;
+    udp_op_context_t* op_context = (udp_op_context_t*)arg;
     udp_bind_handler_fn bind_handler = op_context->bind_handler;
     err_enum_t status = ERR_OK;
     struct udp_pcb* udp_pcb = NULL;
@@ -247,7 +262,7 @@ static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, v
 
 // Called on timeout of DNS lookup (alarm_callback_t)
 static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state) {
-    struct _udp_op_context* op_context = (struct _udp_op_context*)request_state;
+    udp_op_context_t* op_context = (udp_op_context_t*)request_state;
     udp_bind_handler_fn bind_handler = op_context->bind_handler;
 
     cancel_alarm(id);
@@ -262,10 +277,11 @@ static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state)
 
 // Called back by the DNS lookup from a UDP_SINGLE_OPERATION call.
 static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg) {
-    struct _udp_op_context* op_context = (struct _udp_op_context*)arg;
+    udp_op_context_t* op_context = (udp_op_context_t*)arg;
 
     struct pbuf* p = op_context->p;
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
+    void* handler_data = op_context->result_handler_data;
 
     err_enum_t status = ERR_ABRT;
     if (ipaddr) {
@@ -309,12 +325,12 @@ static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, vo
     free(op_context);
     free(op_context);
     // Call thier handler and give them thier PBUF back. They are set up to free one anyway.
-    op_result_handler(status, p);
+    op_result_handler(status, p, handler_data);
 }
 
 // UDP operation data received for a single operation (udp_recv_fn)
 static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port) {
-    struct _udp_op_context* op_context = (struct _udp_op_context*)arg;
+    udp_op_context_t* op_context = (udp_op_context_t*)arg;
 
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
 
@@ -328,22 +344,23 @@ static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const 
     // Hold on to some stuff and free our contexts
     ip_addr_t raddr = op_context->ipaddr;
     uint16_t rport = op_context->port;
+    void* handler_data = op_context->result_handler_data;
 
     free(op_context);
     udp_remove(pcb);
 
     // Do a sanity check on the response.
     if (ip_addr_cmp(addr, &raddr) && port == rport) {
-        op_result_handler(ERR_OK, p);
+        op_result_handler(ERR_OK, p, handler_data);
     }
     else {
-        op_result_handler(ERR_RTE, p);
+        op_result_handler(ERR_RTE, p, handler_data);
     }
 }
 
 // Called on timeout of a single operation (no message received) (alarm_callback_t)
 static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state) {
-    struct _udp_op_context* op_context = (struct _udp_op_context*)request_state;
+    udp_op_context_t* op_context = (udp_op_context_t*)request_state;
 
     cancel_alarm(id);
     error_printf("UDP - Single operation, timeout waiting for response (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
@@ -351,13 +368,14 @@ static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state) {
     struct pbuf* p = op_context->p;
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
 
+    void* handler_data = op_context->result_handler_data;
     // Free the resources
     udp_remove(op_context->udp_pcb);
     free(op_context);
     free(op_context);
 
     // Call thier handler and give them thier PBUF back. They are set up to free one anyway.
-    op_result_handler(ERR_TIMEOUT, p);
+    op_result_handler(ERR_TIMEOUT, p, handler_data);
 
     return 0; // Don't reschedule this alarm.
 }

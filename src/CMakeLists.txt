@@ -23,8 +23,8 @@ project(MuKOB C CXX ASM)
 
 add_compile_options(
   -Wall
-  -Wno-format                     # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
-  -Wno-unused-function            # we have some for the docs that aren't called
+  -Wno-format                     # int != int32_t as far as the compiler is concerned
+  -Wno-unused-function
   -Wno-maybe-uninitialized
   #-H                              # list include header paths
 )
@@ -32,7 +32,9 @@ add_compile_options(
 # External libraries
 add_subdirectory(lib/sd_card)
 # Local libraries (additional sources)
+add_subdirectory(be)
 add_subdirectory(config)
+add_subdirectory(cmt)
 add_subdirectory(kob)
 add_subdirectory(test)
 add_subdirectory(util)
@@ -65,9 +67,13 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_pio/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
+  ${PICO_SDK_PATH}/src/rp2_common/pico_multicore/include
+  be
   config
+  cmt
   kob
   test
+  ui
   ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
@@ -86,12 +92,15 @@ add_compile_definitions(
 
 # Add the libraries required by the system to the build
 target_link_libraries(MuKOB
+  be
   config
+  cmt
   display
   ili9341_spi
   kob
   mukob_test
   term
+  ui
   util
   wire
   hardware_spi
@@ -100,6 +109,7 @@ target_link_libraries(MuKOB
   hardware_timer
   hardware_clocks
   pico_cyw43_arch_lwip_threadsafe_background
+  pico_multicore
   pico_stdlib
   SD_FatFs
 )

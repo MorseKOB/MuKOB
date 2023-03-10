@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#undef putc     // Undefine so the standard macros will not be used
+#undef putchar  // Undefine so the standard macros will not be used
+
+
 #include "pico/stdlib.h"
 
 // SPI

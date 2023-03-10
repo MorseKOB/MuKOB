@@ -6,7 +6,6 @@
  *
  */
 #include <stddef.h>
-//#include <stdio.h>
 
 #include "mkwire.h"
 #include "net.h"

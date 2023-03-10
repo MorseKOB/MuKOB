@@ -62,7 +62,7 @@ int spi_display_write(const uint8_t* data, size_t len) {
 }
 
 int spi_display_write16(const uint16_t* data, size_t len) {
-    return (spi_write16(SPI_DISPLAY_DEVICE, data, len));
+    return (spi_write16(SPI_DISPLAY_DEVICE, data, len)); // ZZZ!!! TODO: Use DMA
 }
 
 void spi_tsd_begin() {

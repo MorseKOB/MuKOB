@@ -8,8 +8,8 @@
 #include "util.h"
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include "pico/stdio.h"
 #include "pico/stdlib.h"
 
 static const uint8_t DAYS_IN_MONTH[] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
@@ -45,6 +45,7 @@ typedef enum _STRDATETIME_BIT_ {
     SDTC_TIME_AMPM_BIT          = 0x0004,
     SDTC_TIME_2DIGITS_BIT       = 0x0100,
     SDTC_TIME_24HOUR_BIT        = 0x0200,
+    SDTC_TIME_2CHAR_HOUR_BIT    = 0x8000,
     SDTC_TIME_BEFORE_DATE_BIT   = 0x4000,
     SDTC_DATE_BIT               = 0x0008,
     SDTC_DATE_SLASH_BIT         = 0x0010,
@@ -140,21 +141,23 @@ void strdatetime(char* buf, uint bufsize, datetime_t* dt, strdatetime_ctrl_t ctr
     bool time_ampm = ((ctrl & SDTC_TIME_AMPM_BIT) && !(ctrl & SDTC_TIME_24HOUR_BIT)); // AM/PM takes priority
     bool time_12_hr = (time_ampm || !(ctrl & SDTC_TIME_24HOUR_BIT));
     int8_t hr = (time_12_hr && dt->hour > 12 ? dt->hour - 12 : dt->hour);
-
+    if (time_12_hr && 0 == hr) {
+        hr = 12;
+    }
     // Start out with empty date and time strings
     memset(time_str, '\000', sizeof(time_str));
     memset(date_str, '\000', sizeof(date_str));
 
     // Format the time
     if (ctrl & SDTC_TIME_BIT) {
-        char* fmt = (ctrl & SDTC_TIME_2DIGITS_BIT ? "%02hd:%02hd" : "%hd:%02hd");
+        char* fmt = (ctrl & SDTC_TIME_2DIGITS_BIT ? "%02hd:%02hd" : (ctrl & SDTC_TIME_2CHAR_HOUR_BIT ? "%2hd:%02hd" : "%hd:%02hd"));
         time_len = snprintf(time_str, sizeof(time_str), fmt, hr, dt->min);
         if (ctrl & SDTC_TIME_SECONDS_BIT) {
             time_len += snprintf(time_str + time_len, sizeof(time_str) - time_len, ":%02hd", dt->sec);
         }
         if (time_ampm) {
-            char* ampm = (dt->hour > 12 ? "PM" : "AM");
-            snprintf(time_str + time_len, sizeof(time_str) - time_len, "%s", ampm);
+            char* ampm = (dt->hour > 12 || dt->hour == 0 ? "PM" : "AM");
+            snprintf(time_str + time_len, sizeof(time_str) - time_len, " %s", ampm);
         }
     }
     // Format the date
@@ -224,42 +227,4 @@ void strtoupper(char* dest, const char* str) {
         *dest++ = toupper(*str++);
         *dest = '\000';
     }
-}
-
-void tm_from_datetime(struct tm* tm, datetime_t* dt) {
-    // For reference...
-    //
-    // From <time.h>
-    // struct tm {
-    //     int	tm_sec;
-    //     int	tm_min;
-    //     int	tm_hour;
-    //     int	tm_mday;
-    //     int	tm_mon;
-    //     int	tm_year;
-    //     int	tm_wday;
-    //     int	tm_yday;
-    //     int	tm_isdst;
-    // };
-    //
-    // From "pico/types.h"
-    // typedef struct {
-    //     int16_t year;    ///< 0..4095
-    //     int8_t month;    ///< 1..12, 1 is January
-    //     int8_t day;      ///< 1..28,29,30,31 depending on month
-    //     int8_t dotw;     ///< 0..6, 0 is Sunday
-    //     int8_t hour;     ///< 0..23
-    //     int8_t min;      ///< 0..59
-    //     int8_t sec;      ///< 0..59
-    // } datetime_t;
-    tm->tm_year = dt->year;
-    tm->tm_mon = dt->month;
-    tm->tm_mday = dt->day;
-    tm->tm_hour = dt->hour;
-    tm->tm_min = dt->min;
-    tm->tm_sec = dt->sec;
-    tm->tm_wday = dt->dotw;
-    // Calculate the day of the year
-    tm->tm_yday = day_of_year(dt->day, dt->month, dt->year);
-    // TODO: Get DST
 }

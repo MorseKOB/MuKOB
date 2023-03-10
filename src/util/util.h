@@ -13,7 +13,6 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <time.h>
 #include "pico/types.h"
 
 typedef enum _STRDATETIME_CTRL_ {
@@ -22,11 +21,12 @@ typedef enum _STRDATETIME_CTRL_ {
     SDTC_TIME_AMPM          = 0x0005, // add 'AM/PM' indicator (implies time)
     SDTC_TIME_2DIGITS       = 0x0101, // 2 digit time numbers (implies time)
     SDTC_TIME_24HOUR        = 0x0201, // 24 hour format (implies time)
+    SDTC_TIME_2CHAR_HOUR    = 0x8001, // Use a leading space for hours 1-9 (implies time)
     SDTC_TIME_BEFORE_DATE   = 0x4009, // put time before date (implies date and time)
     SDTC_DATE               = 0x0008,
     SDTC_DATE_SLASH         = 0x0018, // use '/' rather than '-' (implies date)
     SDTC_DATE_2DIGITS       = 0x0408, // 2 digit month/day numbers (implies date)
-    SDTC_DATE_ORDER_DM      = 0x0408, // use day/month rather than month/day
+    SDTC_DATE_ORDER_DM      = 0x0808, // use day/month rather than month/day
     SDTC_DATE_SHORT_DM      = 0x2088, // use short day and month names (implies long text date)
     SDTC_LONG_TXT           = 0x0088, // date sentence (implies date)
     SDTC_LONG_TXT_AT        = 0x00C9, // date 'at' time (implies long text date and time)
@@ -131,20 +131,6 @@ extern char* strskipws(char* str);
  * @param str The string to uppercase.
  */
 extern void strtoupper(char* dest, const char* str);
-
-/**
- * @brief Convert a Pico RTC `datetime_t` into a 'standard' (time.h) tm structure.
- * @ingroup util
- *
- * This allows using 'standard time' functions on a date-time obtained from the Pico RTC.
- *
- * @see rtc_get_datetime(datetime_t*) From the Pico SDK
- * @see time.h From the standard C libraries
- *
- * @param tm A pointer to a `tm` structure to be filled in.
- * @param dt A pointer to a datetime_t (structure) to get the values from.
- */
-extern void tm_from_datetime(struct tm* tm, datetime_t* dt);
 
 #ifdef __cplusplus
     }

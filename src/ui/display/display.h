@@ -63,10 +63,18 @@ typedef enum Paint_Control_ {
  * @brief Screen line & column position.
  * @ingroup display
  */
-typedef struct Scr_position_ {
+typedef struct _scr_position_ {
     uint16_t line;
     uint16_t column;
 } scr_position_t;
+
+/**
+ * @brief Text foreground and background color pair.
+ */
+typedef struct _text_color_pair_ {
+    colorn16_t fg;
+    colorn16_t bg;
+} text_color_pair_t;
 
 /**
  * @brief Create 'color-byte number' from forground & background color numbers.
@@ -122,7 +130,7 @@ void cursor_home(void);
  *
  * The cursor is used for `print...` operations whether or not the cursor is
  * shown.
- * 
+ *
  * @param show True to show the cursor, false to hide it.
  */
 void cursor_show(bool show);
@@ -220,6 +228,13 @@ void disp_char_colorbyte(uint16_t line, uint16_t col, char c, colorbyte_t color,
 void disp_font_test(void);
 
 /**
+ * @brief Get the current text colors.
+ * 
+ * @return text_color_pair_t The current foreground and background colors.
+ */
+void disp_get_text_colors(text_color_pair_t* cp);
+
+/**
  * @brief Display info - number of text columns
  *
  * Columns are numbered 0 through number of columns minus 1.
@@ -307,12 +322,23 @@ void disp_paint(void);
  * @ingroup display
  *
  * Sets the colors to be used by default when placing text. The colors are from the
- * 16 color (VGA) set.
+ * 16 color number (VGA) set.
  *
  * @param fg Color number (0-15) for the forground
  * @param bg Color number (0-15) for the background
 */
 void disp_set_text_colors(colorn16_t fg, colorn16_t bg);
+
+/**
+ * @brief Set the text forground and background colors to be used for placed text.
+ * @ingroup display
+ *
+ * Sets the colors to be used by default when placing text. The colors are from the
+ * 16 color number (VGA) set.
+ *
+ * @param cp Pointer to a text color pair to use to set the colors.
+ */
+void disp_set_text_colors_cp(text_color_pair_t* cp);
 
 /**
  * @brief Display a string
@@ -327,6 +353,21 @@ void disp_set_text_colors(colorn16_t fg, colorn16_t bg);
  * @param paint True to paint the screen after the operation
  */
 void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint);
+
+/**
+ * @brief Display a string with a given forground and background color
+ * @ingroup display
+ *
+ * Display a string of ASCII characters (plus some special characters)
+ *
+ * @param line Line number, with 0 being the top line
+ * @param col Column number, with 0 being the leftmost column
+ * @param pString Pointer to the first character of a null-terminated string
+ * @param fg Forground color number (0-15)
+ * @param bg Background color number (0-15)
+ * @param paint True to paint the screen after the operation
+ */
+void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn16_t fg, colorn16_t bg, paint_control_t paint);
 
 /**
  * @brief Update the display (graphics) buffer from the text line data. Optionally paint the screen
