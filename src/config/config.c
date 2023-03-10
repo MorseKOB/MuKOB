@@ -23,7 +23,7 @@ typedef struct _CFG_W_MARKER {
     config_t config;
 } _cfg_w_marker_t;
 
-const char* _sys_cfg_filename = ".mukob.sys.cfg";
+const char* _sys_cfg_filename = "mukob.sys.cfg";
 char* _cfg_filename = NULL;
 
 static config_sys_t _system_cfg = { 1, false, 0.0, NULL, NULL, NULL };
