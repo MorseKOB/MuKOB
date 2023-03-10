@@ -23,6 +23,8 @@
 #define UI_DISP_HEADER_GAP_LINE 1
 #define UI_DISP_HEADER_WIRE_LABEL_COL 2
 #define UI_DISP_HEADER_SPEED_LABEL_COL 8
+#define UI_DISP_HEADER_SETUP_COL 20
+#define UI_DISP_HEADER_MENU_COL 22
 
 // Current sender line (at the top)
 #define UI_DISP_SENDER_COLOR_FG C16_LT_BLUE
@@ -46,9 +48,11 @@ static void _header_fill_fixed() {
     // Fixed text
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIRE_LABEL_COL, "W:", false, No_Paint);
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_LABEL_COL, "S:", false, No_Paint);
-    // Put the colors back and paint
-    disp_set_text_colors_cp(&cp);
+    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SETUP_COL, "\012\013", false, No_Paint);
+    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_MENU_COL, "\014\015", false, No_Paint);
+    // Paint and put the colors back
     disp_paint();
+    disp_set_text_colors_cp(&cp);
 }
 
 static void _status_fill_fixed() {
@@ -60,8 +64,9 @@ static void _status_fill_fixed() {
     disp_char(UI_DISP_STATUS_LINE, 0, '\000', No_Paint); // Mu
     disp_string(UI_DISP_STATUS_LINE, 1, "KOB", false, No_Paint);
     disp_char(UI_DISP_STATUS_LINE, UI_DISP_STATUS_LOGO_COL, '\177', No_Paint);
-    disp_set_text_colors_cp(&cp);
+    // Paint and put the colors back
     disp_paint();
+    disp_set_text_colors_cp(&cp);
 }
 
 void ui_build_disp(void) {
