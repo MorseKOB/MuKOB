@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 #include "system_defs.h"
-#include "mukboard.h"
+#include "mkboard.h"
 
 #include "font_9_10_h.h"
 #include "display_oled1306.h"
 #include "oled1306_i2c.h"
-#include <stdio.h>
 #include <string.h>
+#include "pico/stdio.h"
 
 /*! @brief Memory display_full_area for a screen of text (characters) */
 char o1306_full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
@@ -44,9 +44,9 @@ void disp_clear(bool paint) {
  * The font characters are 9x10 allowing for 6 lines of 14 characters
  * on the 128x64 dot display.
  *
- * \param row 0-5
- * \param col 0-13
- * \param c character to display
+ * @param row 0-5
+ * @param col 0-13
+ * @param c character to display
  * 
  * Using a 10 pixel high font on an 64 pixel high screen with 8 pixel high pages,
  * gives us a memory row layout as follows:
@@ -238,11 +238,11 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
  *
  * Display a string of ASCII characters (plus some special characters)
  * 
- * \param row 1-6 With 1 being the top (status) line
- * \param col 1-14 Starting column
- * \param pString Pointer to the first character of a null-terminated string
- * \param invert True to invert the characters
- * \param paint True to paint the screen after the operation
+ * @param row 1-6 With 1 being the top (status) line
+ * @param col 1-14 Starting column
+ * @param pString Pointer to the first character of a null-terminated string
+ * @param invert True to invert the characters
+ * @param paint True to paint the screen after the operation
  */
 void disp_string(unsigned short int row, unsigned short int col, const char *pString, bool invert, bool paint) {
     if (row >= DISP_CHAR_LINES || col >= DISP_CHAR_COLS) {

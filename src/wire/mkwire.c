@@ -6,11 +6,10 @@
  *
  */
 #include <stddef.h>
-//#include <stdio.h>
 
 #include "mkwire.h"
 #include "net.h"
-#include "mukboard.h"
+#include "mkboard.h"
 
 /*
  * *** Message format To/From MorseKOB Server ***

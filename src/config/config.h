@@ -14,12 +14,21 @@
 #include <stdint.h>
 #include "pico/types.h"
 
+#define CONFIG_VERSION 1
 typedef struct _config_ {
     uint16_t cfg_version;
     //
+} config_t;
+
+typedef struct _sys_config_ {
+    uint16_t cfg_version;
+    bool is_set;
+    //
+    double tz_offset;
+    char* user_cfg_filename;
     char* wifi_password;
     char* wifi_ssid;
-} config_t;
+} config_sys_t;
 
 /**
  * @brief Get the current configuration.
@@ -54,6 +63,21 @@ extern int config_init(void);
  * @return config_t* A newly allocated config_t structure. Must be free'ed with `config_free()`.
  */
 extern config_t* config_new(config_t* init_values);
+
+/**
+ * @brief Get the system configuration.
+ *
+ * @return const config_sys_t* The system configuration.
+ */
+extern const config_sys_t* config_sys();
+
+/**
+ * @brief Indicates if the system config was read and set
+ *
+ * @return true System config is available.
+ * @return false System config could not be read and isn't valid.
+ */
+extern bool config_sys_set();
 
 /**
  * @brief Allocate memory for a string value and copy the string value into it.

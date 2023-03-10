@@ -16,7 +16,7 @@
 #include "config.h"
 #include "display.h"
 #include "ili9341_spi.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "term.h"
 #include "util.h"
 #include "hardware/rtc.h"
@@ -46,8 +46,6 @@ int test_config_new_free(){
         return (errors);
     }
     cfg->cfg_version = 9876;
-    cfg->wifi_password = config_value_create("abracadabra");
-    cfg->wifi_ssid = config_value_create("Houdini");
     // Create a copy
     config_t* cfg_copy = config_new(cfg);
     if (NULL == cfg_copy) {
@@ -59,14 +57,6 @@ int test_config_new_free(){
     if (cfg_copy->cfg_version != cfg->cfg_version) {
         errors++;
         error_printf("Test - Config: config copy cfg_version not correct.\n");
-    }
-    if (strcmp(cfg_copy->wifi_password, cfg->wifi_password) != 0) {
-        errors++;
-        error_printf("Test - Config: config copy wifi_password not correct.\n");
-    }
-    if (strcmp(cfg_copy->wifi_ssid, cfg->wifi_ssid) != 0) {
-        errors++;
-        error_printf("Test - Config: config copy wifi_ssid not correct.\n");
     }
     struct _TEST_CFG_W_MARKER* cfgwm = (struct _TEST_CFG_W_MARKER*)((uint8_t*)cfg - (sizeof(struct _TEST_CFG_W_MARKER) - sizeof(config_t)));
     if (cfgwm->marker != _TEST_CFG_MEM_MARKER_) {

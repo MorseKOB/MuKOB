@@ -5,7 +5,7 @@
  */
 #include <stdlib.h>
 #include "system_defs.h"
-#include "mukboard.h"
+#include "mkboard.h"
 #include "display_ili9341.h"
 #include "display_i.h"
 #include "font.h"
@@ -342,6 +342,11 @@ void disp_font_test(void) {
     }
 }
 
+void disp_get_text_colors(text_color_pair_t* cp) {
+    cp->fg = _scr_ctx->color_fg_default;
+    cp->bg = _scr_ctx->color_bg_default;
+}
+
 uint16_t disp_info_columns() {
     return (_scr_ctx->cols);
 }
@@ -451,6 +456,12 @@ void disp_set_text_colors(colorn16_t fg, colorn16_t bg) {
     _scr_ctx->color_bg_default = bg & 0x0f;
 }
 
+void disp_set_text_colors_cp(text_color_pair_t* cp) {
+    // force them to 0-15
+    _scr_ctx->color_fg_default = cp->fg & 0x0f;
+    _scr_ctx->color_bg_default = cp->bg & 0x0f;
+}
+
 void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint) {
     if (line >= _scr_ctx->lines || col >= _scr_ctx->cols) {
         return;  // Invalid line or column
@@ -472,6 +483,27 @@ void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, 
     if (paint) {
         disp_paint();
     }
+}
+
+void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn16_t fg, colorn16_t bg, paint_control_t paint){
+    if (line >= _scr_ctx->lines || col >= _scr_ctx->cols) {
+        return;  // Invalid line or column
+    }
+    for (unsigned char c = *pString; c != 0; c = *(++pString)) {
+        disp_char_color(line, col, c, fg, bg, false);
+        col++;
+        if (col == _scr_ctx->cols) {
+            col = 0;
+            line++;
+            if (line == _scr_ctx->lines) {
+                line = 0;
+            }
+        }
+    }
+    if (paint) {
+        disp_paint();
+    }
+
 }
 
 void disp_update(paint_control_t paint) {

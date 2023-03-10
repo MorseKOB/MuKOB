@@ -115,10 +115,10 @@ typedef enum _VT_TERM_ID_SPECIFIER_ {
 
 /**
  * @brief Function prototype for UDP Bind response handler.
- * \ingroup wire
+ * @ingroup wire
  *
- * \param status The statuc from the operation.
- * \param udp_pcb The udp_pcb that was bound, or NULL if an error occurred.
+ * @param status The statuc from the operation.
+ * @param udp_pcb The udp_pcb that was bound, or NULL if an error occurred.
  */
 typedef void (*term_notify_on_input_fn)(void);
 

@@ -35,14 +35,14 @@ int board_init(void);
 /**
  * @brief Beep the Buzzer on/off
  *
- * \param ms Milliseconds to turn the buzzer on.
+ * @param ms Milliseconds to turn the buzzer on.
 */
 void buzzer_beep(int ms);
 
 /**
  * @brief Turn the buzzer on/off
  *
- * \param on True to turn buzzer on, False to turn it off.
+ * @param on True to turn buzzer on, False to turn it off.
 */
 void buzzer_on(bool on);
 
@@ -51,7 +51,7 @@ void buzzer_on(bool on);
  *
  * This beeps the buzzer for times specified by the `pattern` in milliseconds.
  *
- * \param pattern Array of millisend values to beep the buzzer on, off, on, etc.
+ * @param pattern Array of millisend values to beep the buzzer on, off, on, etc.
  *      The last element of the array must be 0.
 */
 void buzzer_on_off(int pattern[]);
@@ -73,14 +73,14 @@ void display_reset_on(bool on);
 /**
  * @brief Flash the LED on/off
  *
- * \param ms Milliseconds to turn the LED on.
+ * @param ms Milliseconds to turn the LED on.
 */
 void led_flash(int ms);
 
 /**
  * @brief Turn the LED on/off
  *
- * \param on True to turn LED on, False to turn it off.
+ * @param on True to turn LED on, False to turn it off.
 */
 void led_on(bool on);
 
@@ -89,7 +89,7 @@ void led_on(bool on);
  *
  * This flashes the LED for times specified by the `pattern` in milliseconds.
  *
- * \param pattern Array of millisend values to turn the LED on, off, on, etc.
+ * @param pattern Array of millisend values to turn the LED on, off, on, etc.
  *      The last element of the array must be 0.
 */
 void led_on_off(int32_t pattern[]);
@@ -99,7 +99,7 @@ void led_on_off(int32_t pattern[]);
  *
  * This flashes the LED for times specified by the `pattern` in milliseconds.
  *
- * \param pattern Array of millisend values to turn the LED on, off, on, etc.
+ * @param pattern Array of millisend values to turn the LED on, off, on, etc.
  *      The last element of the array must be 0. Negative values are off time, positive values are on time.
 */
 void led_blink_mcode(int32_t *code, uint32_t len);
@@ -126,12 +126,11 @@ uint8_t options_read(void);
  * Use options_read() to actually read the switch and
  * cache the value (requiring a GPIO read)
  *
- * \param See option_t for values
+ * @param See option_t for values
  *
 */
 bool option_value(uint opt);
 
-void format_current_datetime(char* buf, size_t len);
 
 void debug_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 void error_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));

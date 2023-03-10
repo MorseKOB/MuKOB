@@ -38,10 +38,10 @@ void disp_clear(bool paint);
  * Display an ASCII character (plus some special characters).
  * If the top bit is set (c>127) the character is inverse (black on white background).
  *
- * \param row 0-5 With 0 being the top line
- * \param col 0-13 Starting column
- * \param c character to display
- * \param paint Set true to paint the actual display. Otherwise, only buffers will be updated.
+ * @param row 0-5 With 0 being the top line
+ * @param col 0-13 Starting column
+ * @param c character to display
+ * @param paint Set true to paint the actual display. Otherwise, only buffers will be updated.
  */
 void disp_char(unsigned short int row, unsigned short int col, const char c, bool paint);
 
@@ -106,11 +106,11 @@ void disp_rows_scroll_up(unsigned short int row_t, unsigned short int row_b, boo
  *
  * Display a string of ASCII characters (plus some special characters)
  *
- * \param row 1-6 With 1 being the top (status) line
- * \param col 1-14 Starting column
- * \param pString Pointer to the first character of a null-terminated string
- * \param invert True to invert the characters
- * \param paint True to paint the screen after the operation
+ * @param row 1-6 With 1 being the top (status) line
+ * @param col 1-14 Starting column
+ * @param pString Pointer to the first character of a null-terminated string
+ * @param invert True to invert the characters
+ * @param paint True to paint the screen after the operation
  */
 void disp_string(unsigned short int row, unsigned short int col, const char *pString, bool invert, bool paint);
 
