@@ -14,10 +14,34 @@
 #include <stdint.h>
 #include "pico/types.h"
 
+typedef enum _code_type_ {
+    CODE_TYPE_AMERICAN = 1,
+    CODE_TYPE_INTERNATIONAL = 2,
+} code_type_t;
+
+typedef enum _code_spacing_ {
+    CODE_SPACING_NONE = 0,
+    CODE_SPACING_CHAR = 1,
+    CODE_SPACING_WORD = 2,
+} code_spacing_t;
+
 #define CONFIG_VERSION 1
 typedef struct _config_ {
     uint16_t cfg_version;
     //
+    bool auto_connect;
+    code_type_t code_type;
+    bool key_has_closer;
+    bool local;
+    uint8_t char_speed_min;
+    bool remote;
+    char* server_url; // server:port
+    bool sound;
+    bool sounder;
+    code_spacing_t spacing;
+    char* station;
+    uint8_t text_speed;
+    uint16_t wire;
 } config_t;
 
 typedef struct _sys_config_ {

@@ -17,14 +17,28 @@
 #include "net.h"
 #include "util.h"
 
-#define _CFG_MEM_MARKER_ 3224
+#define _CFG_MEM_MARKER_ 3224 // *Magic* & *Air*
+
+/**
+ * @brief Holds the 'magic' marker and a config structure to safegaurd free'ing.
+ *
+ * A config object holds values that are also malloc'ed, and therefore
+ * need to be free'ed when the config object is free'ed. To safeguard
+ * against a client simply free'ing the config object this structure is malloc'ed
+ * and initialized, and then the contained config object is made available to clients.
+ * This prevents clients from accedentally free'ing the config object
+ * (using `free(config*)`), as it will cause a fault. Rather, the `config_free()`
+ * method must be used. It correctly free's the additional malloc'ed objects as well
+ * as the main object.
+ */
 typedef struct _CFG_W_MARKER {
     uint16_t marker;
     config_t config;
 } _cfg_w_marker_t;
 
+
 const char* _sys_cfg_filename = "mukob.sys.cfg";
-char* _cfg_filename = NULL;
+char* _current_cfg_filename = NULL;
 
 static config_sys_t _system_cfg = { 1, false, 0.0, NULL, NULL, NULL };
 static config_t* _current_cfg;
@@ -201,10 +215,10 @@ int config_init(void) {
                 _process_cfg_line(config, buf);
             }
             // Save the filename we used
-            if (_cfg_filename) {
-                free(_cfg_filename);
+            if (_current_cfg_filename) {
+                free(_current_cfg_filename);
             }
-            _cfg_filename = config_value_create(_system_cfg.user_cfg_filename);
+            _current_cfg_filename = config_value_create(_system_cfg.user_cfg_filename);
             // Close file
             fr = f_close(&fil);
             if (fr != FR_OK) {
