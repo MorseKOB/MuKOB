@@ -24,6 +24,7 @@
 
 #define NET_SSID_MAX_LEN 32
 #define NET_PASSWORD_MAX_LEN 128
+#define NET_URL_MAX_LEN 2048
 
 /**
  * @brief Function prototype for UDP Bind response handler.

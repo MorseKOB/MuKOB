@@ -14,10 +14,34 @@
 #include <stdint.h>
 #include "pico/types.h"
 
+typedef enum _code_type_ {
+    CODE_TYPE_AMERICAN = 0,
+    CODE_TYPE_INTERNATIONAL = 1,
+} code_type_t;
+
+typedef enum _code_spacing_ {
+    CODE_SPACING_NONE = 0,
+    CODE_SPACING_CHAR = 1,
+    CODE_SPACING_WORD = 2,
+} code_spacing_t;
+
 #define CONFIG_VERSION 1
 typedef struct _config_ {
     uint16_t cfg_version;
     //
+    bool auto_connect;
+    code_type_t code_type;
+    bool key_has_closer;
+    bool local;
+    uint8_t char_speed_min;
+    bool remote;
+    char* server_url; // server:port
+    bool sound;
+    bool sounder;
+    code_spacing_t spacing;
+    char* station;
+    uint8_t text_speed;
+    uint16_t wire;
 } config_t;
 
 typedef struct _sys_config_ {
@@ -66,6 +90,7 @@ extern config_t* config_new(config_t* init_values);
 
 /**
  * @brief Get the system configuration.
+ * @ingroup config
  *
  * @return const config_sys_t* The system configuration.
  */
@@ -73,19 +98,21 @@ extern const config_sys_t* config_sys();
 
 /**
  * @brief Indicates if the system config was read and set
+ * @ingroup config
  *
  * @return true System config is available.
  * @return false System config could not be read and isn't valid.
  */
-extern bool config_sys_set();
+extern bool config_sys_is_set();
 
 /**
  * @brief Allocate memory for a string value and copy the string value into it.
+ * @ingroup config
  *
  * @param value The value to allocate for and copy.
  * @return char* The new copy.
  */
-extern char* config_value_create(char* value);
+extern char* config_value_create(const char* value);
 
 #ifdef __cplusplus
 }
