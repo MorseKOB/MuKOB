@@ -11,6 +11,26 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Build (or rebuild) the UI on the terminal.
+ * @ingroup ui
+ */
+extern void ui_term_build(void);
+
+/**
+ * @brief Update the sender station ID in the top of the terminal.
+ * @ingroup ui
+ *
+ * @param id The station ID of the sender. A NULL will clear the sender line.
+ */
+extern void ui_term_sender_update(const char* id);
+
+/**
+ * @brief Update the status bar.
+ */
+extern void ui_term_status_update();
+
+
 #ifdef __cplusplus
     }
 #endif

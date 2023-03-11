@@ -13,6 +13,7 @@
 #include "display.h"
 #include "util.h"
 #include "ui_disp.h"
+#include "ui_term.h"
 
 #include "hardware/rtc.h"
 
@@ -70,6 +71,7 @@ void _handle_send_ui_status(cmt_msg_t* msg) {
     _msg_ui_send_status.id = MSG_SEND_UI_STATUS;
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
     ui_disp_status_update();
+    ui_term_status_update();
 }
 
 void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
@@ -79,7 +81,8 @@ void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
 }
 
 void ui_init() {
-    ui_build_disp();
+    ui_disp_build();
+    ui_term_build();
     // Set up to send status to BE every 800 ms
     _msg_ui_send_status.id = MSG_SEND_UI_STATUS;
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
