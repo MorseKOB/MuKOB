@@ -15,8 +15,8 @@
 #include "pico/types.h"
 
 typedef enum _code_type_ {
-    CODE_TYPE_AMERICAN = 1,
-    CODE_TYPE_INTERNATIONAL = 2,
+    CODE_TYPE_AMERICAN = 0,
+    CODE_TYPE_INTERNATIONAL = 1,
 } code_type_t;
 
 typedef enum _code_spacing_ {
@@ -90,6 +90,7 @@ extern config_t* config_new(config_t* init_values);
 
 /**
  * @brief Get the system configuration.
+ * @ingroup config
  *
  * @return const config_sys_t* The system configuration.
  */
@@ -97,19 +98,21 @@ extern const config_sys_t* config_sys();
 
 /**
  * @brief Indicates if the system config was read and set
+ * @ingroup config
  *
  * @return true System config is available.
  * @return false System config could not be read and isn't valid.
  */
-extern bool config_sys_set();
+extern bool config_sys_is_set();
 
 /**
  * @brief Allocate memory for a string value and copy the string value into it.
+ * @ingroup config
  *
  * @param value The value to allocate for and copy.
  * @return char* The new copy.
  */
-extern char* config_value_create(char* value);
+extern char* config_value_create(const char* value);
 
 #ifdef __cplusplus
 }

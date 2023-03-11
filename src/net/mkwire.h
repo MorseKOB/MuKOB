@@ -15,6 +15,7 @@ extern "C" {
 
 #define MKOBSERVER_DEFAULT "mtc-kob.dyndns.org"
 #define MKOBSERVER_PORT_DEFAULT 7890
+#define MKOBSERVER_STATION_ID_MAX_LEN 127
 
 /*!
  * @brief Connect to a MorseKOB Wire.
@@ -42,7 +43,7 @@ void mkwire_init(char *mkobs_url, unsigned short port, char *office_id);
 /*!
  * @brief Connected to KOB Server status.
  * @ingroup wire
- * 
+ *
  * @returns True if currently connected to a KOB Server wire.
  */
 bool mkwire_is_connected();

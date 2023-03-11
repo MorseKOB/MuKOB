@@ -35,6 +35,14 @@ typedef enum _STRDATETIME_CTRL_ {
 } strdatetime_ctrl_t;
 
 /**
+ * @brief Return precisely 0 or 1 from a zero / non-zero value.
+ *
+ * @param b An int/bool value to be converted
+ * @return uint8_t 0 for 0, 1 for non-zero.
+ */
+extern uint8_t binary_from_bool(int b);
+
+/**
  * @brief Get a bool (true/false) value from a string.
  * @ingroup util
  *

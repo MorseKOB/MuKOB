@@ -36,9 +36,9 @@ add_subdirectory(be)
 add_subdirectory(config)
 add_subdirectory(cmt)
 add_subdirectory(kob)
+add_subdirectory(net)
 add_subdirectory(test)
 add_subdirectory(util)
-add_subdirectory(wire)
 add_subdirectory(ui)
 
 # Add executable.
@@ -72,6 +72,7 @@ include_directories(
   config
   cmt
   kob
+  net
   test
   ui
   ui/display
@@ -79,7 +80,6 @@ include_directories(
   ui/rotory_encoder
   ui/term
   util
-  wire
   lib/sd_card/sd_driver
   lib/sd_card/ff15/source
 )
@@ -98,11 +98,11 @@ target_link_libraries(MuKOB
   display
   ili9341_spi
   kob
+  net
   mukob_test
   term
   ui
   util
-  wire
   hardware_spi
   hardware_i2c
   hardware_pio
