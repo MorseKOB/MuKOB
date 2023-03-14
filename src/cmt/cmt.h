@@ -27,6 +27,7 @@ typedef enum _MSG_ID_ {
     MSG_SEND_BE_STATUS,
     //
     MSG_UI_NOOP = 0x8000,       // UI messages
+    MSG_CMD_KEY_PRESSED,
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
 } msg_id_t;
@@ -66,7 +67,7 @@ typedef struct _CMT_MSG {
 
 #include "multicore.h"
 
-// Define functional names for the 'Core' message queue functions (Camel-case to help identify).
+// Define functional names for the 'Core' message queue functions (Camel-case to help flag as aliases).
 #define getBEMsgBlocking( pmsg )        get_core1_msg_blocking( pmsg )
 #define getBEMsgNoWait( pmsg )          get_core1_msg_nowait( pmsg )
 #define getUIMsgBlocking( pmsg )        get_core0_msg_blocking( pmsg )

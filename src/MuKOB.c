@@ -56,7 +56,7 @@ int main()
 
 
     // We never expect to end
-    while (1) {
+    do {
         if (option_value(OPTION_DEBUG)) {
             buzzer_beep(250);
         }
@@ -73,7 +73,7 @@ int main()
 
         // Enter into the (endless) Backend Message Dispatching Loop
         enter_message_loop(&be_msg_loop_cntx);
-    }
+    } while (1);
 
     // How did we get here?!
     error_printf("MuKOB - Somehow we are out of our endless loop!!!");

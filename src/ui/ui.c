@@ -9,6 +9,7 @@
 */
 
 #include "ui.h"
+#include "cmd.h"
 #include "cmt.h"
 #include "display.h"
 #include "util.h"
@@ -36,10 +37,12 @@ ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
 
 msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_send_ui_status };
 msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
+msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_build_line };
 
 msg_handler_entry_t* _handler_entries[] = {
     &_send_status_handler_entry,
     &_wifi_status_handler_entry,
+    &_cmd_key_pressed_handler_entry,
     ((msg_handler_entry_t*)0), // Last entry must be a NULL
 };
 
@@ -83,6 +86,7 @@ void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
 void ui_init() {
     ui_disp_build();
     ui_term_build();
+    cmd_init();
     // Set up to send status to BE every 800 ms
     _msg_ui_send_status.id = MSG_SEND_UI_STATUS;
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
