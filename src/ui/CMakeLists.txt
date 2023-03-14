@@ -7,6 +7,7 @@ target_sources(ui INTERFACE
     ui_term.c
 )
 
+add_subdirectory(cmd)
 add_subdirectory(display)
 add_subdirectory(rotory_encoder)
 add_subdirectory(term)

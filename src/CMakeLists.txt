@@ -75,6 +75,7 @@ include_directories(
   net
   test
   ui
+  ui/cmd
   ui/display
   ui/display/ili9341_spi
   ui/rotory_encoder
@@ -94,6 +95,7 @@ add_compile_definitions(
 target_link_libraries(MuKOB
   be
   config
+  cmd
   cmt
   display
   ili9341_spi

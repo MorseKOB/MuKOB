@@ -15,7 +15,7 @@ extern "C" {
  * @brief Build (or rebuild) the UI on the display.
  * @ingroup ui
  */
-extern void ui_build_disp(void);
+extern void ui_disp_build(void);
 
 /**
  * @brief Update the sender station ID in the top of the display.
