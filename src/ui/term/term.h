@@ -1,6 +1,6 @@
 /**
  * @brief Terminal functionality.
- * @ingroup display
+ * @ingroup term
  *
  * This provides a very (very, very) simple NCURSES-like functionality.
  * It is hard-coded to expect an ANSI capable terminal. It is tested primarily
@@ -26,13 +26,24 @@ extern "C" {
 
 #include "display.h"
 
+/**
+ * @brief Function prototype for the notify on input handler.
+ * @ingroup wire
+ *
+ */
+typedef void (*term_notify_on_input_fn)(void);
+
+
 // Define to debug terminal control sequences
 //#define _TERM_CONTROL_DEBUG_
 
 #ifndef _TERM_CONTROL_DEBUG_
 #define BS      '\010'  // Backspace
+#define BEL     '\007'  // Bell/Alert
+#define CBOL    '\r'    // Carrage Return
 #define CSI     "\e["   // Control Sequence Introducer
 #define DCS     "\eP"   // Device Control String
+#define DEL     '\177'  // Delete
 #define ENQ     '\005'  // ^E (ENQ)
 #define ESC     '\e'    // Escape
 #define IND     "\eD"   // Index
@@ -42,22 +53,26 @@ extern "C" {
 #define ST      "\e\\"  // String Terminator
 #define SS3     "\eO"   // Single Shift 3
 #else
-// Temp debug
+// Debug values to be able to see what is being sent to the terminal.
 #define BS      'ß'
-#define CSI     "ESC["
-#define DCS     "ESCP"
+#define BEL     'Ɓ'
+#define CBOL    'Ç'
+#define CSI     "Ë["
+#define DCS     "ËP"
+#define DEL     'Ð'
 #define ENQ     'Ê'
 #define ESC     'Ë'
-#define IND     "ESCD"
+#define IND     "ËD"
 #define NEL     "ÑL"
-#define OSC     "ESC]"
+#define OSC     "Ë]"
 #define RI      "Û"
-#define ST      "ESC\\"
-#define SS3     "ESCO"
+#define ST      "Ë\\"
+#define SS3     "ËO"
 #endif
 
 /**
  * @brief Terminal text colors
+ * @ingroup term
  */
 typedef enum _TERM_CHR_COLOR_NUMS_ {
     TERM_CHR_COLOR_BLACK            =  0,
@@ -80,6 +95,7 @@ typedef enum _TERM_CHR_COLOR_NUMS_ {
 
 /**
  * @brief Terminal Origin Mode (DECOM)
+ * @ingroup term
  *
  * Upper Left allows the cursor to move to any point in the screen.
  * Margins keeps the cursor within the margins.
@@ -92,6 +108,7 @@ typedef enum _TERM_ORIGIN_MODE_ {
 
 /**
  * @brief VT Terminal type specifiers used for the 'CSI 6 <n> " p' (DECSCL) control.
+ * @ingroup term
  *
  */
 typedef enum _VT_TERM_TYPE_SPECIFIER_ {
@@ -103,6 +120,7 @@ typedef enum _VT_TERM_TYPE_SPECIFIER_ {
 
 /**
  * @brief Specifier for terminal ID used for the 'CSI <n> , q' (DECTID) report.
+ * @ingroup term
  *
  */
 typedef enum _VT_TERM_ID_SPECIFIER_ {
@@ -114,22 +132,15 @@ typedef enum _VT_TERM_ID_SPECIFIER_ {
 } vt_term_id_spec_t;
 
 /**
- * @brief Function prototype for UDP Bind response handler.
- * @ingroup wire
- *
- * @param status The statuc from the operation.
- * @param udp_pcb The udp_pcb that was bound, or NULL if an error occurred.
- */
-typedef void (*term_notify_on_input_fn)(void);
-
-/**
  * @brief Clear the full screen
+ * @ingroup term
  *
  */
 extern void term_clear(void);
 
 /**
  * @brief Set the text character forground color using a color value.
+ * @ingroup term
  *
  * @param colorn A color number (0-16)
  */
@@ -137,6 +148,7 @@ extern void term_color_fg(term_color_t colorn);
 
 /**
  * @brief Set the text character background color using a color value.
+ * @ingroup term
  *
  * @param colorn A color number (0-16)
  */
@@ -144,12 +156,20 @@ extern void term_color_bg(term_color_t colorn);
 
 /**
  * @brief Set the text to the default colors.
+ * @ingroup term
  *
  */
 extern void term_color_default(void);
 
 /**
+ * @brief Move the cursor to the beginning of the current line.
+ * @ingroup term
+ */
+extern void term_cursor_bol();
+
+/**
  * @brief Move the cursor down `n` lines.
+ * @ingroup term
  *
  * @param n Number of lines to move.
  */
@@ -157,12 +177,14 @@ extern void term_cursor_down(uint16_t n);
 
 /**
  * @brief Move the cursor down 1 line.
+ * @ingroup term
  *
  */
 extern void term_cursor_down_1(void);
 
 /**
  * @brief Move the cursor left `n` columns.
+ * @ingroup term
  *
  * @param n Number of columns to move.
  */
@@ -170,12 +192,14 @@ extern void term_cursor_left(uint16_t n);
 
 /**
  * @brief Move the cursor left 1 column.
+ * @ingroup term
  *
  */
 extern void term_cursor_left_1(void);
 
 /**
  * @brief Move the cursor to a given line and column.
+ * @ingroup term
  *
  * @param line Terminal line (top is 1)
  * @param column Terminal column (left is 1)
@@ -184,6 +208,7 @@ extern void term_cursor_moveto(uint16_t line, uint16_t column);
 
 /**
  * @brief Turn the cursor on/off (visible/hidden)
+ * @ingroup term
  *
  * @param on True shows the cursor. False hides the cursor.
  */
@@ -191,6 +216,7 @@ extern void term_cursor_on(bool on);
 
 /**
  * @brief Restore the cursor position and attributes.
+ * @ingroup term
  *
  * Restore the cursor from that previously saved.
  *
@@ -200,6 +226,7 @@ extern void term_cursor_restore(void);
 
 /**
  * @brief Move the cursor right `n` columns.
+ * @ingroup term
  *
  * @param n Number of columns to move.
  */
@@ -207,12 +234,14 @@ extern void term_cursor_right(uint16_t n);
 
 /**
  * @brief Move the cursor right 1 column.
+ * @ingroup term
  *
  */
 extern void term_cursor_right_1(void);
 
 /**
  * @brief Save the cursor position and attributes.
+ * @ingroup term
  *
  * @see term_cursor_restore
  */
@@ -220,6 +249,7 @@ extern void term_cursor_save(void);
 
 /**
  * @brief Move the cursor up `n` lines.
+ * @ingroup term
  *
  * @param n Number of lines to move.
  */
@@ -227,30 +257,105 @@ extern void term_cursor_up(uint16_t n);
 
 /**
  * @brief Move the cursor down 1 line.
+ * @ingroup term
  *
  */
 extern void term_cursor_up_1(void);
 
 /**
  * @brief Erase from the cursor to the beginning of the line.
+ * @ingroup term
  *
  */
 extern void term_erase_bol(void);
 
 /**
+ * @brief Erase `n` characters without moving the cursor.
+ * 
+ * @param n Number of characters to erase.
+ */
+extern void term_erase_char(uint16_t n);
+
+/**
  * @brief Erase from the cursor to the end of the line.
+ * @ingroup term
  *
  */
 extern void term_erase_eol(void);
 
 /**
  * @brief Erase the line the cursor is on.
+ * @ingroup term
  *
  */
 extern void term_erase_line(void);
 
 /**
- * @brief Get a character with a timeout in micro-seconds.
+ * @brief Get the current cursor position.
+ * @ingroup term
+ *
+ * Sends a CPR (CSI 6 n) to the terminal and reads and processes the response. It waits
+ * a maximum of 150ms for a response. If no response is received a position of -1,-1
+ * is returned.
+ *
+ * @return scr_position_t
+ */
+extern scr_position_t term_get_cursor_position(void);
+
+/**
+ * @brief Get the terminal screen info.
+ * @ingroup term
+ *
+ * This sends a CPR (CSI 6 n) to the terminal and reads the tesponse. It waits a maximum of
+ * 250ms for a respoinse.
+ *
+ * @param buf A character buffer to store the DA string into.
+ * @param maxlen The maximum number of characters to get.
+ *
+ * @return int The number of characters actually read.
+ */
+extern int term_get_screen_info(char* buf, int maxlen);
+
+/**
+ * @brief
+ * @ingroup term
+ *
+ * @param id_spec The term type to get the ID info for
+ * @param buf  A character buffer to store the ID string into.
+ * @param maxlen The maximum number of characters to get.
+
+ * @return int The number of characters actually read.
+ */
+extern int term_get_id_info(vt_term_id_spec_t id_spec, char* buf, int maxlen);
+
+/**
+ * @brief Get the term name (response to ^E/ENQ).
+ * @ingroup term
+ *
+ * @param buf  A character buffer to store the name string into.
+ * @param maxlen The maximum number of characters to get.
+
+ * @return int The number of characters actually read.
+ */
+extern int term_get_name(char* buf, int maxlen);
+
+/**
+ * @brief Get the terminal device attributes (1).
+ * @ingroup term
+ *
+ * This sends a DA1 (CSI 0 c) to the terminal and reads the response. It waits a maximum of
+ * 250ms for a respoinse.
+ *
+ * @param buf A character buffer to store the DA string into.
+ * @param maxlen The maximum number of characters to get.
+ *
+ * @return int The number of characters actually read.
+ */
+extern int term_get_type_info(char* buf, int maxlen);
+
+/**
+ * @brief Get a character from the terminal without blocking.
+ * @ingroup term
  *
  * Once the terminal has been initialized, this should be used rather than
  * getchar/getchar_timeout_us as the terminal support installs a handler
@@ -265,65 +370,8 @@ extern void term_erase_line(void);
 extern int term_getc(void);
 
 /**
- * @brief Get the current cursor position.
- *
- * Sends a CPR (CSI 6 n) to the terminal and reads and processes the response. It waits
- * a maximum of 150ms for a response. If no response is received a position of -1,-1
- * is returned.
- *
- * @return scr_position_t
- */
-extern scr_position_t term_get_cursor_position(void);
-
-/**
- * @brief Get the terminal screen info.
- *
- * This sends a CPR (CSI 6 n) to the terminal and reads the tesponse. It waits a maximum of
- * 250ms for a respoinse.
- *
- * @param buf A character buffer to store the DA string into.
- * @param maxlen The maximum number of characters to get.
- *
- * @return int The number of characters actually read.
- */
-extern int term_get_screen_info(char* buf, int maxlen);
-
-/**
- * @brief
- *
- * @param id_spec The term type to get the ID info for
- * @param buf  A character buffer to store the ID string into.
- * @param maxlen The maximum number of characters to get.
-
- * @return int The number of characters actually read.
- */
-extern int term_get_id_info(vt_term_id_spec_t id_spec, char* buf, int maxlen);
-
-/**
- * @brief Get the term name (response to ^E/ENQ).
- *
- * @param buf  A character buffer to store the name string into.
- * @param maxlen The maximum number of characters to get.
-
- * @return int The number of characters actually read.
- */
-extern int term_get_name(char* buf, int maxlen);
-
-/**
- * @brief Get the terminal device attributes (1).
- *
- * This sends a DA1 (CSI 0 c) to the terminal and reads the response. It waits a maximum of
- * 250ms for a respoinse.
- *
- * @param buf A character buffer to store the DA string into.
- * @param maxlen The maximum number of characters to get.
- *
- * @return int The number of characters actually read.
- */
-extern int term_get_type_info(char* buf, int maxlen);
-
-/**
  * @brief Initialize the Term library and send initial configuration to the terminal.
+ * @ingroup term
  *
  * This initializes the terminal type and screen size and sets up an input handler
  * from the standard input device.
@@ -332,6 +380,7 @@ extern void term_init(void);
 
 /**
  * @brief Return status of available input.
+ * @ingroup term
  *
  * @return true If there is input data available (in the input buffer).
  * @return false If there isn't currently input data available.
@@ -340,12 +389,14 @@ extern bool term_input_available(void);
 
 /**
  * @brief Clears the input buffer.
+ * @ingroup term
  *
  */
 extern void term_input_buf_clear(void);
 
 /**
  * @brief Indicates if input data was lost (the buffer was full when input was received).
+ * @ingroup term
  *
  * Once set, this status will remain true until this function is called, or the input buffer is cleared.
  *
@@ -357,18 +408,8 @@ extern void term_input_buf_clear(void);
 extern bool term_input_overflow(void);
 
 /**
- * @brief Register a function to be called when input data becomes available.
- *
- * The function will be called when input data becomes available, including if
- * data is currently available. This is a one-time operation. Once it is called,
- * the function is de-registered.
- *
- * @param fn A `void funcion(void)` function to be called, or `NULL` to remove a registered function.
- */
-extern void term_notify_on_input(term_notify_on_input_fn notify_fn);
-
-/**
  * @brief Terminal ID returned upon power-up.
+ * @ingroup term
  *
  * @return const char* The terminal id (null terminated).
  */
@@ -376,13 +417,27 @@ extern const char* term_pu_id(void);
 
 /**
  * @brief Terminal name returned upon power-up.
+ * @ingroup term
  *
  * @return const char* The terminal name (null terminated).
  */
 extern const char* term_pu_name(void);
 
 /**
+ * @brief Register a function to be called when input data becomes available.
+ * @ingroup term
+ *
+ * The function will be called when input data becomes available from the terminal,
+ * including if data is currently available. This is a one-time operation. Once it is called,
+ * the function is de-registered.
+ *
+ * @param fn A `void funcion(void)` function to be called, or `NULL` to remove a registered function.
+ */
+extern void term_register_notify_on_input(term_notify_on_input_fn notify_fn);
+
+/**
  * @brief Send a reset (ESC c) to the terminal.
+ * @ingroup term
  *
  * This will reset (most of) the terminal attributes to their power on / reset values.
  * The PuTTY docs indicate that it will not reset the terminal emulation/type.
@@ -392,6 +447,7 @@ extern void term_reset(void);
 
 /**
  * @brief Set the terminal top margin and bottom margin.
+ * @ingroup term
  *
  * This defines the scroll size if the origin mode is set to TERM_OM_IN_MARGINS. The bottom margin
  * should be less than or equal to the virtical screen size.
@@ -403,6 +459,7 @@ extern void term_set_margin_top_bottom(uint16_t top_line, uint16_t bottom_line);
 
 /**
  * @brief Sets the Origin Mode (DECOM).
+ * @ingroup term
  *
  * @param mode Origin Mode.
  */
@@ -410,6 +467,7 @@ extern void term_set_origin_mode(term_om_t mode);
 
 /**
  * @brief Set the terminal size in lines x columns
+ * @ingroup term
  *
  * The Dec manual says:
  * Note 1. The page size can be 24, 25, 36, 42, 48, 52, and 72 lines with 80 or 132 columns.
@@ -422,12 +480,14 @@ extern void term_set_size(uint16_t lines, uint16_t columns);
 
 /**
  * @brief Set the terminal compatibility/conformance (operating) level to a specific VT type.
+ * @ingroup term
  *
  */
 extern void term_set_type(vt_term_type_spec_t type, vt_term_id_spec_t id_type);
 
 /**
  * @brief Attempt to set the title bar on the terminal.
+ * @ingroup term
  *
  * @param title Null terminated string to attempt to set.
  */

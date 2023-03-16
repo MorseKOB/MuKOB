@@ -1,8 +1,8 @@
 /**
  * @brief Terminal functionality.
- * @ingroup display
+ * @ingroup term
  *
- * This provides a very (very) simple NCURSES-like functionality.
+ * This provides an interface to terminal functionality.
  * It is hard-coded to expect an ANSI capable terminal. It is tested primarily
  * with Putty.
  *
@@ -59,9 +59,9 @@
 #undef putc     // Use the function, not the macro
 #undef putchar  // Use the function, not the macro
 
-#define _INPUT_BUF_SIZE_ 256 // Make this a power of 2
-#define _TERM_INFO_MAX_ 31 // Maximum term info string response read
-#define _TERM_NAME_MAX_ 31 // Maximum size of term name response read
+#define _INPUT_BUF_SIZE_        256 // Make this a power of 2
+#define _TERM_INFO_MAX_          31 // Maximum term info string response read
+#define _TERM_NAME_MAX_          31 // Maximum size of term name response read
 
 static char _input_buf[_INPUT_BUF_SIZE_];
 static bool _input_buf_overflow = false;
@@ -71,6 +71,12 @@ static char _term_info[_TERM_INFO_MAX_ + 1]; // Holds the terminal device attrib
 static char _term_name[_TERM_NAME_MAX_ + 1]; // Holds the terminal name
 static term_notify_on_input_fn _term_notify_on_input; // Holds a function pointer to be called when input is available
 
+/**
+ * @brief Read multiple characters from the terminal with a timeout. Intended for automated/terminal
+ * responses/input, not for user input. User input should be aquired using `term_getline` which gets input without
+ * doing a sleep.
+ *
+ */
 static int _read_from_term(char* buf, int maxlen, char term_char, int max_wait) {
     int c;
     int chars = 0;
@@ -150,6 +156,10 @@ inline void term_color_fg(term_color_t colorn) {
     printf("%s38;5;%dm", CSI, colorn);
 }
 
+inline void term_cursor_bol() {
+    putchar(CBOL);
+}
+
 inline void term_cursor_down(uint16_t n) {
     printf("%s%hdB", CSI, n); // Also 'E'
 }
@@ -203,22 +213,16 @@ inline void term_erase_bol() {
     printf("%s0K", CSI);
 }
 
+inline void term_erase_char(uint16_t n) {
+    printf("%s%hdX", CSI, n); // Erase chars without moving cursor
+}
+
 inline void term_erase_eol() {
     printf("%s1K", CSI);
 }
 
 inline void term_erase_line() {
     printf("%s2K", CSI);
-}
-
-int term_getc(void) {
-    if (!term_input_available()) {
-        return (-1);
-    }
-    int c = _input_buf[_input_buf_out];
-    _input_buf_out = (_input_buf_out + 1) % _INPUT_BUF_SIZE_;
-
-    return (c);
 }
 
 scr_position_t term_get_cursor_position(void) {
@@ -253,6 +257,16 @@ int term_get_name(char* buf, int maxlen) {
 int term_get_type_info(char* buf, int maxlen) {
     printf("%s0c", CSI); //  "ESC Z" = DECID, "CSI 0 c" = DA1 (Device Attributes 1)
     return (_read_from_term(buf, maxlen, 'c', 80));
+}
+
+int term_getc(void) {
+    if (!term_input_available()) {
+        return (-1);
+    }
+    int c = _input_buf[_input_buf_out];
+    _input_buf_out = (_input_buf_out + 1) % _INPUT_BUF_SIZE_;
+
+    return (c);
 }
 
 void term_init() {
@@ -297,16 +311,16 @@ bool term_input_overflow() {
     return (retval);
 }
 
-void term_notify_on_input(term_notify_on_input_fn notify_fn) {
-    _term_notify_on_input = notify_fn;
-}
-
 inline const char* term_pu_id(void) {
     return (_term_info);
 }
 
 inline const char* term_pu_name(void) {
     return (_term_name);
+}
+
+void term_register_notify_on_input(term_notify_on_input_fn notify_fn) {
+    _term_notify_on_input = notify_fn;
 }
 
 inline void term_reset() {

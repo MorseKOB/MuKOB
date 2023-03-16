@@ -28,6 +28,8 @@ extern msg_loop_cntx_t ui_msg_loop_cntx;
  */
 extern void ui_init(void);
 
+extern void ui_register_input_char_ready_handler();
+
 #ifdef __cplusplus
 }
 #endif

@@ -28,6 +28,7 @@ typedef enum _MSG_ID_ {
     //
     MSG_UI_NOOP = 0x8000,       // UI messages
     MSG_CMD_KEY_PRESSED,
+    MSG_INPUT_CHAR_READY,
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
 } msg_id_t;

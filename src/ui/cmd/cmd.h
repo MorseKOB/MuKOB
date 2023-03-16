@@ -17,15 +17,12 @@ extern "C" {
 #define CMD_PROMPT_CHAR ':'
 
 /**
- * @brief UI Message Loop handler to build up a line of input as characters are typed.
+ * @brief UI Message Loop handler to get a line of input and cause it to be processed.
  * @ingroup ui
- *
- * Being message based, this is called when our CMD message is received. When a full
- * line is built up (a '\n' or '\r' is received) we call the line processing.
  *
  * @param msg The received message
  */
-extern void cmd_build_line(cmt_msg_t* msg);
+extern void cmd_attn_handler(cmt_msg_t* msg);
 
 /**
  * @brief Initialize the command processor.
