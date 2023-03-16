@@ -14,7 +14,6 @@
 
 #include <string.h>
 
-#define CMD_LINE_MAX_LEN 256
 #define CMD_LINE_MAX_ARGS 32
 
 typedef enum _CMD_STATES_ {
@@ -30,31 +29,37 @@ static void _hook_keypress();
 static int _skip_to_ws_eol(char* line);
 
 
-static char _linebuf[CMD_LINE_MAX_LEN];
-static int _line_index;
 static cmd_state_t _cmd_state = CMD_SNOOZING;
+static term_color_pair_t _scr_color_save;
+static scr_position_t _scr_cursor_position_save;
 
 void _notified_of_keypress(void) {
-    // Function that was registered. Getting called clears the registration.
+    // A character is available from the terminal. Getting called clears the registration.
     //
-    // Post a message to our loop with the character if we can read one (should be able to).
-    cmt_msg_t msg;
-    char c = term_getc();
-
-    if (c >= 0) {
-        msg.id = MSG_CMD_KEY_PRESSED;
-        msg.data.c = c;
-        postUIMsgBlocking(&msg);
+    // See if it's our wakeup char. If so, post a message to kick off our command processing.
+    // If not, throw it away.
+    int ci = term_getc();
+    while (ci >= 0) {
+        char c = (char)ci;
+        if (CMD_WAKEUP_CHAR == c) {
+            // Post a message to our loop with the character if we can read one (should be able to).
+            cmt_msg_t msg;
+            msg.id = MSG_CMD_KEY_PRESSED;
+            msg.data.c = c;
+            postUIMsgBlocking(&msg);
+            // We don't re-register, as something else handles the incoming chars until we go idle again.
+            return;
+        }
+        // If it's not our wake char, read again. When no chars are ready, the call returns -1.
+        ci = term_getc();
     }
-    else {
-        // Shouldn't get here since we were notified,
-        // but just in case - hook us back
-        _hook_keypress();
-    }
+    // If we get here we need to re-register so we are notified when another character is ready.
+    _hook_keypress();
 }
 
 static void _hook_keypress() {
-    term_notify_on_input(_notified_of_keypress);
+    // Look for our wakeup char being sent from the terminal.
+    term_register_notify_on_input(_notified_of_keypress);
 }
 
 static int _parseline(char* line, char** argv, int maxargs) {
@@ -72,18 +77,22 @@ static int _parseline(char* line, char** argv, int maxargs) {
     return (maxargs);
 }
 
-static void _process_line() {
-    printf("\nCMD - Got command: `%s`\n", _linebuf);
+static void _process_line(char* line) {
+    // Erase the cursor line (where they entered the command)
+    term_cursor_bol();
+    term_erase_line();
+
+    printf("CMD - Got command: `%s`\n", line);
     // go back to Snoozing
-    _line_index = 0;
     _cmd_state = CMD_SNOOZING;
     // Hook keypress looking for a ':' to wake us up.
     _hook_keypress();
-    // Put the terminal back
+    // Put the terminal state back
     term_cursor_moveto(UI_TERM_CMDLINE, 1);
+    ui_term_color_set(_scr_color_save.fg, _scr_color_save.bg);
     term_cursor_on(false);
     term_erase_line();
-    term_cursor_restore();
+    term_cursor_moveto(_scr_cursor_position_save.line, _scr_cursor_position_save.column);
 }
 
 static int _skip_to_ws_eol(char* line) {
@@ -99,7 +108,7 @@ static int _skip_to_ws_eol(char* line) {
     return (strlen(line));
 }
 
-void cmd_build_line(cmt_msg_t* msg) {
+void cmd_attn_handler(cmt_msg_t* msg) {
     // Called when MSG_CMD_KEY_PRESSED is received
     // We should be in a state where we are looking to be woken up
     // or building up a line to process.
@@ -109,79 +118,24 @@ void cmd_build_line(cmt_msg_t* msg) {
         if (CMD_WAKEUP_CHAR == c) {
             // Wakeup received, change state to building line.
             _cmd_state = CMD_COLLECTING_LINE;
-            // Save the current cursor possition, move it to the bottom, and show it.
-            term_cursor_save();
+            // Get the current cursor possition, move it to the bottom, and show it.
+            // NOTE: Updating the Term UI status uses the terminals `save cursor`
+            //       capability, so we use the `get cursor position` functionality
+            //       and save it.
+            _scr_cursor_position_save = term_get_cursor_position();
+            _scr_color_save = ui_term_color_get();
             term_cursor_moveto(UI_TERM_CMDLINE, 1);
+            ui_term_use_cmd_color();
             putchar(CMD_PROMPT_CHAR);
             term_cursor_on(true);
-            //  See if there is more input.
-            if (term_input_available()) {
-                c = term_getc();
-                // Let the following code continue processing.
-            }
-            else {
-                _hook_keypress(); // Get notified when more characters are available.
-                return;
-            }
+            // Get a command from the user...
+            ui_term_getline(_process_line);
         }
     }
-    if (CMD_COLLECTING_LINE == _cmd_state) {
-        do {
-            if ('\n' == c || '\r' == c) {
-                // EOL - Terminate our input line and process
-                _linebuf[_line_index] = '\0';
-                _cmd_state = CMD_PROCESSING_LINE;
-                _line_index = 0;
-                _process_line();
-                return;
-            }
-            if (BS == c) {
-                // Backspace - move back if we aren't at the BOL
-                _linebuf[_line_index] = '\0';
-                if (_line_index > 0) {
-                    _line_index--;
-                    term_cursor_left_1();
-                }
-            }
-            else if (ESC == c) {
-                // Escape - go back to Snoozing
-                _line_index = 0;
-                _cmd_state = CMD_SNOOZING;
-                term_cursor_moveto(UI_TERM_CMDLINE, 1);
-                term_cursor_on(false);
-                term_erase_line();
-                term_cursor_restore();
-                c = 0;
-            }
-            else {
-                _linebuf[_line_index++] = c;
-                putchar(c);
-                // See if there are more chars available
-                if (_line_index < CMD_LINE_MAX_LEN) {
-                    if (term_input_available()) {
-                        c = term_getc();
-                    }
-                    else {
-                        c = 0;
-                    }
-                }
-                else {
-                    // Beep at them - they need to back up or press enter.
-                    putchar('\a');
-                    _line_index--;
-                    c = 0;
-                }
-            }
-        } while (c > 0);
-    }
-    // No more input chars are available, but we haven't gotten EOL yet,
-    // hook for more, or to wake back up...
-    _hook_keypress();
 }
 
 void cmd_init() {
     _cmd_state = CMD_SNOOZING;
-    _line_index = 0;
     // Hook keypress looking for a ':' to wake us up.
     _hook_keypress();
 }
