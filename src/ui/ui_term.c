@@ -6,6 +6,7 @@
  *
 */
 #include "ui_term.h"
+#include "config.h"
 #include "cmt.h"
 #include "term.h"
 #include "util.h"
@@ -23,9 +24,23 @@ static ui_term_input_available_handler _input_available_handler;
 static ui_term_getline_callback_fn _getline_callback; // Function pointer to be called when an input line is ready
 
 /**
- * @brief Message handler for `MSG_INPUT_CHAR_READY`
- * 
- * @param msg 
+ * @brief Message handler for MSG_INIT_TERMINAL
+ * @ingroup ui
+ *
+ * Init/re-init the terminal. This is typically received by a user requesting
+ * that the terminal be re-initialized/refreshed. For example if they connect
+ * a terminal after MuKOB is already up and running.
+ *
+ * @param msg Nothing important in the message.
+ */
+void _ui_term_handle_init_terminal(cmt_msg_t* msg) {
+    ui_term_build();
+}
+
+/**
+ * Message handler for `MSG_INPUT_CHAR_READY`
+ *
+ * Nothing important in the message.
  */
 void _ui_term_handle_input_char_ready(cmt_msg_t* msg) {
     if (NULL != _input_available_handler) {
@@ -160,8 +175,10 @@ void ui_term_build(void) {
     _term_init();
     _header_fill_fixed();
     _status_fill_fixed();
-    ui_term_sender_update(NULL); // Build a blank sender line
-    ui_term_status_update();
+    ui_term_display_speed();
+    ui_term_display_wire();
+    ui_term_update_sender(NULL); // Build a blank sender line
+    ui_term_update_status();
 }
 
 term_color_pair_t ui_term_color_get() {
@@ -181,6 +198,16 @@ void ui_term_color_set(term_color_t fg, term_color_t bg) {
     term_color_fg(fg);
 }
 
+void ui_term_display_speed() {
+    const config_t* config = config_current();
+    ui_term_update_speed(config->text_speed);
+}
+
+void ui_term_display_wire() {
+    const config_t* config = config_current();
+    ui_term_update_wire(config->wire);
+}
+
 void ui_term_getline(ui_term_getline_callback_fn getline_cb) {
     _getline_callback = getline_cb;
     ui_term_register_input_available_handler(_ui_term_getline_continue);
@@ -192,7 +219,7 @@ void ui_term_register_input_available_handler(ui_term_input_available_handler ha
     _input_available_handler = handler_fn;
 }
 
-void ui_term_sender_update(const char* id) {
+void ui_term_update_sender(const char* id) {
     char buf[UI_TERM_COLUMNS + 1];
 
     term_cursor_save();
@@ -209,7 +236,35 @@ void ui_term_sender_update(const char* id) {
     term_cursor_restore();
 }
 
-void ui_term_status_update() {
+void ui_term_update_speed(uint16_t speed) {
+    char buf[UI_TERM_COLUMNS + 1];
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_SPEED_VALUE_COL);
+    snprintf(buf, sizeof(buf) - 1, "%2hd", speed);
+    printf("%s", buf);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
+}
+
+void ui_term_update_wire(uint16_t wire) {
+    char buf[UI_TERM_COLUMNS + 1];
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_WIRE_VALUE_COL);
+    snprintf(buf, sizeof(buf) - 1, "%3hd", wire);
+    printf("%s", buf);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
+}
+
+void ui_term_update_status() {
     // Put the current time in the center
     char buf[10];
     datetime_t now;

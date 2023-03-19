@@ -10,7 +10,19 @@
       "compilerPath": "/usr/bin/arm-none-eabi-gcc",
       "cStandard": "gnu17",
       "cppStandard": "gnu++14",
-      "intelliSenseMode": "linux-gcc-arm",
+      "intelliSenseMode": "linux-gcc-arm"
+    },
+    {
+      "name": "Windows",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${env:PICO_SDK_PATH}/**"
+      ],
+      "defines": [],
+      "compilerPath": "C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/12.2 rel1/bin/arm-none-eabi-gcc.exe",
+      "cStandard": "gnu17",
+      "cppStandard": "gnu++14",
+      "intelliSenseMode": "windows-msvc-arm"
     }
   ],
   "version": 4

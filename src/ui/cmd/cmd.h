@@ -15,7 +15,7 @@ extern "C" {
 
 #define CMD_WAKEUP_CHAR ':'
 #define CMD_PROMPT_CHAR ':'
-
+#define CMD_REINIT_TERM_CHAR '\022' // ^R
 /**
  * @brief UI Message Loop handler to get a line of input and cause it to be processed.
  * @ingroup ui

@@ -11,6 +11,10 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include "cmt.h"
+#include "pico/types.h"
+
 /**
  * @brief Build (or rebuild) the UI on the display.
  * @ingroup ui
@@ -18,17 +22,46 @@ extern "C" {
 extern void ui_disp_build(void);
 
 /**
+ * @brief Refresh the speed value display in the header.
+ * @ingroup ui
+ */
+extern void ui_disp_display_speed();
+
+/**
+ * @brief Refresh the wire number display in the header.
+ * @ingroup ui
+ */
+extern void ui_disp_display_wire();
+
+/**
  * @brief Update the sender station ID in the top of the display.
  * @ingroup ui
  *
  * @param id The station ID of the sender. A NULL will clear the sender line.
  */
-extern void ui_disp_sender_update(const char* id);
+extern void ui_disp_update_sender(const char* id);
+
+/**
+ * @brief Update the speed value.
+ * @ingroup ui
+ *
+ * @param speed The speed in WPM
+ */
+extern void ui_disp_update_speed(uint16_t speed);
 
 /**
  * @brief Update the status bar.
+ * @ingroup ui
  */
-extern void ui_disp_status_update();
+extern void ui_disp_update_status();
+
+/**
+ * @brief Update/refresh the wire number.
+ * @ingroup ui
+ *
+ * @param wire The wire number.
+ */
+extern void ui_disp_update_wire(uint16_t wire);
 
 #ifdef __cplusplus
 }

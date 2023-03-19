@@ -36,6 +36,7 @@ ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
 #define LEAVE_MSG_HANDLER()    {_ui_idle_function_data.idle_num = 0; _ui_idle_function_data.msg_burst++;}
 
 msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
+msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _ui_term_handle_init_terminal };
 msg_handler_entry_t _input_char_ready_handler_entry = { MSG_INPUT_CHAR_READY, _ui_term_handle_input_char_ready };
 msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_send_ui_status };
 msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
@@ -49,6 +50,7 @@ msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, 
  */
 msg_handler_entry_t* _handler_entries[] = {
     &_send_status_handler_entry,
+    &_cmd_init_terminal_handler_entry,
     &_input_char_ready_handler_entry,
     &_cmd_key_pressed_handler_entry,
     &_wifi_status_handler_entry,
@@ -82,8 +84,8 @@ void _handle_send_ui_status(cmt_msg_t* msg) {
     // Send status to BE in a while
     _msg_ui_send_status.id = MSG_SEND_UI_STATUS;
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
-    ui_disp_status_update();
-    ui_term_status_update();
+    ui_disp_update_status();
+    ui_term_update_status();
 }
 
 void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
