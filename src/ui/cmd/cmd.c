@@ -50,6 +50,15 @@ void _notified_of_keypress(void) {
             // We don't re-register, as something else handles the incoming chars until we go idle again.
             return;
         }
+        else if (CMD_REINIT_TERM_CHAR == c) {
+            // ^R can be typed if the terminal gets messed up or is connected after MuKOB has started.
+            // This re-initializes the terminal.
+            cmt_msg_t msg;
+            msg.id = MSG_CMD_INIT_TERMINAL;
+            msg.data.c = c;
+            postUIMsgBlocking(&msg);
+            // In this case, we do want to re-register to continue being notified of input.
+        }
         // If it's not our wake char, read again. When no chars are ready, the call returns -1.
         ci = term_getc();
     }

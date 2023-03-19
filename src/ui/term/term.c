@@ -116,10 +116,10 @@ static int _read_from_term(char* buf, int maxlen, char term_char, int max_wait) 
  */
 static void _stdio_chars_available(void *param) {
     // Read the character
-    int i;
+    int ci;
     do {
-        i = getchar_timeout_us(0); // 0 means return immediately if not available
-        if (i == PICO_ERROR_TIMEOUT) {
+        ci = getchar_timeout_us(0); // 0 means return immediately if not available
+        if (ci == PICO_ERROR_TIMEOUT) {
             break;
         }
         // See if we have room for it in the input buffer
@@ -128,10 +128,10 @@ static void _stdio_chars_available(void *param) {
             _input_buf_overflow = true;
             break;
         }
-        _input_buf[_input_buf_in] = (char)i;
+        _input_buf[_input_buf_in] = (char)ci;
         _input_buf_in = (_input_buf_in + 1) % _INPUT_BUF_SIZE_;
     } while (true);
-    if (_term_notify_on_input != NULL) {
+    if (_term_notify_on_input != NULL && term_input_available()) {
         // Clear out the function pointer. This is a one-shot function call.
         term_notify_on_input_fn fn = _term_notify_on_input;
         _term_notify_on_input = NULL;
@@ -383,12 +383,12 @@ void term_set_size(uint16_t lines, uint16_t columns) {
     // Send the terminal the commands to set the screen and the page size...
     printf("%s?3%c", CSI, colind); // Columns: Screen size
     sleep_ms(15);
-    printf("%s%hd", CSI, columns); // Columns: Page size
-    sleep_ms(15);
+    // printf("%s%hd", CSI, columns); // Columns: Page size
+    // sleep_ms(15);
     printf("%s%hd*|", CSI, lines); // Lines: Screen size
     sleep_ms(15);
-    printf("%s%hdt", CSI, lines); // Lines: Page size
-    sleep_ms(20);
+    // printf("%s%hdt", CSI, lines); // Lines: Page size
+    // sleep_ms(20);
     term_clear();
 }
 

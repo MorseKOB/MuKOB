@@ -6,13 +6,14 @@
   "configurations": [
   
     {
-      "name": "Cortex Pico Debug",
+      "name": "Pico Debug",
       "cwd": "${workspaceRoot}",
       "executable": "${command:cmake.launchTargetPath}",
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",
-      "gdbPath": "gdb-multiarch",
+      //"gdbPath": "gdb-multiarch" or "arm-none-eabi-gdb"
+      "gdbPath": "${env:ARM_GDB_PATH}",
       "device": "RP2040",
       "configFiles": [
         "interface/picoprobe.cfg",
@@ -25,7 +26,8 @@
           "break main",
           "continue"
       ],
-      "searchDir": ["/home/ed/code/openocd/tcl"],
+      "searchDir": ["${env:OPENOCD_TCL_PATH}"],
+      "showDevDebugOutput": "raw"
     }
   ]
 }

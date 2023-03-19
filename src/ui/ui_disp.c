@@ -6,6 +6,7 @@
  *
 */
 #include "ui_disp.h"
+#include "config.h"
 #include "display.h"
 #include "util.h"
 #include "hardware/rtc.h"
@@ -21,8 +22,10 @@
 #define UI_DISP_HEADER_COLOR_BG C16_BLUE
 #define UI_DISP_HEADER_INFO_LINE 0
 //#define UI_DISP_HEADER_GAP_LINE 1
-#define UI_DISP_HEADER_WIRE_LABEL_COL 2
 #define UI_DISP_HEADER_SPEED_LABEL_COL 8
+#define UI_DISP_HEADER_SPEED_VALUE_COL 10
+#define UI_DISP_HEADER_WIRE_LABEL_COL 2
+#define UI_DISP_HEADER_WIRE_VALUE_COL 4
 #define UI_DISP_HEADER_SETUP_COL 20
 #define UI_DISP_HEADER_MENU_COL 22
 
@@ -75,11 +78,23 @@ void ui_disp_build(void) {
     scroll_area_define(UI_DISP_TOP_FIXED_LINES, UI_DISP_BOTTOM_FIXED_LINES_INIT);
     _header_fill_fixed();
     _status_fill_fixed();
-    ui_disp_sender_update(NULL); // Build a blank sender line
-    ui_disp_status_update();
+    ui_disp_display_speed();
+    ui_disp_display_wire();
+    ui_disp_update_sender(NULL); // Build a blank sender line
+    ui_disp_update_status();
 }
 
-void ui_disp_sender_update(const char* id) {
+void ui_disp_display_speed() {
+    const config_t* config = config_current();
+    ui_disp_update_speed(config->text_speed);
+}
+
+void ui_disp_display_wire() {
+    const config_t* config = config_current();
+    ui_disp_update_wire(config->wire);
+}
+
+void ui_disp_update_sender(const char* id) {
     text_color_pair_t cp;
     char buf[disp_info_columns() + 1];
 
@@ -93,7 +108,14 @@ void ui_disp_sender_update(const char* id) {
     disp_set_text_colors_cp(&cp);
 }
 
-void ui_disp_status_update() {
+void ui_disp_update_speed(uint16_t speed) {
+    char buf[5];
+
+    snprintf(buf, sizeof(buf) - 1, "%2hd", speed);
+    disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
+}
+
+void ui_disp_update_status() {
     // Put the current time in the center
     char buf[10];
     datetime_t now;
@@ -101,4 +123,11 @@ void ui_disp_status_update() {
     rtc_get_datetime(&now);
     strdatetime(buf, 9, &now, SDTC_TIME_2CHAR_HOUR | SDTC_TIME_AMPM);
     disp_string_color(UI_DISP_STATUS_LINE, UI_DISP_STATUS_TIME_COL, buf, UI_DISP_STATUS_COLOR_FG, UI_DISP_STATUS_COLOR_BG, Paint);
+}
+
+void ui_disp_update_wire(uint16_t wire) {
+    char buf[5];
+
+    snprintf(buf, sizeof(buf) - 1, "%3hd", wire);
+    disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIRE_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
 }

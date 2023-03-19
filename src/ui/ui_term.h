@@ -33,8 +33,10 @@ extern "C" {
 #define UI_TERM_HEADER_COLOR_FG TERM_CHR_COLOR_BR_YELLOW
 #define UI_TERM_HEADER_COLOR_BG TERM_CHR_COLOR_BLUE
 #define UI_TERM_HEADER_INFO_LINE 1
-#define UI_TERM_HEADER_WIRE_LABEL_COL 5
 #define UI_TERM_HEADER_SPEED_LABEL_COL 14
+#define UI_TERM_HEADER_SPEED_VALUE_COL 20
+#define UI_TERM_HEADER_WIRE_LABEL_COL 5
+#define UI_TERM_HEADER_WIRE_VALUE_COL 10
 
 // Current sender line (at the top)
 #define UI_TERM_SENDER_COLOR_FG TERM_CHR_COLOR_BLUE
@@ -99,10 +101,22 @@ typedef void (*ui_term_getline_callback_fn)(char* line);
 typedef void (*ui_term_input_available_handler)(void);
 
 /**
+ * @brief Message handler for MSG_INIT_TERMINAL
+ * @ingroup ui
+ *
+ * Init/re-init the terminal. This is typically received by a user requesting
+ * that the terminal be re-initialized/refreshed. For example if they connect
+ * a terminal after MuKOB is already up and running.
+ *
+ * @param msg Nothing important in the message.
+ */
+extern void _ui_term_handle_init_terminal(cmt_msg_t* msg);
+
+/**
  * @brief `MSG_INPUT_CHAR_READY` message handler.
  * @ingroup ui
- * 
- * @param msg The message
+ *
+ * @param msg Nothing important in the message.
  */
 extern void _ui_term_handle_input_char_ready(cmt_msg_t* msg);
 
@@ -136,6 +150,18 @@ extern void ui_term_color_refresh();
 extern void ui_term_color_set(term_color_t fg, term_color_t bg);
 
 /**
+ * @brief Refresh the speed value display in the header.
+ * @ingroup ui
+ */
+extern void ui_term_display_speed();
+
+/**
+ * @brief Refresh the wire number display in the header.
+ * @ingroup ui
+ */
+extern void ui_term_display_wire();
+
+/**
  * @brief Get a line of user input.
  * @ingroup term
  * @see term_getline_callback_fn for details on use.
@@ -146,18 +172,10 @@ extern void ui_term_getline(ui_term_getline_callback_fn getline_cb);
 
 /**
  * @brief Register a function to handle terminal input available.
- * 
- * @param handler_fn 
+ *
+ * @param handler_fn
  */
 extern void ui_term_register_input_available_handler(ui_term_input_available_handler handler_fn);
-
-/**
- * @brief Update the sender station ID in the top of the terminal.
- * @ingroup ui
- *
- * @param id The station ID of the sender. A NULL will clear the sender line.
- */
-extern void ui_term_sender_update(const char* id);
 
 /**
  * @brief Set the color to the code display color.
@@ -170,10 +188,34 @@ extern void ui_term_use_code_color();
 extern void ui_term_use_cmd_color();
 
 /**
- * @brief Update the status bar.
+ * @brief Update the sender station ID in the top of the terminal.
+ * @ingroup ui
+ *
+ * @param id The station ID of the sender. A NULL will clear the sender line.
  */
-extern void ui_term_status_update();
+extern void ui_term_update_sender(const char* id);
 
+/**
+ * @brief Update the speed value.
+ * @ingroup ui
+ *
+ * @param speed The speed in WPM
+ */
+extern void ui_term_update_speed(uint16_t speed);
+
+/**
+ * @brief Update the status bar.
+ * @ingroup ui
+ */
+extern void ui_term_update_status();
+
+/**
+ * @brief Update/refresh the wire number.
+ * @ingroup ui
+ *
+ * @param wire The wire number.
+ */
+extern void ui_term_update_wire(uint16_t wire);
 
 #ifdef __cplusplus
     }
