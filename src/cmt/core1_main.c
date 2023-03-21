@@ -24,5 +24,5 @@ void core1_main() {
     ui_init();
 
     // Enter into the (endless) UI Message Dispatching Loop
-    enter_message_loop(&ui_msg_loop_cntx);
+    message_loop(&ui_msg_loop_cntx);
 }

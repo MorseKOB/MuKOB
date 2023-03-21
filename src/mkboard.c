@@ -60,7 +60,6 @@ static int _format_printf_datetime(char* buf, size_t len);
 */
 int board_init() {
     int retval = 0;
-    const config_t* cfg;
 
     stdio_init_all();
 

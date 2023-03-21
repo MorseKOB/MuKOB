@@ -162,7 +162,7 @@ extern void ui_term_display_speed();
 extern void ui_term_display_wire();
 
 /**
- * @brief Get a line of user input.
+ * @brief Get a line of user input. Returns immediately. Calls back when line is ready.
  * @ingroup term
  * @see term_getline_callback_fn for details on use.
  *

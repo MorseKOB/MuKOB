@@ -238,7 +238,7 @@ static int64_t _test_term_notify_on_input_to(alarm_id_t id, void* not_used) {
     _test_term_notify_on_input_to_id = 0;
     error_printf("\nTEST - test_term_notify_on_input timed out.\n");
     _input = -1;
-    term_notify_on_input(NULL);
+    term_register_notify_on_input(NULL);
     _test_term_notify_on_input_called = true; // Say this was called, but the char is '-1'
 
     return (0); // Don't reschedule this timer
@@ -249,7 +249,7 @@ char test_term_notify_on_input(uint32_t timeout) {
     _input = -1; // Return -1 if we timeout
     _test_term_notify_on_input_to_id = add_alarm_in_ms(timeout, _test_term_notify_on_input_to, NULL, true);
     // Register our callback and wait...
-    term_notify_on_input(_test_term_notify_on_input);
+    term_register_notify_on_input(_test_term_notify_on_input);
 
     while (!_test_term_notify_on_input_called && time_waited < timeout + 250) {
         sleep_ms(10);
@@ -261,7 +261,7 @@ char test_term_notify_on_input(uint32_t timeout) {
     if (_test_term_notify_on_input_to_id != 0) {
         cancel_alarm(_test_term_notify_on_input_to_id);
     }
-    term_notify_on_input(NULL);
+    term_register_notify_on_input(NULL);
 
     return (_input);
 }

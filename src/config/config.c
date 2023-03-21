@@ -73,7 +73,7 @@ static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* v
 static int32_t _cih_local(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_char_speed_min(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_server_url(config_t* cfg, const char* key, const char* value, char* buf);
+static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_sound(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_sounder(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_spacing(config_t* cfg, const char* key, const char* value, char* buf);
@@ -101,7 +101,7 @@ static const cfg_item_handler_fn cfg_handlers[] = {
     _cih_local,
     _cih_char_speed_min,
     _cih_remote,
-    _cih_server_url,
+    _cih_host_port,
     _cih_sound,
     _cih_sounder,
     _cih_spacing,
@@ -175,7 +175,7 @@ static int32_t _cih_config_version(config_t* cfg, const char* key, const char* v
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 10 + 2; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n\n", our_key, cfg->cfg_version);
+        retval = snprintf(buf, max_len, "# Config file/format version.\n%s=%hd\n\n", our_key, cfg->cfg_version);
     }
     return (retval);
 }
@@ -194,7 +194,7 @@ static int32_t _cih_auto_connect(config_t* cfg, const char* key, const char* val
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->auto_connect));
+        retval = snprintf(buf, max_len, "# Autoconnect to wire on startup.\n%s=%hd\n", our_key, binary_from_bool(cfg->auto_connect));
     }
     return (retval);
 }
@@ -224,7 +224,7 @@ static int32_t _cih_code_type(config_t* cfg, const char* key, const char* value,
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 13 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, _code_type_enum_names[cfg->code_type]);
+        retval = snprintf(buf, max_len, "# Code type (AMERICAN | INTERNATIONAL).\n%s=%s\n", our_key, _code_type_enum_names[cfg->code_type]);
     }
     return (retval);
 }
@@ -243,7 +243,7 @@ static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* v
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->key_has_closer));
+        retval = snprintf(buf, max_len, "# Does the key have a physical closer.\n%s=%hd\n", our_key, binary_from_bool(cfg->key_has_closer));
     }
     return (retval);
 }
@@ -262,7 +262,7 @@ static int32_t _cih_local(config_t* cfg, const char* key, const char* value, cha
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->local));
+        retval = snprintf(buf, max_len, "# Sound key input locally.\n%s=%hd\n", our_key, binary_from_bool(cfg->local));
     }
     return (retval);
 }
@@ -281,7 +281,7 @@ static int32_t _cih_char_speed_min(config_t* cfg, const char* key, const char* v
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, cfg->char_speed_min);
+        retval = snprintf(buf, max_len, "# The minimum character speed. Used for Farnsworth.\n%s=%hd\n", our_key, cfg->char_speed_min);
     }
     return (retval);
 }
@@ -300,29 +300,29 @@ static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, ch
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->remote));
+        retval = snprintf(buf, max_len, "# Send key input to the remote server.\n%s=%hd\n", our_key, binary_from_bool(cfg->remote));
     }
     return (retval);
 }
 
-static int32_t _cih_server_url(config_t* cfg, const char* key, const char* value, char* buf) {
+static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value, char* buf) {
     int32_t retval = 0;
-    char* our_key = "server_url";
+    char* our_key = "host_port";
 
     if (key) {
         // See if it is the key we handle
         if (strcmp(key, our_key) == 0) {
-            if (cfg->server_url) {
-                free(cfg->server_url);
+            if (cfg->host_port) {
+                free(cfg->host_port);
             }
-            cfg->server_url = config_value_create(value);
+            cfg->host_port = config_value_create(value);
             retval = 1;
         }
     }
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + NET_URL_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, cfg->server_url);
+        retval = snprintf(buf, max_len, "# host:port of MorseKOB Server.\n%s=%s\n", our_key, cfg->host_port);
     }
     return (retval);
 }
@@ -341,7 +341,7 @@ static int32_t _cih_sound(config_t* cfg, const char* key, const char* value, cha
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->sound));
+        retval = snprintf(buf, max_len, "# Use the board sound (tone) for code sounding.\n%s=%hd\n", our_key, binary_from_bool(cfg->sound));
     }
     return (retval);
 }
@@ -360,7 +360,7 @@ static int32_t _cih_sounder(config_t* cfg, const char* key, const char* value, c
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, binary_from_bool(cfg->sounder));
+        retval = snprintf(buf, max_len, "# Use the sounder for code sounding.\n%s=%hd\n", our_key, binary_from_bool(cfg->sounder));
     }
     return (retval);
 }
@@ -391,7 +391,7 @@ static int32_t _cih_spacing(config_t* cfg, const char* key, const char* value, c
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 4 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, _spacing_enum_names[cfg->spacing]);
+        retval = snprintf(buf, max_len, "# Where to insert space for Farnsworth (NONE | CHAR | WORD).\n%s=%s\n", our_key, _spacing_enum_names[cfg->spacing]);
     }
     return (retval);
 }
@@ -404,16 +404,16 @@ static int32_t _cih_station(config_t* cfg, const char* key, const char* value, c
         // See if it is the key we handle
         if (strcmp(key, our_key) == 0) {
             if (cfg->station) {
-                free(cfg->server_url);
+                free(cfg->station);
             }
-            cfg->server_url = config_value_create(value);
+            cfg->station = config_value_create(value);
             retval = 1;
         }
     }
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + MKOBSERVER_STATION_ID_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, cfg->server_url);
+        retval = snprintf(buf, max_len, "# Station ID.\n%s=%s\n", our_key, cfg->station);
     }
     return (retval);
 }
@@ -432,7 +432,7 @@ static int32_t _cih_text_speed(config_t* cfg, const char* key, const char* value
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, cfg->text_speed);
+        retval = snprintf(buf, max_len, "# Text speed (in WPM).\n%s=%hd\n", our_key, cfg->text_speed);
     }
     return (retval);
 }
@@ -451,7 +451,7 @@ static int32_t _cih_wire(config_t* cfg, const char* key, const char* value, char
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n", our_key, cfg->wire);
+        retval = snprintf(buf, max_len, "# MorseKOB Wire.\n%s=%hd\n", our_key, cfg->wire);
     }
     return (retval);
 }
@@ -470,7 +470,7 @@ static int32_t _scih_config_version(config_sys_t* sys_cfg, const char* key, cons
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 10 + 2; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%hd\n\n", our_key, sys_cfg->cfg_version);
+        retval = snprintf(buf, max_len, "# Config file/format version.\n%s=%hd\n\n", our_key, sys_cfg->cfg_version);
     }
     return (retval);
 }
@@ -489,7 +489,7 @@ static int32_t _scih_tz_offset(config_sys_t* sys_cfg, const char* key, const cha
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 5 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%.1f\n", our_key, sys_cfg->tz_offset);
+        retval = snprintf(buf, max_len, "# Timezone offset (hours from GMT).\n%s=%.1f\n", our_key, sys_cfg->tz_offset);
     }
     return (retval);
 }
@@ -511,7 +511,7 @@ static int32_t _scih_user_cfg_filename(config_sys_t* sys_cfg, const char* key, c
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + FF_MAX_LFN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, sys_cfg->user_cfg_filename);
+        retval = snprintf(buf, max_len, "# User config file to load initially.\n%s=%s\n", our_key, sys_cfg->user_cfg_filename);
     }
     return (retval);
 }
@@ -533,7 +533,7 @@ static int32_t _scih_wifi_password(config_sys_t* sys_cfg, const char* key, const
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + NET_PASSWORD_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, sys_cfg->wifi_password);
+        retval = snprintf(buf, max_len, "# WiFi password.\n%s=%s\n", our_key, sys_cfg->wifi_password);
     }
     return (retval);
 }
@@ -555,7 +555,7 @@ static int32_t _scih_ssid(config_sys_t* sys_cfg, const char* key, const char* va
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + NET_SSID_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "%s=%s\n", our_key, sys_cfg->wifi_ssid);
+        retval = snprintf(buf, max_len, "# WiFi SSID (name)\n%s=%s\n", our_key, sys_cfg->wifi_ssid);
     }
     return (retval);
 }
@@ -630,6 +630,10 @@ int32_t _process_sys_cfg_line(char* line) {
 }
 
 const config_t* config_current() {
+    return _current_cfg;
+}
+
+config_t* config_current_for_modification() {
     return _current_cfg;
 }
 

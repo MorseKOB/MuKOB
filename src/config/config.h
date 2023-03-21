@@ -35,7 +35,7 @@ typedef struct _config_ {
     bool local;
     uint8_t char_speed_min;
     bool remote;
-    char* server_url; // server:port
+    char* host_port; // host/addr:port of the MorseKOB Server
     bool sound;
     bool sounder;
     code_spacing_t spacing;
@@ -61,6 +61,13 @@ typedef struct _sys_config_ {
  * @return config_t* Current configuration.
  */
 extern const config_t* config_current();
+
+/**
+ * @brief Get the current configuration to be modified.
+ *
+ * @return config_t* Current configuration.
+ */
+extern config_t* config_current_for_modification();
 
 /**
  * @brief Free a config_t structure previously allowcated with config_new.

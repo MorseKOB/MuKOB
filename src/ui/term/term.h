@@ -271,7 +271,7 @@ extern void term_erase_bol(void);
 
 /**
  * @brief Erase `n` characters without moving the cursor.
- * 
+ *
  * @param n Number of characters to erase.
  */
 extern void term_erase_char(uint16_t n);
@@ -303,20 +303,6 @@ extern void term_erase_line(void);
 extern scr_position_t term_get_cursor_position(void);
 
 /**
- * @brief Get the terminal screen info.
- * @ingroup term
- *
- * This sends a CPR (CSI 6 n) to the terminal and reads the tesponse. It waits a maximum of
- * 250ms for a respoinse.
- *
- * @param buf A character buffer to store the DA string into.
- * @param maxlen The maximum number of characters to get.
- *
- * @return int The number of characters actually read.
- */
-extern int term_get_screen_info(char* buf, int maxlen);
-
-/**
  * @brief
  * @ingroup term
  *
@@ -338,6 +324,20 @@ extern int term_get_id_info(vt_term_id_spec_t id_spec, char* buf, int maxlen);
  * @return int The number of characters actually read.
  */
 extern int term_get_name(char* buf, int maxlen);
+
+/**
+ * @brief Get the terminal screen info.
+ * @ingroup term
+ *
+ * This sends a CPR (CSI 6 n) to the terminal and reads the tesponse. It waits a maximum of
+ * 250ms for a respoinse.
+ *
+ * @param buf A character buffer to store the DA string into.
+ * @param maxlen The maximum number of characters to get.
+ *
+ * @return int The number of characters actually read.
+ */
+extern int term_get_screen_info(char* buf, int maxlen);
 
 /**
  * @brief Get the terminal device attributes (1).
@@ -492,6 +492,22 @@ extern void term_set_type(vt_term_type_spec_t type, vt_term_id_spec_t id_type);
  * @param title Null terminated string to attempt to set.
  */
 extern void term_set_title(const char *title);
+
+/**
+ * @brief Sets the text bold attribute.
+ * @ingroup term
+ *
+ * Text sent to the terminal will be bold after this.
+ */
+extern void term_text_bold();
+
+/**
+ * @brief Resets the text attributes to the normal state.
+ * @ingroup term
+ *
+ * Text sent to the terminal after this will be displayed normally.
+ */
+extern void term_text_normal();
 
 #ifdef __cplusplus
 }

@@ -74,7 +74,7 @@ void alarm_set_ms(uint32_t ms, cmt_msg_t* msg) {
     }
 }
 
-void enter_message_loop(msg_loop_cntx_t* loop_context) {
+void message_loop(msg_loop_cntx_t* loop_context) {
     get_msg_nowait_fn get_msg_function = (loop_context->corenum == 0 ? get_core0_msg_nowait : get_core1_msg_nowait);
     cmt_msg_t msg;
     idle_fn* idle_functions = loop_context->idle_functions;

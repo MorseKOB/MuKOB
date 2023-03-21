@@ -6,10 +6,15 @@
  *
  */
 #include <stddef.h>
+#include <string.h>
 
 #include "mkwire.h"
+#include "config.h"
+#include "cmt.h"
 #include "net.h"
 #include "mkboard.h"
+
+#define ADDR_PORT_SEP ':'
 
 /*
  * *** Message format To/From MorseKOB Server ***
@@ -55,13 +60,14 @@
 
 // *** Local function declarations...
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
-struct pbuf* _connect_req_builder();
-struct pbuf* _disconnect_req_builder();
-struct pbuf* _send_id_req_builder();
+static struct pbuf* _connect_req_builder();
+static struct pbuf* _disconnect_req_builder();
+static struct pbuf* _send_id_req_builder();
 static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
-void _send_id();
-void _start_keep_alive();
-void _stop_keep_alive();
+static void _send_id();
+static void _start_keep_alive();
+static void _stop_keep_alive();
+static void _wire_connect();
 
 const char* _mks_commands[6] = {
     "*UNDEFINED*",
@@ -156,25 +162,13 @@ typedef struct mkspkt_code {
 char *_office_id = NULL;
 char *_mkserver_host = NULL;
 uint16_t _mkserver_port = 0;
-int16_t _wire_no = 0;
+int16_t _wire_no = 1;
 int32_t _seqno_send = 0;
 int32_t _seqno_recv = -1;
 struct udp_pcb *_udp_pcb = NULL;
 struct repeating_timer _keep_alive_timer;
 bool _keep_alive_active = false;
 void (*_next_fn)(void) = NULL;
-void mkwire_connect(unsigned short wire_no) {
-    _wire_no = wire_no;
-    if (_udp_pcb != NULL) {
-        mkwire_disconnect();
-    }
-    // Need to bind to a port to keep it constant across UDP operations,
-    // as KOBServer tracks clients by IP:Port
-    err_enum_t status = udp_socket_bind(_mkserver_host, _mkserver_port, _bind_handler);
-    if (status != ERR_OK) {
-        error_printf("MK Wire Connect failed: %d\n", status);
-    }
-}
 
 void mkwire_disconnect() {
     _wire_no = 0;
@@ -190,7 +184,24 @@ void mkwire_disconnect() {
     _stop_keep_alive();
 }
 
-void mkwire_init(char* mkobs_url, unsigned short port, char* office_id) {
+void mkwire_connect(unsigned short wire_no) {
+    if (mkwire_is_connected()) {
+        mkwire_disconnect();
+    }
+    mkwire_wire_set(wire_no);
+    _wire_connect();
+}
+
+void mkwire_connect_toggle() {
+    if (mkwire_is_connected()) {
+        mkwire_disconnect();
+    }
+    else {
+        _wire_connect();
+    }
+}
+
+void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, int16_t wire_no) {
     if (_mkserver_host) {
         free(_mkserver_host);
         _mkserver_host = NULL;
@@ -203,10 +214,43 @@ void mkwire_init(char* mkobs_url, unsigned short port, char* office_id) {
     strcpy(_mkserver_host, mkobs_url);
     _mkserver_port = port;
     mkwire_set_office_id(office_id);
+    mkwire_wire_set(wire_no);
 }
 
 bool mkwire_is_connected() {
     return (_udp_pcb != NULL);
+}
+
+bool mkwire_host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port) {
+    const char* h2u = (host_and_port ? host_and_port : MKOBSERVER_DEFAULT);
+    int len_of_host;
+
+    // See if there is a ':'
+    char* sep = strchr(h2u, ADDR_PORT_SEP);
+    if (sep) {
+        // There is a ':', get the string up to it
+        len_of_host = sep - h2u;
+    }
+    else {
+        len_of_host = strlen(h2u);
+    }
+    if (maxlen > len_of_host) {
+        strncpy(buf, h2u, len_of_host);
+    }
+    else {
+        strncpy(buf, h2u, maxlen);
+    }
+
+    return (len_of_host < maxlen);
+}
+
+uint16_t mkwire_port_from_hostport(const char* host_and_port) {
+    // Is there a ':'?
+    char* sep = strchr(host_and_port, ADDR_PORT_SEP);
+    if (NULL == sep) {
+        return MKOBSERVER_PORT_DEFAULT;
+    }
+    return (atoi(sep+1));
 }
 
 void mkwire_set_office_id(char* office_id) {
@@ -219,6 +263,28 @@ void mkwire_set_office_id(char* office_id) {
         error_printf("malloc failed in mkwire_set_office_id\n");
     }
     strcpy(_office_id, office_id);
+}
+
+int16_t mkwire_wire_get() {
+    return (_wire_no);
+}
+
+void mkwire_wire_set(int16_t wire_no) {
+    if (wire_no > 0 && wire_no < 1000) {
+        _wire_no = wire_no;
+        config_t* cfg = config_current_for_modification();
+        cfg->wire = wire_no;
+        // If we are currently connected, disconnect and re-connect with the new wire.
+        if (mkwire_is_connected()) {
+            mkwire_disconnect();
+            _wire_connect();
+        }
+        cmt_msg_t msg;
+        msg.id = MSG_WIRE_CHANGED;
+        msg.data.wire = wire_no;
+        postUIMsgBlocking(&msg);
+
+    }
 }
 
 // *** Local functions ***
@@ -246,7 +312,7 @@ void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
  * @param code Array of int code values
  * @param n Number of code values
  */
-void _pack_code_packet(mkspkt_code_t* code_pkt, int32_t code[], int n) {
+static void _pack_code_packet(mkspkt_code_t* code_pkt, int32_t code[], int n) {
     // start with all zeros
     memset(code_pkt, 0x00, sizeof(mkspkt_id_t));
     code_pkt->cmd = MKS_CMD_DATA;
@@ -265,7 +331,7 @@ void _pack_code_packet(mkspkt_code_t* code_pkt, int32_t code[], int n) {
  *
  * @param id_pkt The ID Packet structure to set values into
  */
-void _pack_id_packet(mkspkt_id_t *id_pkt) {
+static void _pack_id_packet(mkspkt_id_t *id_pkt) {
     // start with all zeros
     memset(id_pkt, 0x00, sizeof(mkspkt_id_t));
     id_pkt->cmd = MKS_CMD_DATA;
@@ -290,7 +356,7 @@ void _pack_id_packet(mkspkt_id_t *id_pkt) {
  * @param p The PBUF received from the MorseKOB Server (caller to assure it's not NULL)
  *          The caller is responsible for freeing it (they might have more they want to do with it)
  */
-void _unpack_code_packet(mkspkt_code_t* code_pkt, const struct pbuf* p) {
+static void _unpack_code_packet(mkspkt_code_t* code_pkt, const struct pbuf* p) {
     memset(code_pkt, 0, sizeof(mkspkt_code_t));
     pbuf_copy_partial(p, &code_pkt->cmd, sizeof(member_size(mkspkt_code_t, cmd)), MKSPKT_CODE_OFFSET_CMD);
     pbuf_copy_partial(p, &code_pkt->bytes, sizeof(member_size(mkspkt_code_t, bytes)), MKSPKT_CODE_OFFSET_BYTES);
@@ -313,7 +379,7 @@ void _unpack_code_packet(mkspkt_code_t* code_pkt, const struct pbuf* p) {
  * @param p The PBUF received from the MorseKOB Server (caller to assure it's not NULL)
  *          The caller is responsible for freeing it (they might have more they want to do with it)
  */
-void _unpack_id_packet(mkspkt_id_t* id_pkt, const struct pbuf* p) {
+static void _unpack_id_packet(mkspkt_id_t* id_pkt, const struct pbuf* p) {
     memset(id_pkt, 0, sizeof(mkspkt_id_t));
     pbuf_copy_partial(p, &id_pkt->cmd, sizeof(member_size(mkspkt_id_t, cmd)), MKSPKT_ID_OFFSET_CMD);
     pbuf_copy_partial(p, &id_pkt->bytes, sizeof(member_size(mkspkt_id_t, bytes)), MKSPKT_ID_OFFSET_BYTES);
@@ -323,7 +389,7 @@ void _unpack_id_packet(mkspkt_id_t* id_pkt, const struct pbuf* p) {
     pbuf_copy_partial(p, &id_pkt->version, MKS_PKT_MAX_STRING_LEN, MKSPKT_ID_OFFSET_VERSION);
 }
 
-struct pbuf* _connect_req_builder() {
+static struct pbuf* _connect_req_builder() {
     debug_printf("Make MKS `connect` request\n");
 
     mkspkt_cmd_wire_t connect_packet = { MKS_CMD_CONNECT, _wire_no };
@@ -337,7 +403,7 @@ struct pbuf* _connect_req_builder() {
     return (p);
 }
 
-struct pbuf* _disconnect_req_builder() {
+static struct pbuf* _disconnect_req_builder() {
     debug_printf("Make MKS `disconnect` request\n");
 
     mkspkt_cmd_wire_t disconnect_packet = { MKS_CMD_DISCONNECT, 0 };
@@ -351,7 +417,7 @@ struct pbuf* _disconnect_req_builder() {
     return (p);
 }
 
-struct pbuf* _send_id_req_builder() {
+static struct pbuf* _send_id_req_builder() {
     debug_printf("Make MKS `send id` request\n");
 
     mkspkt_id_t id_packet;
@@ -420,7 +486,7 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
 }
 
 // Continuation of the `_send_id` function. Called after 'ACK' is received.
-void _send_id_2() {
+static void _send_id_2() {
     if (_udp_pcb) {
         _seqno_send += 2; // Account for the CON message and this DAT message.
         struct pbuf* p = _send_id_req_builder();
@@ -431,7 +497,7 @@ void _send_id_2() {
     }
 }
 
-void _send_id() {
+static void _send_id() {
     if (_udp_pcb) {
         // Send a connect message and indicate that _send_id_2 should be called when 'ACK' is received.
         struct pbuf* p = _connect_req_builder();
@@ -443,20 +509,32 @@ void _send_id() {
 }
 
 bool _keep_alive_callback(struct repeating_timer* t) {
-    debug_printf("Keep alive at %lld\n", time_us_64());
+    // debug_printf("Keep alive at %lld\n", time_us_64());
     _send_id();
     return true;
 }
 
-void _start_keep_alive() {
+static void _start_keep_alive() {
     if (!_keep_alive_active) {
         add_repeating_timer_ms(MKS_KEEP_ALIVE_TIME, _keep_alive_callback, NULL, &_keep_alive_timer);
         _keep_alive_active = true;
     }
 }
 
-void _stop_keep_alive() {
+static void _stop_keep_alive() {
     if (_keep_alive_active) {
         _keep_alive_active = !cancel_repeating_timer(&_keep_alive_timer);
+    }
+}
+
+static void _wire_connect() {
+    if (_udp_pcb != NULL) {
+        mkwire_disconnect();
+    }
+    // Need to bind to a port to keep it constant across UDP operations,
+    // as KOBServer tracks clients by IP:Port
+    err_enum_t status = udp_socket_bind(_mkserver_host, _mkserver_port, _bind_handler);
+    if (status != ERR_OK) {
+        error_printf("MK Wire Connect failed: %d\n", status);
     }
 }
