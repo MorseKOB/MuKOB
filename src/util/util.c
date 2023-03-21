@@ -8,6 +8,7 @@
 #include "util.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
@@ -107,6 +108,18 @@ int16_t day_of_year(int8_t day, int8_t month, int16_t year) {
     }
 
     return (dofy);
+}
+
+int int_from_str(const char* str, bool* success) {
+    char* unparsed;
+    *success = true; // Be an optimist
+    unsigned int retval = strtol(str, &unparsed, 10);
+    if (*unparsed) {
+        retval = 0;
+        *success = false;
+    }
+
+    return (retval);
 }
 
 bool is_leap_year(int16_t year) {
@@ -227,4 +240,16 @@ void strtoupper(char* dest, const char* str) {
         *dest++ = toupper(*str++);
         *dest = '\000';
     }
+}
+
+unsigned int uint_from_str(const char* str, bool* success) {
+    char* unparsed;
+    *success = true; // Be an optimist
+    unsigned int retval = strtoul(str, &unparsed, 10);
+    if (*unparsed) {
+        retval = 0;
+        *success = false;
+    }
+
+    return (retval);
 }

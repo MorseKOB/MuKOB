@@ -81,6 +81,18 @@ extern int8_t days_in_month(int8_t month, int16_t year);
 extern int16_t day_of_year(int8_t day, int8_t month, int16_t year);
 
 /**
+ * @brief Convert a string to an integer and indicate successful conversion.
+ * @ingroup util
+ *
+ * This uses strtol, taking care of checking for successful conversion.
+ *
+ * @param str The string to convert
+ * @param success Pointer to a bool that will be set `true` on success
+ * @return unsigned int The converted value or 0.
+ */
+extern int int_from_str(const char* str, bool* success);
+
+/**
  * @brief Is the year a leap year.
  *
  * @param year The year to check.
@@ -139,6 +151,18 @@ extern char* strskipws(char* str);
  * @param str The string to uppercase.
  */
 extern void strtoupper(char* dest, const char* str);
+
+/**
+ * @brief Convert a string to an unsigned integer and indicate successful conversion.
+ * @ingroup util
+ *
+ * This uses strtoul, taking care of checking for successful conversion.
+ *
+ * @param str The string to convert
+ * @param success Pointer to a bool that will be set `true` on success
+ * @return unsigned int The converted value or 0.
+ */
+extern unsigned int uint_from_str(const char* str, bool* success);
 
 #ifdef __cplusplus
     }

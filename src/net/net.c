@@ -189,28 +189,34 @@ static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, dou
 
 // NTP data received (udp_incoming_data_handler_fn)
 static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handler_data) {
-    uint8_t mode = pbuf_get_at(p, 0) & 0x7;
-    uint8_t stratum = pbuf_get_at(p, 1);
-    ntp_handler_data_t* ntp_handler_data = (ntp_handler_data_t*)handler_data;
-    double tz_offset = ntp_handler_data->tz_offset;
-    free(ntp_handler_data);
+    if (p) {
+        uint8_t mode = pbuf_get_at(p, 0) & 0x7;
+        uint8_t stratum = pbuf_get_at(p, 1);
+        ntp_handler_data_t* ntp_handler_data = (ntp_handler_data_t*)handler_data;
+        double tz_offset = ntp_handler_data->tz_offset;
 
-    if (status != ERR_OK) {
-        _ntp_set_datetime(status, NULL, tz_offset);
+        if (status != ERR_OK) {
+            _ntp_set_datetime(status, NULL, tz_offset);
+        }
+        else if (status == ERR_OK && mode == 0x4 && stratum != 0) {
+            uint8_t seconds_buf[4] = { 0 };
+            pbuf_copy_partial(p, seconds_buf, sizeof(seconds_buf), 40);
+            uint32_t seconds_since_1900 = seconds_buf[0] << 24 | seconds_buf[1] << 16 | seconds_buf[2] << 8 | seconds_buf[3];
+            uint32_t seconds_since_1970 = seconds_since_1900 - NTP_DELTA;
+            time_t seconds_from_epoch = seconds_since_1970;
+            _ntp_set_datetime(status, &seconds_from_epoch, tz_offset);
+        }
+        else {
+            error_printf("invalid NTP response\n");
+            _ntp_set_datetime(ERR_VAL, NULL, tz_offset);
+        }
+        if (p->ref > 0) {
+            pbuf_free(p);
+        }
     }
-    else if (status == ERR_OK && mode == 0x4 && stratum != 0) {
-        uint8_t seconds_buf[4] = { 0 };
-        pbuf_copy_partial(p, seconds_buf, sizeof(seconds_buf), 40);
-        uint32_t seconds_since_1900 = seconds_buf[0] << 24 | seconds_buf[1] << 16 | seconds_buf[2] << 8 | seconds_buf[3];
-        uint32_t seconds_since_1970 = seconds_since_1900 - NTP_DELTA;
-        time_t seconds_from_epoch = seconds_since_1970;
-        _ntp_set_datetime(status, &seconds_from_epoch, tz_offset);
+    if (handler_data) {
+        free(handler_data);
     }
-    else {
-        error_printf("invalid NTP response\n");
-        _ntp_set_datetime(ERR_VAL, NULL, tz_offset);
-    }
-    pbuf_free(p);
 }
 
 // Called back with a DNS result (dns_found_callback)

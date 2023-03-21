@@ -12,11 +12,14 @@
 #include "util.h"
 #include "hardware/rtc.h"
 #include "pico/printf.h"
+#include <ctype.h>
+#include <string.h>
 
 #define _UI_TERM_GETLINE_MAX_LEN_  256 // Maximum line length (including /0) for the `term_getline` function
 
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
+static ui_term_control_char_handler _control_char_handler[32]; // Room for a handler for each control character
 static char _getline_buf[_UI_TERM_GETLINE_MAX_LEN_];
 static int16_t _getline_index;
 
@@ -24,23 +27,10 @@ static ui_term_input_available_handler _input_available_handler;
 static ui_term_getline_callback_fn _getline_callback; // Function pointer to be called when an input line is ready
 
 /**
- * @brief Message handler for MSG_INIT_TERMINAL
+ * @brief Message handler for `MSG_INPUT_CHAR_READY`
  * @ingroup ui
  *
- * Init/re-init the terminal. This is typically received by a user requesting
- * that the terminal be re-initialized/refreshed. For example if they connect
- * a terminal after MuKOB is already up and running.
- *
  * @param msg Nothing important in the message.
- */
-void _ui_term_handle_init_terminal(cmt_msg_t* msg) {
-    ui_term_build();
-}
-
-/**
- * Message handler for `MSG_INPUT_CHAR_READY`
- *
- * Nothing important in the message.
  */
 void _ui_term_handle_input_char_ready(cmt_msg_t* msg) {
     if (NULL != _input_available_handler) {
@@ -119,17 +109,17 @@ static void _ui_term_getline_continue() {
             _getline_buf[_getline_index] = '\0';
         }
         else if (ESC == c) {
-            // Escape - erase the line and give blank to the callback
-            while (_getline_index >= 0) {
+            // Escape - erase the line
+            while (_getline_index > 0) {
                 _getline_buf[_getline_index] = '\0';
                 term_cursor_left_1();
                 term_erase_char(1);
                 _getline_index--;
             }
             _getline_index = 0;
-            _getline_callback = NULL;
-            fn(_getline_buf);
-            return;
+            _getline_buf[_getline_index] = '\0';
+            // If there is a handler registered for ESC let it handle it too
+            ui_term_handle_control_character(c);
         }
         else if (c >= ' ' && c < DEL) {
             if (_getline_index < (_UI_TERM_GETLINE_MAX_LEN_ - 1)) {
@@ -142,8 +132,11 @@ static void _ui_term_getline_continue() {
             }
         }
         else {
-            // Control or 8-bit character we don't deal with
-            putchar(BEL);
+            // See if there is a handler registered for this, else BEEP
+            if (!ui_term_handle_control_character(c)) {
+                // Control or 8-bit character we don't deal with
+                putchar(BEL);
+            }
         }
         // `while` will see if there are more chars available
     }
@@ -154,6 +147,7 @@ static void _ui_term_getline_continue() {
 
 static void _term_init() {
     _input_available_handler = NULL;
+    memset(_control_char_handler, 0, sizeof(_control_char_handler));
     term_reset();
     term_color_default();
     term_set_type(VT_510_TYPE_SPEC, VT_510_ID_SPEC);
@@ -208,6 +202,13 @@ void ui_term_display_wire() {
     ui_term_update_wire(config->wire);
 }
 
+static ui_term_control_char_handler ui_term_get_control_char_handler(char c) {
+    if (iscntrl(c)) {
+        return _control_char_handler[(int)c];
+    }
+    return (NULL);
+}
+
 void ui_term_getline(ui_term_getline_callback_fn getline_cb) {
     _getline_callback = getline_cb;
     ui_term_register_input_available_handler(_ui_term_getline_continue);
@@ -215,8 +216,45 @@ void ui_term_getline(ui_term_getline_callback_fn getline_cb) {
     _ui_term_getline_continue();
 }
 
+void ui_term_getline_cancel(ui_term_input_available_handler input_handler) {
+    _getline_callback = NULL;
+    ui_term_register_input_available_handler(input_handler);
+    _getline_index = 0;
+    _getline_buf[_getline_index] = '\0';
+}
+
+bool ui_term_handle_control_character(char c) {
+    if (iscntrl(c)) {
+        ui_term_control_char_handler handler_fn = _control_char_handler[(int)c];
+        if (handler_fn) {
+            handler_fn(c);
+            return (true);
+        }
+    }
+    return (false);
+}
+
+extern void ui_term_register_control_char_handler(char c, ui_term_control_char_handler handler_fn) {
+    if (iscntrl(c)) {
+        _control_char_handler[(int)c] = handler_fn;
+    }
+}
+
 void ui_term_register_input_available_handler(ui_term_input_available_handler handler_fn) {
     _input_available_handler = handler_fn;
+}
+
+void ui_term_update_connected_state(wire_connected_state_t state) {
+    char state_char = (WIRE_CONNECTED == state ? UI_TERM_CONNECTED_CHAR : UI_TERM_NOT_CONNECTED_CHAR);
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_CONNECTED_ICON_COL);
+    printf("[%c]", state_char);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
 }
 
 void ui_term_update_sender(const char* id) {
@@ -244,7 +282,7 @@ void ui_term_update_speed(uint16_t speed) {
     term_color_bg(UI_TERM_HEADER_COLOR_BG);
     term_set_origin_mode(TERM_OM_UPPER_LEFT);
     term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_SPEED_VALUE_COL);
-    snprintf(buf, sizeof(buf) - 1, "%2hd", speed);
+    snprintf(buf, sizeof(buf) - 1, "%-2hd", speed);
     printf("%s", buf);
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();
@@ -258,7 +296,7 @@ void ui_term_update_wire(uint16_t wire) {
     term_color_bg(UI_TERM_HEADER_COLOR_BG);
     term_set_origin_mode(TERM_OM_UPPER_LEFT);
     term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_WIRE_VALUE_COL);
-    snprintf(buf, sizeof(buf) - 1, "%3hd", wire);
+    snprintf(buf, sizeof(buf) - 1, "%-3hd", wire);
     printf("%s", buf);
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();

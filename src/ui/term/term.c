@@ -117,26 +117,24 @@ static int _read_from_term(char* buf, int maxlen, char term_char, int max_wait) 
 static void _stdio_chars_available(void *param) {
     // Read the character
     int ci;
-    do {
-        ci = getchar_timeout_us(0); // 0 means return immediately if not available
-        if (ci == PICO_ERROR_TIMEOUT) {
-            break;
-        }
+    while (PICO_ERROR_TIMEOUT != (ci = getchar_timeout_us(0))) {
         // See if we have room for it in the input buffer
         if (((_input_buf_in + 1) % _INPUT_BUF_SIZE_) == _input_buf_out) {
             // No room. Just throw it away.
             _input_buf_overflow = true;
-            break;
         }
-        _input_buf[_input_buf_in] = (char)ci;
-        _input_buf_in = (_input_buf_in + 1) % _INPUT_BUF_SIZE_;
-    } while (true);
+        else {
+            // Store it, then continue reading
+            _input_buf[_input_buf_in] = (char)ci;
+            _input_buf_in = (_input_buf_in + 1) % _INPUT_BUF_SIZE_;
+        }
+    }
     if (_term_notify_on_input != NULL && term_input_available()) {
         // Clear out the function pointer. This is a one-shot function call.
-        term_notify_on_input_fn fn = _term_notify_on_input;
+        term_notify_on_input_fn notify_function = _term_notify_on_input;
         _term_notify_on_input = NULL;
         // Call it.
-        fn();
+        notify_function();
     }
 }
 
@@ -321,6 +319,8 @@ inline const char* term_pu_name(void) {
 
 void term_register_notify_on_input(term_notify_on_input_fn notify_fn) {
     _term_notify_on_input = notify_fn;
+    // Call to see if anything is currently available on the UART
+    // ZZZ - causes endless loop? _stdio_chars_available(NULL);
 }
 
 inline void term_reset() {
@@ -407,4 +407,12 @@ void term_set_type(vt_term_type_spec_t type, vt_term_id_spec_t id_type) {
         term_input_buf_clear();
         sleep_ms(50);
     }
+}
+
+inline void term_text_bold() {
+    printf("%s1m", CSI);
+}
+
+inline void term_text_normal() {
+    printf("%s0m", CSI);
 }

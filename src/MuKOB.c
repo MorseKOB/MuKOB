@@ -72,7 +72,7 @@ int main()
         be_init();
 
         // Enter into the (endless) Backend Message Dispatching Loop
-        enter_message_loop(&be_msg_loop_cntx);
+        message_loop(&be_msg_loop_cntx);
     } while (1);
 
     // How did we get here?!

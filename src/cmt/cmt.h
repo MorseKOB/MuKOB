@@ -18,20 +18,27 @@ extern "C" {
 #include "pico/types.h"
 
 typedef enum _MSG_ID_ {
-    MSG_COMMON_NOOP = 0x0000,   // Common messages
+    // Common messages (used by both BE and UI)
+    MSG_COMMON_NOOP = 0x0000,
     MSG_DELAY_COMPLETE,
     //
-    MSG_BACKEND_NOOP = 0x4000,  // Back-end messages
+    // Back-End messages
+    MSG_BACKEND_NOOP = 0x4000,
     MSG_WIRE_CONNECT,
+    MSG_WIRE_CONNECT_TOGGLE,
     MSG_WIRE_DISCONNECT,
+    MSG_WIRE_SET,
     MSG_SEND_BE_STATUS,
     //
-    MSG_UI_NOOP = 0x8000,       // UI messages
+    // Front-End/UI messages
+    MSG_UI_NOOP = 0x8000,
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
     MSG_INPUT_CHAR_READY,
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
+    MSG_WIRE_CHANGED,
+    MSG_WIRE_CONNECTED_STATE,
 } msg_id_t;
 
 /**
@@ -128,7 +135,7 @@ extern void alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
  *
  * @param loop_context Loop context for processing.
  */
-extern void enter_message_loop(msg_loop_cntx_t* loop_context);
+extern void message_loop(msg_loop_cntx_t* loop_context);
 
 #ifdef __cplusplus
     }
