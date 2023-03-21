@@ -18,6 +18,11 @@ extern "C" {
 #define MKOBSERVER_PORT_DEFAULT 7890
 #define MKOBSERVER_STATION_ID_MAX_LEN 127
 
+typedef enum _WIRE_CONNECTED_STATE_ {
+    WIRE_NOT_CONNECTED,
+    WIRE_CONNECTED,
+} wire_connected_state_t;
+
 /*!
  * @brief Disconnect from the currently connected MorseKOB Wire.
  * @ingroup wire
@@ -41,6 +46,14 @@ void mkwire_connect(unsigned short wire_no);
  */
 void mkwire_connect_toggle();
 
+/**
+ * @brief The wire connected state.
+ * @ingroup wire
+ *
+ * @return wire_connected_state_t The current state
+ */
+wire_connected_state_t mkwire_connected_state();
+
 /*!
  * @brief Initialize the MorseKOB Wire subsystem.
  * @ingroup wire
@@ -49,7 +62,7 @@ void mkwire_connect_toggle();
  * @param office_id The local Station/Office ID.
  * @param wire_no The wire number to use for connect.
  */
-void mkwire_init(char *mkobs_url, uint16_t port, char *office_id, int16_t wire_no);
+void mkwire_init(char *mkobs_url, uint16_t port, char *office_id, uint16_t wire_no);
 
 /*!
  * @brief Connected to KOB Server status.
@@ -62,11 +75,11 @@ bool mkwire_is_connected();
 /**
  * @brief Return the host from a Host:Port, or the default.
  * @ingroup wire
- * 
+ *
  * Copy the host portion of a Host:Port, or the default.
- * 
+ *
  * @param buf The buffer to copy the host into.
- * @param 
+ * @param
  * @param host_and_port A string that is NULL, contains a Host, or a Host:Port
  * @return true It the buffer was large enough to contain the full host.
  * @return false If the complete host couldn't be copied into the buffer.
@@ -76,11 +89,11 @@ bool mkwire_host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_
 /**
  * @brief Return the port from a Host:Port, or the default.
  * @ingroup wire
- * 
+ *
  * Returns the `port` part of a host:port, or the default MorseKOB
  * Server port if no port is included.
- * 
- * @param host_and_port 
+ *
+ * @param host_and_port
  * @return uint16_t The port part or the default port.
  */
 uint16_t mkwire_port_from_hostport(const char* host_and_port);
@@ -97,7 +110,7 @@ void mkwire_set_office_id(char *office_id);
  *
  * @return int16_t The wire number.
  */
-int16_t mkwire_wire_get();
+uint16_t mkwire_wire_get();
 
 /**
  * @brief Set the wire number (without connecting).
@@ -108,7 +121,7 @@ int16_t mkwire_wire_get();
  *
  * @param wire_no Wire number 1-999 are used/allowed by MorseKOB Server.
  */
-void mkwire_wire_set(int16_t wire_no);
+void mkwire_wire_set(uint16_t wire_no);
 
 #ifdef __cplusplus
 }

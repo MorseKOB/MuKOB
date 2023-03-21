@@ -17,13 +17,8 @@
 
 #define CMD_LINE_MAX_ARGS 64
 
-typedef enum _CMD_STATES_ {
-    CMD_SNOOZING,   // Waiting for user input to wake us up
-    CMD_COLLECTING_LINE,
-    CMD_PROCESSING_LINE,
-} cmd_state_t;
-
 // Command processor declarations
+static int _cmd_connect(int argc, char** argv);
 static int _cmd_help(int argc, char** argv);
 static int _cmd_wire(int argc, char** argv);
 
@@ -36,6 +31,13 @@ typedef struct _CMD_HANDLER_ENTRY {
     char* description;
 } cmd_handler_entry_t;
 
+static cmd_handler_entry_t _cmd_connect_entry = {
+    _cmd_connect,
+    1,
+    "connect",
+    "[wire-number]",
+    "Connect/disconnect (toggle) the current wire. Connect to a specific wire.",
+};
 static cmd_handler_entry_t _cmd_help_entry = {
     _cmd_help,
     1,
@@ -43,7 +45,6 @@ static cmd_handler_entry_t _cmd_help_entry = {
     "[command_name]",
     "List of commands or information for a specific command.",
 };
-
 static cmd_handler_entry_t _cmd_wire_entry = {
     _cmd_wire,
     1,
@@ -53,9 +54,10 @@ static cmd_handler_entry_t _cmd_wire_entry = {
 };
 
 /**
- * @brief List of Command Handlers 
+ * @brief List of Command Handlers
  */
 cmd_handler_entry_t* _command_entries[] = {
+    &_cmd_connect_entry,
     &_cmd_help_entry,
     &_cmd_wire_entry,
     ((cmd_handler_entry_t*)0), // Last entry must be a NULL
@@ -83,6 +85,41 @@ static scr_position_t _scr_cursor_position_save;
 
 
 // Command functions
+
+static int _cmd_connect(int argc, char** argv) {
+    if (argc > 2) {
+        _help_display(&_cmd_connect_entry, HELP_DISP_USAGE);
+        return (-1);
+    }
+    int16_t current_wire = mkwire_wire_get();
+    if (argc == 2) {
+        bool success;
+        uint16_t wire = (uint16_t)uint_from_str(argv[1], &success);
+        if (!success) {
+            printf("Value error - '%s' is not a number.\n", argv[1]);
+            return (-1);
+        }
+        if (wire < 1 || wire > 999) {
+            printf("Wire number must be 1 to 999.\n");
+            return (-1);
+        }
+        if (wire != current_wire) {
+            // The wire specified is not the current wire - connect to it.
+            printf("Connecting to wire %hu...\n", wire);
+            cmt_msg_t msg;
+            msg.id = MSG_WIRE_CONNECT;
+            msg.data.wire = wire;
+            postBEMsgBlocking(&msg);
+            return (0);
+        }
+    }
+    char* op = (mkwire_is_connected() ? "Disconnecting from" : "Connecting to");
+    printf("%s wire %hu...\n", op, current_wire);
+    cmt_msg_t msg;
+    msg.id = MSG_WIRE_CONNECT_TOGGLE;
+    postBEMsgBlocking(&msg);
+    return (0);
+}
 
 static int _cmd_help(int argc, char** argv) {
     cmd_handler_entry_t** cmds = _command_entries;
@@ -151,6 +188,33 @@ static int _cmd_wire(int argc, char** argv) {
 
 // Internal functions
 
+/**
+ * @brief Registered to handle ^C to toggle the connect/disconnect.
+ * @ingroup ui
+ *
+ * @param c Should be ^C
+ */
+void _handle_connect_toggle_char(char c) {
+    // ^C can be typed to connect/disconnect.
+    cmt_msg_t msg;
+    msg.id = MSG_WIRE_CONNECT_TOGGLE;
+    postBEMsgBlocking(&msg);
+}
+
+/**
+ * @brief Registered to handle ^R to re-initialize the terminal.
+ *
+ * @param c Should be ^R
+ */
+void _handle_reinit_terminal_char(char c) {
+    // ^R can be typed if the terminal gets messed up or is connected after MuKOB has started.
+    // This re-initializes the terminal.
+    cmt_msg_t msg;
+    msg.id = MSG_CMD_INIT_TERMINAL;
+    msg.data.c = c;
+    postUIMsgBlocking(&msg);
+}
+
 static void _help_display(cmd_handler_entry_t* cmd, cmd_help_display_format_t type) {
     term_color_pair_t tc = ui_term_color_get();
     term_color_default();
@@ -173,7 +237,7 @@ static void _help_display(cmd_handler_entry_t* cmd, cmd_help_display_format_t ty
     term_color_bg(tc.bg);
 }
 
-void _notified_of_keypress(void) {
+void _notified_of_keypress() {
     // A character is available from the terminal. Getting called clears the registration.
     //
     // See if it's our wakeup char. If so, post a message to kick off our command processing.
@@ -190,21 +254,8 @@ void _notified_of_keypress(void) {
             // We don't re-register, as something else handles the incoming chars until we go idle again.
             return;
         }
-        else if (CMD_CONNECT_TOGGLE_CHAR == c) {
-            // ^C can be typed to connect/disconnect.
-            cmt_msg_t msg;
-            msg.id = MSG_WIRE_CONNECT_TOGGLE;
-            postBEMsgBlocking(&msg);
-            // In this case, we do want to re-register to continue being notified of input.
-        }
-        else if (CMD_REINIT_TERM_CHAR == c) {
-            // ^R can be typed if the terminal gets messed up or is connected after MuKOB has started.
-            // This re-initializes the terminal.
-            cmt_msg_t msg;
-            msg.id = MSG_CMD_INIT_TERMINAL;
-            msg.data.c = c;
-            postUIMsgBlocking(&msg);
-            // In this case, we do want to re-register to continue being notified of input.
+        else {
+            ui_term_handle_control_character(c); // This might not be a control char, but that's okay.
         }
         // If it's not our wake char, read again. When no chars are ready, the call returns -1.
         ci = term_getc();
@@ -222,9 +273,8 @@ static void _process_line(char* line) {
     char* argv[CMD_LINE_MAX_ARGS];
     memset(argv, 0, sizeof(argv));
 
-    // Erase the cursor line (where they entered the command)
-    // term_cursor_bol();
-    // term_erase_line();
+    _cmd_state = CMD_PROCESSING_LINE;
+
     printf("\n");
 
     int argc = parse_line(line, argv, CMD_LINE_MAX_ARGS);
@@ -232,41 +282,36 @@ static void _process_line(char* line) {
     int user_cmd_len = strlen(user_cmd);
     bool command_matched = false;
 
-    cmd_handler_entry_t** cmds = _command_entries;
-    cmd_handler_entry_t* cmd;
-    while (NULL != (cmd = *cmds++)) {
-        int cmd_name_len = strlen(cmd->name);
-        if (user_cmd_len <= cmd_name_len && user_cmd_len >= cmd->min_match) {
-            if (0 == strncmp(cmd->name, user_cmd, user_cmd_len)) {
-                // This command matches
-                command_matched = true;
-                cmd->cmd(argc, argv);
-                break;
+    if (user_cmd_len > 0) {
+        cmd_handler_entry_t** cmds = _command_entries;
+        cmd_handler_entry_t* cmd;
+
+        while (NULL != (cmd = *cmds++)) {
+            int cmd_name_len = strlen(cmd->name);
+            if (user_cmd_len <= cmd_name_len && user_cmd_len >= cmd->min_match) {
+                if (0 == strncmp(cmd->name, user_cmd, user_cmd_len)) {
+                    // This command matches
+                    command_matched = true;
+                    _cmd_state = CMD_EXECUTING_COMMAND;
+                    cmd->cmd(argc, argv);
+                    break;
+                }
             }
         }
-    }
-    if (!command_matched) {
-        printf("Command not found: '%s'. Try 'help'.\n", user_cmd);
+        if (!command_matched) {
+            printf("Command not found: '%s'. Try 'help'.\n", user_cmd);
+        }
     }
 
     // If we aren't currently connected, get another line from the user.
     if (!mkwire_is_connected()) {
         // Get a command from the user...
-        printf("%c", CMD_PROMPT_CHAR);
+        _cmd_state = CMD_COLLECTING_LINE;
+        printf("%c", CMD_PROMPT);
         ui_term_getline(_process_line);
     }
     else {
-        // Put the terminal state back
-        term_cursor_moveto(UI_TERM_CMDLINE, 1);
-        ui_term_color_set(_scr_color_save.fg, _scr_color_save.bg);
-        term_cursor_on(false);
-        term_erase_line();
-        term_cursor_moveto(_scr_cursor_position_save.line, _scr_cursor_position_save.column);
-
-        // go back to Snoozing
-        _cmd_state = CMD_SNOOZING;
-        // Hook keypress looking for a ':' to wake us up.
-        _hook_keypress();
+        cmd_enter_idle_state();
     }
 }
 
@@ -296,7 +341,7 @@ void cmd_attn_handler(cmt_msg_t* msg) {
         if (CMD_WAKEUP_CHAR == c) {
             // Wakeup received, change state to building line.
             _cmd_state = CMD_COLLECTING_LINE;
-            // Get the current cursor possition, move it to the bottom, and show it.
+            // Get the current cursor position, move it to the bottom, and show it.
             // NOTE: Updating the Term UI status uses the terminals `save cursor`
             //       capability, so we use the `get cursor position` functionality
             //       and save it.
@@ -304,7 +349,7 @@ void cmd_attn_handler(cmt_msg_t* msg) {
             _scr_color_save = ui_term_color_get();
             term_cursor_moveto(UI_TERM_CMDLINE, 1);
             ui_term_use_cmd_color();
-            putchar(CMD_PROMPT_CHAR);
+            putchar(CMD_PROMPT);
             term_cursor_on(true);
             // Get a command from the user...
             ui_term_getline(_process_line);
@@ -312,8 +357,34 @@ void cmd_attn_handler(cmt_msg_t* msg) {
     }
 }
 
+/**
+ * This is typically called by the UI when the system connects to a wire.
+ */
+extern void cmd_enter_idle_state() {
+    if (CMD_SNOOZING != _cmd_state) {
+        // Cancel any inprocess 'getline'
+        ui_term_getline_cancel(_notified_of_keypress);
+        // Put the terminal state back
+        term_cursor_moveto(UI_TERM_CMDLINE, 1);
+        ui_term_color_set(_scr_color_save.fg, _scr_color_save.bg);
+        term_cursor_on(false);
+        term_erase_line();
+        term_cursor_moveto(_scr_cursor_position_save.line, _scr_cursor_position_save.column);
+
+        // go back to Snoozing
+        _cmd_state = CMD_SNOOZING;
+    }
+}
+
+const cmd_state_t cmd_get_state() {
+    return _cmd_state;
+}
+
 void cmd_init() {
     _cmd_state = CMD_SNOOZING;
+    // Register the control character handlers.
+    ui_term_register_control_char_handler(CMD_CONNECT_TOGGLE_CHAR, _handle_connect_toggle_char);
+    ui_term_register_control_char_handler(CMD_REINIT_TERM_CHAR, _handle_reinit_terminal_char);
     // Hook keypress looking for a ':' to wake us up.
     _hook_keypress();
 }

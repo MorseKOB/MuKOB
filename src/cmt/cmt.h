@@ -38,6 +38,7 @@ typedef enum _MSG_ID_ {
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
+    MSG_WIRE_CONNECTED_STATE,
 } msg_id_t;
 
 /**

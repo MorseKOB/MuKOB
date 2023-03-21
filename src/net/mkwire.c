@@ -159,19 +159,19 @@ typedef struct mkspkt_code {
 #define MKSPKT_CODE_OFFSET_PAD3 488
 #define MKSPKT_CODE_LEN 496
 
-char *_office_id = NULL;
-char *_mkserver_host = NULL;
-uint16_t _mkserver_port = 0;
-int16_t _wire_no = 1;
-int32_t _seqno_send = 0;
-int32_t _seqno_recv = -1;
-struct udp_pcb *_udp_pcb = NULL;
-struct repeating_timer _keep_alive_timer;
-bool _keep_alive_active = false;
-void (*_next_fn)(void) = NULL;
+static char *_office_id = NULL;
+static char* _mkserver_host = NULL;
+static uint16_t _mkserver_port = 0;
+static uint16_t _wire_no = 1;
+static int32_t _seqno_send = 0;
+static int32_t _seqno_recv = -1;
+static struct udp_pcb* _udp_pcb = NULL;
+static wire_connected_state_t _connected_state = WIRE_NOT_CONNECTED;
+static struct repeating_timer _keep_alive_timer;
+static bool _keep_alive_active = false;
+static void (*_next_fn)(void) = NULL;
 
 void mkwire_disconnect() {
-    _wire_no = 0;
     if (_udp_pcb) {
         // Send a disconnect message and free up the UDP connection.
         struct pbuf* p = _disconnect_req_builder();
@@ -180,7 +180,13 @@ void mkwire_disconnect() {
         pbuf_free(p);
         udp_remove(_udp_pcb);
         _udp_pcb = NULL;
+        _connected_state = WIRE_NOT_CONNECTED;
     }
+    // Post a message to the UI letting it know we are connected
+    cmt_msg_t msg;
+    msg.id = MSG_WIRE_CONNECTED_STATE;
+    msg.data.status = _connected_state;
+    postUIMsgBlocking(&msg);
     _stop_keep_alive();
 }
 
@@ -201,7 +207,11 @@ void mkwire_connect_toggle() {
     }
 }
 
-void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, int16_t wire_no) {
+wire_connected_state_t mkwire_connected_state() {
+    return (_connected_state);
+}
+
+void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
     if (_mkserver_host) {
         free(_mkserver_host);
         _mkserver_host = NULL;
@@ -265,11 +275,11 @@ void mkwire_set_office_id(char* office_id) {
     strcpy(_office_id, office_id);
 }
 
-int16_t mkwire_wire_get() {
+uint16_t mkwire_wire_get() {
     return (_wire_no);
 }
 
-void mkwire_wire_set(int16_t wire_no) {
+void mkwire_wire_set(uint16_t wire_no) {
     if (wire_no > 0 && wire_no < 1000) {
         _wire_no = wire_no;
         config_t* cfg = config_current_for_modification();
@@ -283,7 +293,6 @@ void mkwire_wire_set(int16_t wire_no) {
         msg.id = MSG_WIRE_CHANGED;
         msg.data.wire = wire_no;
         postUIMsgBlocking(&msg);
-
     }
 }
 
@@ -296,9 +305,15 @@ void mkwire_wire_set(int16_t wire_no) {
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
     if (status == ERR_OK) {
         _udp_pcb = udp_pcb;
+        _connected_state = WIRE_CONNECTED;
         // Set up to receive incoming messages from the MKServer.
         udp_recv(udp_pcb, _mks_recv, NULL);  // Can pass user-data in 3rd arg if needed
         _send_id();
+        // Post a message to the UI letting it know we are connected
+        cmt_msg_t msg;
+        msg.id = MSG_WIRE_CONNECTED_STATE;
+        msg.data.status = _connected_state;
+        postUIMsgBlocking(&msg);
     }
 }
 
@@ -392,7 +407,7 @@ static void _unpack_id_packet(mkspkt_id_t* id_pkt, const struct pbuf* p) {
 static struct pbuf* _connect_req_builder() {
     debug_printf("Make MKS `connect` request\n");
 
-    mkspkt_cmd_wire_t connect_packet = { MKS_CMD_CONNECT, _wire_no };
+    mkspkt_cmd_wire_t connect_packet = { MKS_CMD_CONNECT, (int16_t)_wire_no };
     size_t msg_len = sizeof(mkspkt_cmd_wire_t);
     struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, msg_len, PBUF_RAM);
     if (p) {
@@ -534,7 +549,7 @@ static void _wire_connect() {
     // Need to bind to a port to keep it constant across UDP operations,
     // as KOBServer tracks clients by IP:Port
     err_enum_t status = udp_socket_bind(_mkserver_host, _mkserver_port, _bind_handler);
-    if (status != ERR_OK) {
+    if (!(ERR_OK == status || ERR_INPROGRESS == status)) {
         error_printf("MK Wire Connect failed: %d\n", status);
     }
 }

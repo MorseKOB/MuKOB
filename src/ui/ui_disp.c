@@ -22,6 +22,7 @@
 #define UI_DISP_HEADER_COLOR_BG C16_BLUE
 #define UI_DISP_HEADER_INFO_LINE 0
 //#define UI_DISP_HEADER_GAP_LINE 1
+#define UI_DISP_HEADER_CONNECTED_ICON_COL 0
 #define UI_DISP_HEADER_SPEED_LABEL_COL 8
 #define UI_DISP_HEADER_SPEED_VALUE_COL 10
 #define UI_DISP_HEADER_WIRE_LABEL_COL 2
@@ -51,8 +52,8 @@ static void _header_fill_fixed() {
     // Fixed text
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIRE_LABEL_COL, "W:", false, No_Paint);
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_LABEL_COL, "S:", false, No_Paint);
-    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SETUP_COL, "\012\013", false, No_Paint);
-    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_MENU_COL, "\014\015", false, No_Paint);
+    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SETUP_COL, "\012\013", false, No_Paint); // Gear LF/RT
+    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_MENU_COL, "\014\015", false, No_Paint);  // Lines LF/RT
     // Paint and put the colors back
     disp_paint();
     disp_set_text_colors_cp(&cp);
@@ -94,6 +95,12 @@ void ui_disp_display_wire() {
     ui_disp_update_wire(config->wire);
 }
 
+extern void ui_disp_update_connected_state(wire_connected_state_t state) {
+    char* state_indicator = (WIRE_CONNECTED == state ? "\026\027" : "\024\025"); // Conn/Not-Conn LF/RT
+    disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_CONNECTED_ICON_COL,
+        state_indicator, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
+}
+
 void ui_disp_update_sender(const char* id) {
     text_color_pair_t cp;
     char buf[disp_info_columns() + 1];
@@ -111,7 +118,7 @@ void ui_disp_update_sender(const char* id) {
 void ui_disp_update_speed(uint16_t speed) {
     char buf[5];
 
-    snprintf(buf, sizeof(buf) - 1, "%2hd", speed);
+    snprintf(buf, sizeof(buf) - 1, "%-2hd", speed);
     disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
 }
 
@@ -128,6 +135,6 @@ void ui_disp_update_status() {
 void ui_disp_update_wire(uint16_t wire) {
     char buf[5];
 
-    snprintf(buf, sizeof(buf) - 1, "%3hd", wire);
+    snprintf(buf, sizeof(buf) - 1, "%-3hd", wire);
     disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIRE_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
 }

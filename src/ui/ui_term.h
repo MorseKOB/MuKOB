@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 #include "cmt.h"
+#include "mkwire.h"
 #include "term.h"
 
 #define UI_TERM_NAME_VERSION "μKOB v0.1"
@@ -33,10 +34,13 @@ extern "C" {
 #define UI_TERM_HEADER_COLOR_FG TERM_CHR_COLOR_BR_YELLOW
 #define UI_TERM_HEADER_COLOR_BG TERM_CHR_COLOR_BLUE
 #define UI_TERM_HEADER_INFO_LINE 1
+#define UI_TERM_HEADER_CONNECTED_ICON_COL 1
 #define UI_TERM_HEADER_SPEED_LABEL_COL 14
 #define UI_TERM_HEADER_SPEED_VALUE_COL 20
 #define UI_TERM_HEADER_WIRE_LABEL_COL 5
 #define UI_TERM_HEADER_WIRE_VALUE_COL 10
+#define UI_TERM_CONNECTED_CHAR '\244'
+#define UI_TERM_NOT_CONNECTED_CHAR ' '
 
 // Current sender line (at the top)
 #define UI_TERM_SENDER_COLOR_FG TERM_CHR_COLOR_BLUE
@@ -73,6 +77,22 @@ typedef struct _TERM_COLOR_PAIR_ {
 } term_color_pair_t;
 
 /**
+ * @brief Function prototype registered to handle control characters.
+ * @ingroup ui
+ *
+ * These can be registered for one or more control characters. The control
+ * characters are received during Command Shell idle state or during `term_ui_getline`.
+ *
+ * Note: During `term_ui_getline` the characters ^H (BS), ^J (NL), and ^M (CR)
+ * are handled by the line construction and handler functions for these characters
+ * will not be called. In addition, ^[ (ESC) is used to erase the line if a handler
+ * is not registered.
+ *
+ * @param c The control character received.
+ */
+typedef void (*ui_term_control_char_handler)(char c);
+
+/**
  * @brief Callback function that gets the line once it has been received/assembled.
  * @ingroup ui
  *
@@ -101,18 +121,6 @@ typedef void (*ui_term_getline_callback_fn)(char* line);
 typedef void (*ui_term_input_available_handler)(void);
 
 /**
- * @brief Message handler for MSG_INIT_TERMINAL
- * @ingroup ui
- *
- * Init/re-init the terminal. This is typically received by a user requesting
- * that the terminal be re-initialized/refreshed. For example if they connect
- * a terminal after MuKOB is already up and running.
- *
- * @param msg Nothing important in the message.
- */
-extern void _ui_term_handle_init_terminal(cmt_msg_t* msg);
-
-/**
  * @brief `MSG_INPUT_CHAR_READY` message handler.
  * @ingroup ui
  *
@@ -133,7 +141,7 @@ extern void ui_term_build(void);
 extern term_color_pair_t ui_term_color_get();
 
 /**
- * @brief Set the terminal the currently set text colors.
+ * @brief Send the terminal the currently set text colors.
  * @ingroup ui
  */
 extern void ui_term_color_refresh();
@@ -162,8 +170,17 @@ extern void ui_term_display_speed();
 extern void ui_term_display_wire();
 
 /**
+ * @brief Get the control character handler for the given control character.
+ * @ingroup ui
+ *
+ * @param c Character to get the handler for. Non control characters will return NULL.
+ * @return ui_term_control_char_handler The handler for the character or NULL.
+ */
+static ui_term_control_char_handler ui_term_get_control_char_handler(char c);
+
+/**
  * @brief Get a line of user input. Returns immediately. Calls back when line is ready.
- * @ingroup term
+ * @ingroup ui
  * @see term_getline_callback_fn for details on use.
  *
  * @param getline_cb The callback function to call when a line is ready.
@@ -171,21 +188,50 @@ extern void ui_term_display_wire();
 extern void ui_term_getline(ui_term_getline_callback_fn getline_cb);
 
 /**
+ * @brief Cancel a `ui_term_getline` that is inprogress.
+ * @ingroup ui
+ * @see ui_term_getline
+ *
+ * @param input_handler Input available handler to replace the `ui_term_getline` handler. Can be NULL.
+ */
+extern void ui_term_getline_cancel(ui_term_input_available_handler input_handler);
+
+/**
+ * @brief Handle a control character by calling the handler if one is registered.
+ * @ingroup ui
+ *
+ * @param c The control character to handle.
+ * @return true If there is a handler for this character
+ * @return false If there isn't a handler for this character or the character isn't a control.
+ */
+extern bool ui_term_handle_control_character(char c);
+
+/**
+ * @brief Register a control character handler.
+ * @ingroup ui
+ *
+ * @see `ui_term_control_char_handler` for a description of when this is used.
+ *
+ * @param c The control character to register the handler for.
+ * @param handler_fn The handler.
+ */
+extern void ui_term_register_control_char_handler(char c, ui_term_control_char_handler handler_fn);
+
+/**
  * @brief Register a function to handle terminal input available.
+ * @ingroup ui
  *
  * @param handler_fn
  */
 extern void ui_term_register_input_available_handler(ui_term_input_available_handler handler_fn);
 
 /**
- * @brief Set the color to the code display color.
+ * @brief Update the Connected icon based on the state.
+ * @ingroup ui
+ *
+ * @param state The connected state
  */
-extern void ui_term_use_code_color();
-
-/**
- * @brief Set the color to the command display color.
- */
-extern void ui_term_use_cmd_color();
+extern void ui_term_update_connected_state(wire_connected_state_t state);
 
 /**
  * @brief Update the sender station ID in the top of the terminal.
@@ -216,6 +262,18 @@ extern void ui_term_update_status();
  * @param wire The wire number.
  */
 extern void ui_term_update_wire(uint16_t wire);
+
+/**
+ * @brief Set the color to the code display color.
+ * @ingroup ui
+ */
+extern void ui_term_use_code_color();
+
+/**
+ * @brief Set the color to the command display color.
+ * @ingroup ui
+ */
+extern void ui_term_use_cmd_color();
 
 #ifdef __cplusplus
     }

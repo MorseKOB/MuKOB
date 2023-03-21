@@ -13,6 +13,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "cmt.h"
+#include "mkwire.h"
 #include "pico/types.h"
 
 /**
@@ -32,6 +33,14 @@ extern void ui_disp_display_speed();
  * @ingroup ui
  */
 extern void ui_disp_display_wire();
+
+/**
+ * @brief Update the Connected icon based on the state.
+ * @ingroup ui
+ *
+ * @param state The connected state
+ */
+extern void ui_disp_update_connected_state(wire_connected_state_t state);
 
 /**
  * @brief Update the sender station ID in the top of the display.

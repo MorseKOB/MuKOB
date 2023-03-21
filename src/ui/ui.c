@@ -12,6 +12,7 @@
 #include "cmd.h"
 #include "cmt.h"
 #include "display.h"
+#include "mkwire.h"
 #include "util.h"
 #include "ui_disp.h"
 #include "ui_term.h"
@@ -20,15 +21,20 @@
 
 #define STATUS_PULSE_PERIOD 6000
 
+// Internal, non message handler, function declarations
+static void _ui_init_terminal_shell();
+
 typedef struct _UI_IDLE_FN_DATA_ {
     unsigned long int idle_num;
     unsigned long int msg_burst;
 } ui_idle_fn_data_t;
 
 // Message handler functions...
+void _handle_init_terminal(cmt_msg_t* msg);
 void _handle_send_ui_status(cmt_msg_t* msg);
 void _handle_wifi_conn_status_update(cmt_msg_t* msg);
 void _handle_wire_changed(cmt_msg_t* msg);
+void _handle_wire_connected_state(cmt_msg_t* msg);
 void _ui_idle_function_1(ui_idle_fn_data_t* data);
 
 cmt_msg_t _msg_ui_send_status;
@@ -37,11 +43,12 @@ ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
 #define LEAVE_MSG_HANDLER()    {_ui_idle_function_data.idle_num = 0; _ui_idle_function_data.msg_burst++;}
 
 msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
-msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _ui_term_handle_init_terminal };
+msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _handle_init_terminal };
 msg_handler_entry_t _input_char_ready_handler_entry = { MSG_INPUT_CHAR_READY, _ui_term_handle_input_char_ready };
 msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_send_ui_status };
 msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
 msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGED, _handle_wire_changed };
+msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
 
 /**
  * @brief List of handler entries.
@@ -54,6 +61,7 @@ msg_handler_entry_t* _handler_entries[] = {
     &_send_status_handler_entry,
     &_input_char_ready_handler_entry,
     &_cmd_key_pressed_handler_entry,
+    &_wire_connected_state_handler_entry,
     &_wifi_status_handler_entry,
     &_wire_changed_handler_entry,
     &_cmd_init_terminal_handler_entry,
@@ -77,6 +85,20 @@ void _ui_idle_function_1(ui_idle_fn_data_t* data) {
     // Something to do when there are no messages to process.
     data->msg_burst = 0; // Reset our message burst count
     data->idle_num++;
+}
+
+/**
+ * @brief Message handler for MSG_INIT_TERMINAL
+ * @ingroup ui
+ *
+ * Init/re-init the terminal. This is typically received by a user requesting
+ * that the terminal be re-initialized/refreshed. For example if they connect
+ * a terminal after MuKOB is already up and running.
+ *
+ * @param msg Nothing important in the message.
+ */
+void _handle_init_terminal(cmt_msg_t* msg) {
+    _ui_init_terminal_shell();
 }
 
 cmt_msg_t _send_ui_status_msg;
@@ -103,48 +125,50 @@ void _handle_wire_changed(cmt_msg_t* msg) {
     ui_term_update_wire(wire_no);
 }
 
-void ui_init() {
-    ui_disp_build();
+void _handle_wire_connected_state(cmt_msg_t* msg) {
+    wire_connected_state_t state = (wire_connected_state_t)msg->data.status;
+    ui_disp_update_connected_state(state);
+    ui_term_update_connected_state(state);
+
+    // If connected, cancel out of an active command shell.
+    if (WIRE_CONNECTED == state) {
+        cmd_enter_idle_state();
+    }
+    else {
+        // Make sure a command shell is available.
+        if (CMD_SNOOZING == cmd_get_state()) {
+            // Do this by posting a message.
+            cmt_msg_t msg;
+            msg.id = MSG_CMD_KEY_PRESSED;
+            msg.data.c = CMD_WAKEUP_CHAR;
+            postUIMsgBlocking(&msg);
+        }
+    }
+}
+
+static void _ui_init_terminal_shell() {
     ui_term_build();
     cmd_init();
+    // If we aren't connected to a wire, enter into the command shell by posting a message.
+    if (!mkwire_is_connected()) {
+        // Do this by posting a message.
+        cmt_msg_t msg;
+        msg.id = MSG_CMD_KEY_PRESSED;
+        msg.data.c = CMD_WAKEUP_CHAR;
+        postUIMsgBlocking(&msg);
+    }
+}
+
+void ui_init() {
+    ui_disp_build();
+    _ui_init_terminal_shell();
+    wire_connected_state_t connected_state = mkwire_connected_state();
+    cmt_msg_t msg;
+    msg.id = MSG_WIRE_CONNECTED_STATE;
+    msg.data.status = connected_state;
+    postUIMsgBlocking(&msg);
+
     // Set up to send status to BE every 800 ms
     _msg_ui_send_status.id = MSG_SEND_UI_STATUS;
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
-}
-
-static void xyzzy() {
-    // color++;
-    // uint8_t fgc = fg_from_cb(color);
-    // uint8_t bgc = bg_from_cb(color);
-    // if (fgc == bgc) {
-    //     continue;
-    // }
-    // screen_new();
-    // disp_set_text_colors(fgc, bgc);
-    // disp_clear(Paint);
-    // cursor_set(19, 0);
-    // test_disp_show_full_scroll_barberpoll();
-
-    // // Test creating a new (sub) screen and writing to it
-    // screen_new();
-    // printf_disp(No_Paint, "This is on a new (sub)\nscreen!\n\n");
-    // printf_disp(Paint, "Then it will delay. At\nthe end, pop the\nsub-screen off -\nrestoring the previous screen.");
-    // sleep_ms(2000);
-
-    // test_disp_show_mukob_head_foot();
-    // disp_set_text_colors(C16_LT_GREEN, C16_BLACK);
-    // disp_string(12, 0, "098765432109876543210987", false, true);
-    // disp_string(13, 0, "A 1 B 2 C 3 D 4 E 5 F 6 ", false, true);
-    // disp_string(14, 0, " A 1 B 2 C 3 D 4 E 5 F 6", false, true);
-    // sleep_ms(1000);
-    // cursor_home();
-    // // void test_ili9341_show_scroll();
-    // test_disp_show_half_width_scroll_barberpoll();
-    // sleep_ms(1000);
-    // disp_clear(Paint);
-    // screen_close();
-    // sleep_ms(1000);
-    // disp_clear(Paint);
-    // screen_close();
-    // sleep_ms(1000);
 }
