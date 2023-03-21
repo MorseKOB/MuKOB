@@ -110,6 +110,15 @@ extern bool is_leap_year(int16_t year);
 extern const char* num_ordinal(int num);
 
 /**
+ * @brief Allocate memory for a string value and copy the string value into it.
+ * @ingroup util
+ *
+ * @param value The value to allocate for and copy.
+ * @return char* The new copy.
+ */
+extern char* str_value_create(const char* value);
+
+/**
  * @brief Format a date-time into a string.
  * @ingroup util
  *

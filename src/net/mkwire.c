@@ -13,6 +13,7 @@
 #include "cmt.h"
 #include "net.h"
 #include "mkboard.h"
+#include "util.h"
 
 #define ADDR_PORT_SEP ':'
 
@@ -470,26 +471,31 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
             else if (MKS_CMD_DATA) {
                 // Data or ID
                 // Unpack as Data first, if 'n' is zero, then it is an ID
+                cmt_msg_t msg;
                 mkspkt_code_t code_pkt;
                 _unpack_code_packet(&code_pkt, p);
+                char* station_id = code_pkt.id;
                 if (code_pkt.n > 0) {
                     // It is a Code packet, process it...
-                    // ZZZ for now, just print it
-                    debug_printf("MKS Code: Bytes:%hi SeqNo:%i n:%i ID:'%s' Text:'%s' Code:", 
-                        code_pkt.bytes, code_pkt.seqno, code_pkt.n, code_pkt.id, code_pkt.text);
+                    // Let the UI know who the sender is.
+                    msg.id = MSG_WIRE_CURRENT_SENDER;
+                    msg.data.station_id = str_value_create(station_id);
+                    postUIMsgBlocking(&msg);
                     for (int i = 0; i < code_pkt.n; i++) {
-                        printf("%i ", code_pkt.code_list[i]);
+                        printf("%i ", code_pkt.code_list[i]); // ZZZ - Send this to decode
                     }
                     printf("\n");
-                    //led_blink_mcode(code_pkt.code_list, code_pkt.n);
                 }
                 else {
                     // It is an ID packet, process it...
-                    // ZZZ for now, just print it
                     mkspkt_id_t id_pkt;
                     _unpack_id_packet(&id_pkt, p);
+                    station_id = id_pkt.id;
+                    msg.id = MSG_WIRE_STATION_ID_RCVD;
+                    msg.data.station_id = str_value_create(station_id);
+                    postUIMsgBlocking(&msg);
                     debug_printf("MKS ID: Bytes:%hi SeqNo:%i idflag:%i ID:'%s' Version:'%s'\n", 
-                        id_pkt.bytes, id_pkt.seqno, id_pkt.idflag, id_pkt.id, id_pkt.version);
+                        id_pkt.bytes, id_pkt.seqno, id_pkt.idflag, station_id, id_pkt.version);
                 }
             }
             pbuf_free(p);

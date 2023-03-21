@@ -112,15 +112,6 @@ extern const config_sys_t* config_sys();
  */
 extern bool config_sys_is_set();
 
-/**
- * @brief Allocate memory for a string value and copy the string value into it.
- * @ingroup config
- *
- * @param value The value to allocate for and copy.
- * @return char* The new copy.
- */
-extern char* config_value_create(const char* value);
-
 #ifdef __cplusplus
 }
 #endif

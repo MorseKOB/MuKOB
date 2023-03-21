@@ -76,6 +76,6 @@ int main()
     } while (1);
 
     // How did we get here?!
-    error_printf("MuKOB - Somehow we are out of our endless loop!!!");
+    error_printf("MuKOB - Somehow we are out of our endless loop in `main()`!!!");
     return 0;
 }

@@ -19,6 +19,8 @@
 
 #include "hardware/rtc.h"
 
+#include <stdlib.h>
+
 #define STATUS_PULSE_PERIOD 6000
 
 // Internal, non message handler, function declarations
@@ -35,6 +37,7 @@ void _handle_send_ui_status(cmt_msg_t* msg);
 void _handle_wifi_conn_status_update(cmt_msg_t* msg);
 void _handle_wire_changed(cmt_msg_t* msg);
 void _handle_wire_connected_state(cmt_msg_t* msg);
+void _handle_wire_station_msgs(cmt_msg_t* msg);
 void _ui_idle_function_1(ui_idle_fn_data_t* data);
 
 cmt_msg_t _msg_ui_send_status;
@@ -49,6 +52,8 @@ msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_s
 msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
 msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGED, _handle_wire_changed };
 msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
+msg_handler_entry_t _wire_current_sender_handler_entry = { MSG_WIRE_CURRENT_SENDER, _handle_wire_station_msgs };
+msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD, _handle_wire_station_msgs };
 
 /**
  * @brief List of handler entries.
@@ -61,6 +66,8 @@ msg_handler_entry_t* _handler_entries[] = {
     &_send_status_handler_entry,
     &_input_char_ready_handler_entry,
     &_cmd_key_pressed_handler_entry,
+    &_wire_current_sender_handler_entry,
+    &_wire_station_id_handler_entry,
     &_wire_connected_state_handler_entry,
     &_wifi_status_handler_entry,
     &_wire_changed_handler_entry,
@@ -80,12 +87,18 @@ msg_loop_cntx_t ui_msg_loop_cntx = {
     &_ui_idle_function_data,
 };
 
+static char* _sender_id = NULL;
 
 void _ui_idle_function_1(ui_idle_fn_data_t* data) {
     // Something to do when there are no messages to process.
     data->msg_burst = 0; // Reset our message burst count
     data->idle_num++;
 }
+
+
+// ============================================
+// Message handler functions
+// ============================================
 
 /**
  * @brief Message handler for MSG_INIT_TERMINAL
@@ -99,6 +112,7 @@ void _ui_idle_function_1(ui_idle_fn_data_t* data) {
  */
 void _handle_init_terminal(cmt_msg_t* msg) {
     _ui_init_terminal_shell();
+    LEAVE_MSG_HANDLER();
 }
 
 cmt_msg_t _send_ui_status_msg;
@@ -111,6 +125,7 @@ void _handle_send_ui_status(cmt_msg_t* msg) {
     alarm_set_ms(STATUS_PULSE_PERIOD, &_msg_ui_send_status);
     ui_disp_update_status();
     ui_term_update_status();
+    LEAVE_MSG_HANDLER();
 }
 
 void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
@@ -123,6 +138,7 @@ void _handle_wire_changed(cmt_msg_t* msg) {
     uint16_t wire_no = msg->data.wire;
     ui_disp_update_wire(wire_no);
     ui_term_update_wire(wire_no);
+    LEAVE_MSG_HANDLER();
 }
 
 void _handle_wire_connected_state(cmt_msg_t* msg) {
@@ -144,7 +160,41 @@ void _handle_wire_connected_state(cmt_msg_t* msg) {
             postUIMsgBlocking(&msg);
         }
     }
+    LEAVE_MSG_HANDLER();
 }
+
+/**
+ * Handle both messages from the wire that involve a Station ID.
+ */
+void _handle_wire_station_msgs(cmt_msg_t* msg) {
+    char* msg_station_id = msg->data.station_id;
+
+    if (MSG_WIRE_CURRENT_SENDER == msg->id) {
+        if (_sender_id) {
+            if (strcmp(_sender_id, msg_station_id) == 0) {
+                // Same station, just free the message station id
+                free(msg_station_id);
+                return;
+            }
+            free(_sender_id);
+        }
+        // Different station, store it and update the UI.
+        _sender_id = msg->data.station_id;
+        ui_disp_update_sender(_sender_id);
+        ui_term_update_sender(_sender_id);
+    }
+    else if (MSG_WIRE_STATION_ID_RCVD == msg->id) {
+        // Update the station list
+        // ZZZ for now, just free up the string.
+        free(msg->data.station_id);
+    }
+    LEAVE_MSG_HANDLER();
+}
+
+
+// ============================================
+// Internal functions
+// ============================================
 
 static void _ui_init_terminal_shell() {
     ui_term_build();
@@ -158,6 +208,10 @@ static void _ui_init_terminal_shell() {
         postUIMsgBlocking(&msg);
     }
 }
+
+// ============================================
+// Public functions
+// ============================================
 
 void ui_init() {
     ui_disp_build();

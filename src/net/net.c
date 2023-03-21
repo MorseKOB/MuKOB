@@ -329,7 +329,6 @@ static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, vo
     }
     // If we get here it means that there was a problem. Free resources.
     free(op_context);
-    free(op_context);
     // Call thier handler and give them thier PBUF back. They are set up to free one anyway.
     op_result_handler(status, p, handler_data);
 }
@@ -377,7 +376,6 @@ static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state) {
     void* handler_data = op_context->result_handler_data;
     // Free the resources
     udp_remove(op_context->udp_pcb);
-    free(op_context);
     free(op_context);
 
     // Call thier handler and give them thier PBUF back. They are set up to free one anyway.
