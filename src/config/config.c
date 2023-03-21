@@ -51,7 +51,7 @@ typedef struct _CFG_W_MARKER {
  *    config file. If the handler knows how to handle the passed in key, it processes the value
  *    into the config object and returns >0. If the handler is not for the passed in key it
  *    must return 0. If it is for the key, but encounters an error it should return <0.
- *    NOTE: If the value string is to be stored into the config object `config_value_create` should
+ *    NOTE: If the value string is to be stored into the config object `str_value_create` should
  *          be used to allocate and copy the value.
  *
  *   Writing a config file:
@@ -125,7 +125,7 @@ static const cfg_item_handler_fn cfg_handlers[] = {
  *    config file. If the handler knows how to handle the passed in key, it processes the value
  *    into the system config object and returns >0. If the handler is not for the passed in key it
  *    must return 0. If it is for the key, but encounters an error it should return <0.
- *    NOTE: If the value string is to be stored into the system config object `config_value_create` should
+ *    NOTE: If the value string is to be stored into the system config object `str_value_create` should
  *          be used to allocate and copy the value.
  *
  *   Writing a system config file:
@@ -315,7 +315,7 @@ static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value,
             if (cfg->host_port) {
                 free(cfg->host_port);
             }
-            cfg->host_port = config_value_create(value);
+            cfg->host_port = str_value_create(value);
             retval = 1;
         }
     }
@@ -406,7 +406,7 @@ static int32_t _cih_station(config_t* cfg, const char* key, const char* value, c
             if (cfg->station) {
                 free(cfg->station);
             }
-            cfg->station = config_value_create(value);
+            cfg->station = str_value_create(value);
             retval = 1;
         }
     }
@@ -504,7 +504,7 @@ static int32_t _scih_user_cfg_filename(config_sys_t* sys_cfg, const char* key, c
             if (sys_cfg->user_cfg_filename) {
                 free(sys_cfg->user_cfg_filename);
             }
-            sys_cfg->user_cfg_filename = config_value_create(value);
+            sys_cfg->user_cfg_filename = str_value_create(value);
             retval = 1;
         }
     }
@@ -526,7 +526,7 @@ static int32_t _scih_wifi_password(config_sys_t* sys_cfg, const char* key, const
             if (sys_cfg->wifi_password) {
                 free(sys_cfg->wifi_password);
             }
-            sys_cfg->wifi_password = config_value_create(value);
+            sys_cfg->wifi_password = str_value_create(value);
             retval = 1;
         }
     }
@@ -548,7 +548,7 @@ static int32_t _scih_ssid(config_sys_t* sys_cfg, const char* key, const char* va
             if (sys_cfg->wifi_ssid) {
                 free(sys_cfg->wifi_ssid);
             }
-            sys_cfg->wifi_ssid = config_value_create(value);
+            sys_cfg->wifi_ssid = str_value_create(value);
             retval = 1;
         }
     }
@@ -739,7 +739,7 @@ int config_init(void) {
             if (_current_cfg_filename) {
                 free(_current_cfg_filename);
             }
-            _current_cfg_filename = config_value_create(_system_cfg.user_cfg_filename);
+            _current_cfg_filename = str_value_create(_system_cfg.user_cfg_filename);
             // Close file
             fr = f_close(&fil);
             if (FR_OK != fr) {
@@ -780,12 +780,4 @@ const config_sys_t* config_sys() {
 
 bool config_sys_is_set() {
     return (_system_cfg.is_set);
-}
-
-char* config_value_create(const char* value) {
-    char* malloced_value;
-    malloced_value = malloc(strlen(value) + 1);
-    strcpy(malloced_value, value);
-
-    return (malloced_value);
 }

@@ -39,6 +39,8 @@ typedef enum _MSG_ID_ {
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
     MSG_WIRE_CONNECTED_STATE,
+    MSG_WIRE_CURRENT_SENDER,
+    MSG_WIRE_STATION_ID_RCVD,
 } msg_id_t;
 
 /**
@@ -59,6 +61,7 @@ typedef union _MSG_DATA_VALUE {
     char* str;
     void* ex_data;
     // Specific values (more readable, for use by specific messages)
+    char* station_id;
     int32_t status;
     unsigned short wire;
 } msg_data_value_t;

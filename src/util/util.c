@@ -147,6 +147,14 @@ const char* num_ordinal(int num){
     return (NO_TH);
 }
 
+char* str_value_create(const char* value) {
+    char* malloced_value;
+    malloced_value = malloc(strlen(value) + 1);
+    strcpy(malloced_value, value);
+
+    return (malloced_value);
+}
+
 void strdatetime(char* buf, uint bufsize, datetime_t* dt, strdatetime_ctrl_t ctrl) {
     char time_str[12];
     int time_len = 0;
