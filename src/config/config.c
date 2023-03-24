@@ -307,22 +307,22 @@ static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, ch
 
 static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value, char* buf) {
     int32_t retval = 0;
-    char* our_key = "host_port";
+    char* our_key = "host_and_port";
 
     if (key) {
         // See if it is the key we handle
         if (strcmp(key, our_key) == 0) {
-            if (cfg->host_port) {
-                free(cfg->host_port);
+            if (cfg->host_and_port) {
+                free(cfg->host_and_port);
             }
-            cfg->host_port = str_value_create(value);
+            cfg->host_and_port = str_value_create(value);
             retval = 1;
         }
     }
     else if (buf) {
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + NET_URL_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# host:port of MorseKOB Server.\n%s=%s\n", our_key, cfg->host_port);
+        retval = snprintf(buf, max_len, "# host:port of MorseKOB Server.\n%s=%s\n", our_key, cfg->host_and_port);
     }
     return (retval);
 }

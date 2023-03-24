@@ -128,6 +128,34 @@ void post_to_core1_blocking(cmt_msg_t *msg);
 bool post_to_core1_nowait(cmt_msg_t *msg);
 
 /**
+ * @brief Post a message to both Core 0 and Core 1 (using the Core 0 and Core 1 queues).
+ * @ingroup mk_multicore
+ *
+ * Generally used for necessary operational information/instructions.
+ *
+ * @note Since this is posting the same message to both cores, it should not be used for messages
+ *       that contain allocated resources, as both core's message handlers would try to free them.
+ *
+ * @param msg The message to post.
+ */
+void post_to_cores_blocking(cmt_msg_t* msg);
+
+/**
+ * @brief Post a message to both Core 0 and Core 1 (using the Core 0 and Core 1 queues). Do not
+ *        wait if it can't be posted.
+ * @ingroup mk_multicore
+ *
+ * Generally used for informational status. Especially information that
+ * is updated on an ongoing basis.
+ *
+ * @note Since this is posting the same message to both cores, it should not be used for messages
+ *       that contain allocated resources, as both core's message handlers would try to free them.
+ *
+ * @param msg The message to post.
+ */
+uint16_t post_to_cores_nowait(cmt_msg_t* msg);
+
+/**
  * @brief Start the Core 1 functionality.
  * @ingroup multi_core
  *

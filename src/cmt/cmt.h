@@ -15,15 +15,18 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "morse.h"
 #include "pico/types.h"
 
 typedef enum _MSG_ID_ {
     // Common messages (used by both BE and UI)
     MSG_COMMON_NOOP = 0x0000,
+    MSG_CONFIG_CHANGED,
     MSG_DELAY_COMPLETE,
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_MORSE_TO_DECODE,
     MSG_WIRE_CONNECT,
     MSG_WIRE_CONNECT_TOGGLE,
     MSG_WIRE_DISCONNECT,
@@ -49,18 +52,8 @@ typedef enum _MSG_ID_ {
  * Union that can hold the data needed by the messages.
  */
 typedef union _MSG_DATA_VALUE {
-    // General purpose (non-specifically named) values
     char c;
-    unsigned char uc;
-    int16_t n;
-    uint16_t un;
-    int32_t d;
-    uint32_t ud;
-    int64_t l;
-    uint64_t ll;
-    char* str;
-    void* ex_data;
-    // Specific values (more readable, for use by specific messages)
+    mcode_t* mcode;
     char* station_id;
     int32_t status;
     unsigned short wire;
@@ -88,6 +81,8 @@ typedef struct _CMT_MSG {
 #define postBEMsgNoWait( pmsg )         post_to_core0_nowait( pmsg )
 #define postUIMsgBlocking( pmsg )       post_to_core1_blocking( pmsg )
 #define postUIMsgNoWait( pmsg )         post_to_core1_nowait( pmsg )
+#define postBothMsgBlocking( pmsg )     post_to_cores_blocking( pmsg )
+#define postBothMsgNoWait( pmsg )       post_to_cores_nowait( pmsg )
 
 /**
  * @brief Function prototype for a message handler.

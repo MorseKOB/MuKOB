@@ -52,30 +52,28 @@ int main()
         GPIO_FUNC_UART));
     bi_decl(bi_program_description("Micro version of MorseKOB, with built-in display and terminal UI"));
 
+    // Board/base level initialization
     board_init();
 
+    // Indicate that we are alive
+    if (option_value(OPTION_DEBUG)) {
+        buzzer_beep(250);
+    }
+    led_on_off(say_hi);
 
-    // We never expect to end
-    do {
-        if (option_value(OPTION_DEBUG)) {
-            buzzer_beep(250);
-        }
-        led_on_off(say_hi);
+    // Initialize the multi-core system
+    multicore_init();
 
-        // Initialize our multi-core system
-        multicore_init();
+    // Set up the Backend
+    be_init();
 
-        // Launch Core 1 - The UI
-        start_core1();
+    // Launch Core 1 - The UI
+    start_core1();
 
-        // Set up the Backend
-        be_init();
-
-        // Enter into the (endless) Backend Message Dispatching Loop
-        message_loop(&be_msg_loop_cntx);
-    } while (1);
+    // Enter into the (endless) Backend Message Dispatching Loop
+    message_loop(&be_msg_loop_cntx);
 
     // How did we get here?!
-    error_printf("MuKOB - Somehow we are out of our endless loop in `main()`!!!");
+    error_printf("MuKOB - Somehow we are out of our endless message loop in `main()`!!!");
     return 0;
 }

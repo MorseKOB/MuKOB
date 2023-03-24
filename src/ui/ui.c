@@ -20,6 +20,7 @@
 #include "hardware/rtc.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define STATUS_PULSE_PERIOD 6000
 

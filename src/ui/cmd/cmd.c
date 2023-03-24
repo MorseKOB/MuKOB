@@ -8,6 +8,7 @@
 
 #include "cmd.h"
 #include "mkwire.h"
+#include "morse.h"
 #include "term.h"
 #include "ui_term.h"
 #include "util.h"
@@ -19,6 +20,7 @@
 
 // Command processor declarations
 static int _cmd_connect(int argc, char** argv);
+static int _cmd_encode(int argc, char** argv);
 static int _cmd_help(int argc, char** argv);
 static int _cmd_wire(int argc, char** argv);
 
@@ -37,6 +39,13 @@ static cmd_handler_entry_t _cmd_connect_entry = {
     "connect",
     "[wire-number]",
     "Connect/disconnect (toggle) the current wire. Connect to a specific wire.",
+};
+static cmd_handler_entry_t _cmd_encode_entry = {
+    _cmd_encode,
+    1,
+    "encode",
+    "<string-to-encode>",
+    "Encode a string to Morse.",
 };
 static cmd_handler_entry_t _cmd_help_entry = {
     _cmd_help,
@@ -58,6 +67,7 @@ static cmd_handler_entry_t _cmd_wire_entry = {
  */
 cmd_handler_entry_t* _command_entries[] = {
     &_cmd_connect_entry,
+    &_cmd_encode_entry,
     &_cmd_help_entry,
     &_cmd_wire_entry,
     ((cmd_handler_entry_t*)0), // Last entry must be a NULL
@@ -118,6 +128,35 @@ static int _cmd_connect(int argc, char** argv) {
     cmt_msg_t msg;
     msg.id = MSG_WIRE_CONNECT_TOGGLE;
     postBEMsgBlocking(&msg);
+    return (0);
+}
+
+static int _cmd_encode(int argc, char** argv) {
+    if (argc < 2) {
+        _help_display(&_cmd_encode_entry, HELP_DISP_USAGE);
+        return (-1);
+    }
+    cmt_msg_t msg;
+    mcode_t* mcode_space;
+    for (int i = 1; i < argc; i++) {
+        char* str = argv[i];
+        char c;
+        while ('\000' != (c = *str++)) {
+            mcode_t* mcode = morse_encode(c);
+            // Post it to the backend to decode
+            msg.id = MSG_MORSE_TO_DECODE;
+            msg.data.mcode = mcode;
+            postBEMsgBlocking(&msg);
+        }
+        if (i+1 < argc) {
+            // Add a space
+            mcode_space = morse_encode(' ');
+            msg.id = MSG_MORSE_TO_DECODE;
+            msg.data.mcode = mcode_space;
+            postBEMsgBlocking(&msg);
+        }
+    }
+
     return (0);
 }
 

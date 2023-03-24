@@ -11,11 +11,10 @@
 #include "mkwire.h"
 #include "config.h"
 #include "cmt.h"
-#include "net.h"
 #include "mkboard.h"
+#include "morse.h"
+#include "net.h"
 #include "util.h"
-
-#define ADDR_PORT_SEP ':'
 
 /*
  * *** Message format To/From MorseKOB Server ***
@@ -232,38 +231,6 @@ bool mkwire_is_connected() {
     return (_udp_pcb != NULL);
 }
 
-bool mkwire_host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port) {
-    const char* h2u = (host_and_port ? host_and_port : MKOBSERVER_DEFAULT);
-    int len_of_host;
-
-    // See if there is a ':'
-    char* sep = strchr(h2u, ADDR_PORT_SEP);
-    if (sep) {
-        // There is a ':', get the string up to it
-        len_of_host = sep - h2u;
-    }
-    else {
-        len_of_host = strlen(h2u);
-    }
-    if (maxlen > len_of_host) {
-        strncpy(buf, h2u, len_of_host);
-    }
-    else {
-        strncpy(buf, h2u, maxlen);
-    }
-
-    return (len_of_host < maxlen);
-}
-
-uint16_t mkwire_port_from_hostport(const char* host_and_port) {
-    // Is there a ':'?
-    char* sep = strchr(host_and_port, ADDR_PORT_SEP);
-    if (NULL == sep) {
-        return MKOBSERVER_PORT_DEFAULT;
-    }
-    return (atoi(sep+1));
-}
-
 void mkwire_set_office_id(char* office_id) {
     if (_office_id) {
         free(_office_id);
@@ -468,35 +435,54 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
                     (*fn)();
                 }
             }
-            else if (MKS_CMD_DATA) {
+            else if (MKS_CMD_DATA == cmd) {
                 // Data or ID
                 // Unpack as Data first, if 'n' is zero, then it is an ID
                 cmt_msg_t msg;
                 mkspkt_code_t code_pkt;
+                // Treat it as a code packet first.
                 _unpack_code_packet(&code_pkt, p);
                 char* station_id = code_pkt.id;
-                if (code_pkt.n > 0) {
-                    // It is a Code packet, process it...
-                    // Let the UI know who the sender is.
-                    msg.id = MSG_WIRE_CURRENT_SENDER;
-                    msg.data.station_id = str_value_create(station_id);
-                    postUIMsgBlocking(&msg);
-                    for (int i = 0; i < code_pkt.n; i++) {
-                        printf("%i ", code_pkt.code_list[i]); // ZZZ - Send this to decode
-                    }
-                    printf("\n");
-                }
-                else {
-                    // It is an ID packet, process it...
+                if (code_pkt.n == 0) {
+                    // ID packet, let the UI know the Station ID
                     mkspkt_id_t id_pkt;
                     _unpack_id_packet(&id_pkt, p);
                     station_id = id_pkt.id;
                     msg.id = MSG_WIRE_STATION_ID_RCVD;
                     msg.data.station_id = str_value_create(station_id);
                     postUIMsgBlocking(&msg);
-                    debug_printf("MKS ID: Bytes:%hi SeqNo:%i idflag:%i ID:'%s' Version:'%s'\n", 
-                        id_pkt.bytes, id_pkt.seqno, id_pkt.idflag, station_id, id_pkt.version);
                 }
+                else if (code_pkt.n > 0 && code_pkt.seqno != _seqno_recv) {
+                    int code_len = (code_pkt.n <= MKS_PKT_MAX_CODE_LEN ? code_pkt.n : MKS_PKT_MAX_CODE_LEN);
+                    // It is a Code packet.
+                    // Let the UI know who the sender is.
+                    msg.id = MSG_WIRE_CURRENT_SENDER;
+                    msg.data.station_id = str_value_create(station_id);
+                    postUIMsgBlocking(&msg);
+                    // Process the code...
+                    mcode_t* mcode = malloc(sizeof(mcode_t));
+                    if (code_pkt.seqno != (_seqno_recv + 1)) {
+                        // Sequence break (lost packet?)
+                        // Prepend negative 0x7FFF as a long break
+                        mcode->code = malloc((code_len + 1) * sizeof(int32_t));
+                        *mcode->code = (-0x7FFF);
+                        memcpy((mcode->code + 1), code_pkt.code_list, code_len * sizeof(int32_t));
+                        code_len++;
+                    }
+                    else {
+                        mcode->code = malloc(code_len * sizeof(int32_t));
+                        memcpy((mcode->code), code_pkt.code_list, code_len * sizeof(int32_t));
+                    }
+                    mcode->len = code_len;
+                    // Post it to the backend to decode
+                    msg.id = MSG_MORSE_TO_DECODE;
+                    msg.data.mcode = mcode;
+                    postBEMsgBlocking(&msg);
+                    _seqno_recv = code_pkt.seqno;
+                }
+            }
+            else {
+                error_printf("MKWIRE - Unknown CMD: %hd\n", cmd);
             }
             pbuf_free(p);
         }

@@ -34,7 +34,9 @@ add_subdirectory(lib/sd_card)
 add_subdirectory(be)
 add_subdirectory(config)
 add_subdirectory(cmt)
+add_subdirectory(data)
 add_subdirectory(kob)
+add_subdirectory(morse)
 add_subdirectory(net)
 add_subdirectory(test)
 add_subdirectory(util)
@@ -70,7 +72,9 @@ include_directories(
   be
   config
   cmt
+  data
   kob
+  morse
   net
   test
   ui
@@ -96,9 +100,11 @@ target_link_libraries(MuKOB
   config
   cmd
   cmt
+  data
   display
   ili9341_spi
   kob
+  morse
   net
   mukob_test
   term
