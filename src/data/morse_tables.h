@@ -33,7 +33,7 @@
  *  B = "-..."
  *  C = ".. ."
  */
-extern char* american_morse[];
+extern const char* american_morse[];
 
 /**
  * @brief Table of dit-dah strings for characters from Space through Z.
@@ -53,7 +53,7 @@ extern char* american_morse[];
  *  B = "-..."
  *  C = ".-.-"
  */
-extern char* international_morse[];
+extern const char* international_morse[];
 
 #ifdef __cplusplus
   }

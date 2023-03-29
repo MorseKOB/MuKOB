@@ -207,6 +207,33 @@ extern void ui_term_getline_cancel(ui_term_input_available_handler input_handler
 extern bool ui_term_handle_control_character(char c);
 
 /**
+ * @brief Version of `printf` that adds a leading newline if interrupting
+ *        printing of Morse Code.
+ * @ingroup ui
+ *
+ * @return Number of characters printed.
+ */
+int ui_term_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+
+/**
+ * @brief Print the code-text string. This is 0-n spaces and a character.
+ * @ingroup ui
+ *
+ * @param str The string to print.
+ */
+extern void ui_term_put_codetext(char* str);
+
+/**
+ * @brief Print a string in the scrolling (code) area of the screen.
+ * @ingroup ui
+ *
+ * If code is displaying, this will print a newline and then the string.
+ *
+ * @param str The string to print.
+ */
+extern void ui_term_puts(char* str);
+
+/**
  * @brief Register a control character handler.
  * @ingroup ui
  *

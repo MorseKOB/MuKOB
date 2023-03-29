@@ -7,7 +7,8 @@ extern "C" {
 #undef putc     // Undefine so the standard macros will not be used
 #undef putchar  // Undefine so the standard macros will not be used
 
-
+#include <hardware/exception.h>
+#include "multicore.h"
 #include "pico/stdlib.h"
 
 // SPI

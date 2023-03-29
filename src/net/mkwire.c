@@ -69,7 +69,7 @@ static void _start_keep_alive();
 static void _stop_keep_alive();
 static void _wire_connect();
 
-const char* _mks_commands[6] = {
+static const char* _mks_commands[6] = {
     "*UNDEFINED*",
     "*UNDEFINED*",
     "DISCONNECT",
@@ -460,23 +460,23 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
                     msg.data.station_id = str_value_create(station_id);
                     postUIMsgBlocking(&msg);
                     // Process the code...
-                    mcode_t* mcode = malloc(sizeof(mcode_t));
+                    mcode_seq_t* mcode_seq = malloc(sizeof(mcode_seq_t));
                     if (code_pkt.seqno != (_seqno_recv + 1)) {
                         // Sequence break (lost packet?)
                         // Prepend negative 0x7FFF as a long break
-                        mcode->code = malloc((code_len + 1) * sizeof(int32_t));
-                        *mcode->code = (-0x7FFF);
-                        memcpy((mcode->code + 1), code_pkt.code_list, code_len * sizeof(int32_t));
+                        mcode_seq->code_seq = malloc((code_len + 1) * sizeof(int32_t));
+                        *mcode_seq->code_seq = (-0x7FFF);
+                        memcpy((mcode_seq->code_seq + 1), code_pkt.code_list, code_len * sizeof(int32_t));
                         code_len++;
                     }
                     else {
-                        mcode->code = malloc(code_len * sizeof(int32_t));
-                        memcpy((mcode->code), code_pkt.code_list, code_len * sizeof(int32_t));
+                        mcode_seq->code_seq = malloc(code_len * sizeof(int32_t));
+                        memcpy((mcode_seq->code_seq), code_pkt.code_list, code_len * sizeof(int32_t));
                     }
-                    mcode->len = code_len;
+                    mcode_seq->len = code_len;
                     // Post it to the backend to decode
                     msg.id = MSG_MORSE_TO_DECODE;
-                    msg.data.mcode = mcode;
+                    msg.data.mcode_seq = mcode_seq;
                     postBEMsgBlocking(&msg);
                     _seqno_recv = code_pkt.seqno;
                 }

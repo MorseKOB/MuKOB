@@ -26,6 +26,7 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_MORSE_DECODE_FLUSH,
     MSG_MORSE_TO_DECODE,
     MSG_WIRE_CONNECT,
     MSG_WIRE_CONNECT_TOGGLE,
@@ -38,6 +39,8 @@ typedef enum _MSG_ID_ {
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
     MSG_INPUT_CHAR_READY,
+    MSG_CODE_TEXT,
+    MSG_DISPLAY_MESSAGE,
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
@@ -53,8 +56,9 @@ typedef enum _MSG_ID_ {
  */
 typedef union _MSG_DATA_VALUE {
     char c;
-    mcode_t* mcode;
+    mcode_seq_t* mcode_seq;
     char* station_id;
+    char* str;
     int32_t status;
     unsigned short wire;
 } msg_data_value_t;
@@ -111,18 +115,40 @@ typedef struct _MSG_DISPATCH_CNTX {
 
 typedef struct _MSG_LOOP_CNTX {
     uint8_t corenum;                        // The core number the loop is running on
-    msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
-    idle_fn* idle_functions;                // Null terminated list of idle functions
+    const msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
+    const idle_fn* idle_functions;                // Null terminated list of idle functions
     void* idle_data;                        // Data to pass to the idle functions
 } msg_loop_cntx_t;
+
+typedef int alarm_index_t;
+#define ALARM_INDEX_INVALID -1
+
+/**
+ * @brief Cancel an alarm that was set using `alarm_set_ms`.
+ * @ingroup cmt
+ *
+ * This will attempt to cancel the alarm. It is possible that the alarm might have already
+ * triggered and posted the message.
+ *
+ * @param alarm_id The index returned from the `alarm_set_ms` function.
+ */
+extern void alarm_cancel(alarm_index_t alarm_index);
 
 /**
  * @brief Set an alarm to post a message when a millisecond period elapses.
  *
  * @param ms The time in milliseconds.
  * @param msg The cmt_msg_t message to post when the time period elapses.
+ *
+ * @return Timer index that can be used to cancel a timer.
  */
-extern void alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
+extern alarm_index_t alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
+
+/**
+ * @brief Initialize the Cooperative Multi-Tasking system.
+ * @ingroup cmt
+ */
+void cmt_init();
 
 /**
  * @brief Enter into a message processing loop.
@@ -133,7 +159,7 @@ extern void alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
  *
  * @param loop_context Loop context for processing.
  */
-extern void message_loop(msg_loop_cntx_t* loop_context);
+extern void message_loop(const msg_loop_cntx_t* loop_context);
 
 #ifdef __cplusplus
     }

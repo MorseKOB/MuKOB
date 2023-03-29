@@ -7,22 +7,12 @@
 */
 #include "pico/binary_info.h"
 //
-#include "hardware/irq.h"
-#include "hardware/rtc.h"
-#include "pico.h"
-#include "pico/printf.h"
-#include "pico/stdio.h"
-#include "pico/stdlib.h"
-#include "pico/time.h"
-#include "pico/types.h"
-#include "pico/util/datetime.h"
-
 #include "system_defs.h" // Main system/board/application definitions
 //
 #include "core1_main.h"
 #include "be.h"
 #include "mkboard.h"
-#include "multicore.h"
+#include "morse.h"
 
 #define DOT_MS 60 // Dot at 20 WPM
 #define UP_MS  DOT_MS
@@ -30,7 +20,7 @@
 #define CHR_SP (3 * DOT_MS)
 
  // 'H' (....) 'I' (..)
-static int32_t say_hi[] = {
+static const int32_t say_hi[] = {
     DOT_MS,
     UP_MS,
     DOT_MS,
@@ -45,12 +35,24 @@ static int32_t say_hi[] = {
     1000, // Pause before repeating
     0 };
 
+//static int32_t qbf[] = { -32767, 2, -460, 180, -230, 60, -60, 60, -60, 60, -60, 60, -230, 60, -460, 60, -60, 60, -60, 180, 60, 60, -230, 60, -60, 60, -60, 180 };
+
 int main()
 {
     // useful information for picotool
-    bi_decl_if_func_used(bi_2pins_with_func(PICO_DEFAULT_UART_RX_PIN, PICO_DEFAULT_UART_TX_PIN,
-        GPIO_FUNC_UART));
+    bi_decl_if_func_used(bi_2pins_with_func(PICO_DEFAULT_UART_RX_PIN, PICO_DEFAULT_UART_TX_PIN, GPIO_FUNC_UART));
     bi_decl(bi_program_description("Micro version of MorseKOB, with built-in display and terminal UI"));
+
+    // // ZZZ Test Morse Decode
+    // mcode_seq_t mc;
+    // mc.code_seq = qbf;
+    // mc.len = (sizeof(qbf) / sizeof(int32_t));
+
+    // morse_init(20, 20, CODE_TYPE_AMERICAN, CODE_SPACING_NONE);
+
+    // while (1) {
+    //     morse_decode(&mc);
+    // }
 
     // Board/base level initialization
     board_init();

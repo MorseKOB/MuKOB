@@ -38,7 +38,8 @@
     "type_traits": "c",
     "utility": "c",
     "time.h": "c",
-    "cmt.h": "c"
+    "cmt.h": "c",
+    "cstdio": "c"
   },
   "cmake.buildBeforeRun": true,
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",

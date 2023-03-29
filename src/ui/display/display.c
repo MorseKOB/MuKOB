@@ -45,14 +45,18 @@ bool _push_scr_context(scr_context_t* sc) {
     return (false);
 }
 
+static void _printc_for_printf_disp(char c, void* arg) {
+    printc(c, No_Paint);
+}
 
 int printf_disp(paint_control_t paint, const char* format, ...) {
-    char buf[1024];
+    int pl;
     va_list xArgs;
     va_start(xArgs, format);
-    int pl = vsnprintf(buf, sizeof(buf), format, xArgs);
-    prints(buf, paint);
+    pl = vfctprintf(_printc_for_printf_disp, NULL, format, xArgs);
     va_end(xArgs);
-
+    if (Paint == paint) {
+        disp_paint();
+    }
     return (pl);
 }

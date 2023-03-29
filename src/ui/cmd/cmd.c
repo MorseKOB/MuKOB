@@ -22,6 +22,7 @@
 static int _cmd_connect(int argc, char** argv);
 static int _cmd_encode(int argc, char** argv);
 static int _cmd_help(int argc, char** argv);
+static int _cmd_speed(int argc, char** argv);
 static int _cmd_wire(int argc, char** argv);
 
 // Command processors framework
@@ -33,28 +34,35 @@ typedef struct _CMD_HANDLER_ENTRY {
     char* description;
 } cmd_handler_entry_t;
 
-static cmd_handler_entry_t _cmd_connect_entry = {
+static const cmd_handler_entry_t _cmd_connect_entry = {
     _cmd_connect,
     1,
     "connect",
     "[wire-number]",
     "Connect/disconnect (toggle) the current wire. Connect to a specific wire.",
 };
-static cmd_handler_entry_t _cmd_encode_entry = {
+static const cmd_handler_entry_t _cmd_encode_entry = {
     _cmd_encode,
     1,
     "encode",
     "<string-to-encode>",
     "Encode a string to Morse.",
 };
-static cmd_handler_entry_t _cmd_help_entry = {
+static const cmd_handler_entry_t _cmd_help_entry = {
     _cmd_help,
     1,
     "help",
     "[command_name]",
     "List of commands or information for a specific command.",
 };
-static cmd_handler_entry_t _cmd_wire_entry = {
+static const cmd_handler_entry_t _cmd_speed_entry = {
+    _cmd_speed,
+    1,
+    "speed",
+    "[text-speed] [character-speed]",
+    "Display or set the 'Text' and 'Character' speeds.",
+};
+static const cmd_handler_entry_t _cmd_wire_entry = {
     _cmd_wire,
     1,
     "wire",
@@ -65,10 +73,11 @@ static cmd_handler_entry_t _cmd_wire_entry = {
 /**
  * @brief List of Command Handlers
  */
-cmd_handler_entry_t* _command_entries[] = {
+static const cmd_handler_entry_t* _command_entries[] = {
     &_cmd_connect_entry,
     &_cmd_encode_entry,
     &_cmd_help_entry,
+    &_cmd_speed_entry,
     &_cmd_wire_entry,
     ((cmd_handler_entry_t*)0), // Last entry must be a NULL
 };
@@ -82,9 +91,9 @@ typedef enum _CMD_HELP_DISPLAY_FMT_ {
     HELP_DISP_USAGE,
 } cmd_help_display_format_t;
 
-static void _help_display(cmd_handler_entry_t* cmd, cmd_help_display_format_t type);
+static void _help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_format_t type);
 static void _hook_keypress();
-static int _skip_to_ws_eol(char* line);
+static int _skip_to_ws_eol(const char* line);
 
 
 // Class data
@@ -106,16 +115,16 @@ static int _cmd_connect(int argc, char** argv) {
         bool success;
         uint16_t wire = (uint16_t)uint_from_str(argv[1], &success);
         if (!success) {
-            printf("Value error - '%s' is not a number.\n", argv[1]);
+            ui_term_printf("Value error - '%s' is not a number.\n", argv[1]);
             return (-1);
         }
         if (wire < 1 || wire > 999) {
-            printf("Wire number must be 1 to 999.\n");
+            ui_term_puts("Wire number must be 1 to 999.\n");
             return (-1);
         }
         if (wire != current_wire) {
             // The wire specified is not the current wire - connect to it.
-            printf("Connecting to wire %hu...\n", wire);
+            ui_term_printf("Connecting to wire %hu...\n", wire);
             cmt_msg_t msg;
             msg.id = MSG_WIRE_CONNECT;
             msg.data.wire = wire;
@@ -124,7 +133,7 @@ static int _cmd_connect(int argc, char** argv) {
         }
     }
     char* op = (mkwire_is_connected() ? "Disconnecting from" : "Connecting to");
-    printf("%s wire %hu...\n", op, current_wire);
+    ui_term_printf("%s wire %hu...\n", op, current_wire);
     cmt_msg_t msg;
     msg.id = MSG_WIRE_CONNECT_TOGGLE;
     postBEMsgBlocking(&msg);
@@ -137,22 +146,22 @@ static int _cmd_encode(int argc, char** argv) {
         return (-1);
     }
     cmt_msg_t msg;
-    mcode_t* mcode_space;
+    mcode_seq_t* mcode_space;
     for (int i = 1; i < argc; i++) {
         char* str = argv[i];
         char c;
         while ('\000' != (c = *str++)) {
-            mcode_t* mcode = morse_encode(c);
+            mcode_seq_t* mcode_seq = morse_encode(c);
             // Post it to the backend to decode
             msg.id = MSG_MORSE_TO_DECODE;
-            msg.data.mcode = mcode;
+            msg.data.mcode_seq = mcode_seq;
             postBEMsgBlocking(&msg);
         }
         if (i+1 < argc) {
             // Add a space
             mcode_space = morse_encode(' ');
             msg.id = MSG_MORSE_TO_DECODE;
-            msg.data.mcode = mcode_space;
+            msg.data.mcode_seq = mcode_space;
             postBEMsgBlocking(&msg);
         }
     }
@@ -161,11 +170,11 @@ static int _cmd_encode(int argc, char** argv) {
 }
 
 static int _cmd_help(int argc, char** argv) {
-    cmd_handler_entry_t** cmds = _command_entries;
-    cmd_handler_entry_t* cmd;
+    const cmd_handler_entry_t** cmds = _command_entries;
+    const cmd_handler_entry_t* cmd;
     if (1 == argc) {
         // List all of the commands with thier usage.
-        printf("Commands:\n");
+        ui_term_puts("Commands:\n");
         while (NULL != (cmd = *cmds++)) {
             _help_display(cmd, HELP_DISP_NAME);
         }
@@ -190,11 +199,66 @@ static int _cmd_help(int argc, char** argv) {
                 }
             }
             if (!command_matched) {
-                printf("Unknown: '%s'\n", user_cmd);
+                ui_term_printf("Unknown: '%s'\n", user_cmd);
             }
         }
     }
 
+    return (0);
+}
+
+static int _cmd_speed_get_value(const char* v) {
+    bool success;
+    uint8_t sp = (uint8_t)uint_from_str(v, &success);
+    if (!success) {
+        ui_term_printf("Value error - '%s' is not a number.\n", v);
+        return (-1);
+    }
+    if (sp < 1 || sp > 99) {
+        ui_term_puts("Speed must be 1 to 99.\n");
+        return (-1);
+    }
+    return (sp);
+}
+
+static int _cmd_speed(int argc, char** argv) {
+    if (argc > 3) {
+        _help_display(&_cmd_speed_entry, HELP_DISP_USAGE);
+        return (-1);
+    }
+    config_t* cfg = config_current_for_modification();
+    uint8_t char_sp = cfg->char_speed_min;
+    uint8_t text_sp = cfg->text_speed;
+    uint8_t new_char_sp = char_sp;
+    uint8_t new_text_sp = text_sp;
+
+    if (argc > 1) {
+        // Speeds entered. First is 'text'
+        new_text_sp = _cmd_speed_get_value(argv[1]);
+        if (new_text_sp < 0) {
+            return (-1);
+        }
+    }
+    if (argc > 2) {
+        // Speeds entered. Second is 'character'
+        new_char_sp = _cmd_speed_get_value(argv[2]);
+        if (new_char_sp < 0) {
+            return (-1);
+        }
+        if (new_char_sp < new_text_sp) {
+            ui_term_puts("Character speed must be >= Text speed. Setting equal.\n");
+            new_char_sp = new_text_sp;
+        }
+    }
+    ui_term_printf("Text speed: %hu  Character speed: %hu\n", new_text_sp, new_char_sp);
+    if (new_text_sp != text_sp || new_char_sp != char_sp) {
+        // Value(s) changed - set them both.
+        cfg->text_speed = new_text_sp;
+        cfg->char_speed_min = new_char_sp;
+        cmt_msg_t msg;
+        msg.id = MSG_CONFIG_CHANGED;
+        postBothMsgBlocking(&msg);
+    }
     return (0);
 }
 
@@ -207,11 +271,11 @@ static int _cmd_wire(int argc, char** argv) {
         bool success;
         uint16_t wire = (uint16_t)uint_from_str(argv[1], &success);
         if (!success) {
-            printf("Value error - '%s' is not a number.\n", argv[1]);
+            ui_term_printf("Value error - '%s' is not a number.\n", argv[1]);
             return (-1);
         }
         if (wire < 1 || wire > 999) {
-            printf("Wire number must be 1 to 999.\n");
+            ui_term_puts("Wire number must be 1 to 999.\n");
             return (-1);
         }
         cmt_msg_t msg;
@@ -220,7 +284,7 @@ static int _cmd_wire(int argc, char** argv) {
         postBEMsgBlocking(&msg);
     }
     else {
-        printf("%hd\n", mkwire_wire_get());
+        ui_term_printf("%hd\n", mkwire_wire_get());
     }
     return (0);
 }
@@ -254,11 +318,11 @@ void _handle_reinit_terminal_char(char c) {
     postUIMsgBlocking(&msg);
 }
 
-static void _help_display(cmd_handler_entry_t* cmd, cmd_help_display_format_t type) {
+static void _help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_format_t type) {
     term_color_pair_t tc = ui_term_color_get();
     term_color_default();
     if (HELP_DISP_USAGE == type) {
-        printf("Usage: ");
+        ui_term_puts("Usage: ");
     }
     int name_min = cmd->min_match;
     char* name_rest = ((cmd->name) + name_min);
@@ -266,11 +330,11 @@ static void _help_display(cmd_handler_entry_t* cmd, cmd_help_display_format_t ty
     // Print the minimum required characters bold and the rest normal.
     snprintf(format, 16, " %%.%ds", name_min);
     term_text_bold();
-    printf(format, cmd->name);
+    ui_term_printf(format, cmd->name);
     term_text_normal();
-    printf("%s %s\n", name_rest, cmd->usage);
+    ui_term_printf("%s %s\n", name_rest, cmd->usage);
     if (HELP_DISP_LONG == type || HELP_DISP_USAGE == type) {
-        printf("     %s\n", cmd->description);
+        ui_term_printf("     %s\n", cmd->description);
     }
     term_color_fg(tc.fg);
     term_color_bg(tc.bg);
@@ -314,7 +378,7 @@ static void _process_line(char* line) {
 
     _cmd_state = CMD_PROCESSING_LINE;
 
-    printf("\n");
+    ui_term_puts("\n");
 
     int argc = parse_line(line, argv, CMD_LINE_MAX_ARGS);
     char* user_cmd = argv[0];
@@ -322,8 +386,8 @@ static void _process_line(char* line) {
     bool command_matched = false;
 
     if (user_cmd_len > 0) {
-        cmd_handler_entry_t** cmds = _command_entries;
-        cmd_handler_entry_t* cmd;
+        const cmd_handler_entry_t** cmds = _command_entries;
+        const cmd_handler_entry_t* cmd;
 
         while (NULL != (cmd = *cmds++)) {
             int cmd_name_len = strlen(cmd->name);
@@ -338,7 +402,7 @@ static void _process_line(char* line) {
             }
         }
         if (!command_matched) {
-            printf("Command not found: '%s'. Try 'help'.\n", user_cmd);
+            ui_term_printf("Command not found: '%s'. Try 'help'.\n", user_cmd);
         }
     }
 
@@ -346,7 +410,7 @@ static void _process_line(char* line) {
     if (!mkwire_is_connected()) {
         // Get a command from the user...
         _cmd_state = CMD_COLLECTING_LINE;
-        printf("%c", CMD_PROMPT);
+        ui_term_printf("%c", CMD_PROMPT);
         ui_term_getline(_process_line);
     }
     else {
@@ -354,7 +418,7 @@ static void _process_line(char* line) {
     }
 }
 
-static int _skip_to_ws_eol(char* line) {
+static int _skip_to_ws_eol(const char* line) {
     int chars_skipped = 0;
     do {
         char c = *(line + chars_skipped);

@@ -21,11 +21,12 @@ pico_sdk_init()
 project(MuKOB C CXX ASM)
 
 add_compile_options(
+  -O0                       # No optimizations for now, for debugging
   -Wall
-  -Wno-format                     # int != int32_t as far as the compiler is concerned
+  -Wno-format               # int != int32_t as far as the compiler is concerned
   -Wno-unused-function
   -Wno-maybe-uninitialized
-  #-H                              # list include header paths
+  #-H                       # list include header paths
 )
 
 # External libraries
@@ -45,6 +46,7 @@ add_subdirectory(ui)
 # Add executable.
 add_executable(MuKOB
   MuKOB.c
+  debugging.c
   mkboard.c
   spi_ops.c
 )
@@ -90,8 +92,13 @@ include_directories(
 
 # ZZZ Figure out how to set `PICO_DEBUG_MALLOC` only if 'debug build'
 add_compile_definitions(
+  PICO_MALLOC_PANIC
   PICO_USE_MALLOC_MUTEX
-#  PICO_DEBUG_MALLOC
+  PICO_USE_STACK_GUARDS
+  PICO_STACK_SIZE=4096
+  PICO_CORE1_STACK_SIZE=4096
+
+  # PICO_DEBUG_MALLOC
 )
 
 # Add the libraries required by the system to the build
@@ -110,15 +117,18 @@ target_link_libraries(MuKOB
   term
   ui
   util
-  hardware_spi
+  hardware_clocks
+  hardware_exception
   hardware_i2c
   hardware_pio
+  hardware_spi
   hardware_timer
-  hardware_clocks
   pico_cyw43_arch_lwip_threadsafe_background
   pico_multicore
   pico_stdlib
   SD_FatFs
 )
+
+pico_set_linker_script(MuKOB ${CMAKE_SOURCE_DIR}/memmap_mukob_custom.ld)
 
 pico_add_extra_outputs(MuKOB)

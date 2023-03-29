@@ -155,8 +155,8 @@ static const sys_cfg_item_handler_fn sys_cfg_handlers[] = {
     ((sys_cfg_item_handler_fn)0), // NULL last item to signify end
 };
 
-const char* _sys_cfg_filename = "mukob.sys.cfg";
-char* _current_cfg_filename = NULL;
+static const char* _sys_cfg_filename = "mukob.sys.cfg";
+static char* _current_cfg_filename = NULL;
 
 static config_sys_t _system_cfg = { 1, false, 0.0, NULL, NULL, NULL };
 static config_t* _current_cfg;
@@ -444,7 +444,7 @@ static int32_t _cih_wire(config_t* cfg, const char* key, const char* value, char
     if (key) {
         if (strcmp(key, our_key) == 0) {
             int iv = atoi(value);
-            cfg->wire = (uint8_t)iv;
+            cfg->wire = (uint16_t)iv;
             retval = 1;
         }
     }

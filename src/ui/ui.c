@@ -33,28 +33,33 @@ typedef struct _UI_IDLE_FN_DATA_ {
 } ui_idle_fn_data_t;
 
 // Message handler functions...
-void _handle_init_terminal(cmt_msg_t* msg);
-void _handle_send_ui_status(cmt_msg_t* msg);
-void _handle_wifi_conn_status_update(cmt_msg_t* msg);
-void _handle_wire_changed(cmt_msg_t* msg);
-void _handle_wire_connected_state(cmt_msg_t* msg);
-void _handle_wire_station_msgs(cmt_msg_t* msg);
-void _ui_idle_function_1(ui_idle_fn_data_t* data);
+static void _handle_code_window_output(cmt_msg_t* msg);
+static void _handle_config_changed(cmt_msg_t* msg);
+static void _handle_init_terminal(cmt_msg_t* msg);
+static void _handle_send_ui_status(cmt_msg_t* msg);
+static void _handle_wifi_conn_status_update(cmt_msg_t* msg);
+static void _handle_wire_changed(cmt_msg_t* msg);
+static void _handle_wire_connected_state(cmt_msg_t* msg);
+static void _handle_wire_station_msgs(cmt_msg_t* msg);
+static void _ui_idle_function_1(ui_idle_fn_data_t* data);
 
-cmt_msg_t _msg_ui_send_status;
-ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
+static cmt_msg_t _msg_ui_send_status;
+static ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
 
 #define LEAVE_MSG_HANDLER()    {_ui_idle_function_data.idle_num = 0; _ui_idle_function_data.msg_burst++;}
 
-msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
-msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _handle_init_terminal };
-msg_handler_entry_t _input_char_ready_handler_entry = { MSG_INPUT_CHAR_READY, _ui_term_handle_input_char_ready };
-msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_send_ui_status };
-msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
-msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGED, _handle_wire_changed };
-msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
-msg_handler_entry_t _wire_current_sender_handler_entry = { MSG_WIRE_CURRENT_SENDER, _handle_wire_station_msgs };
-msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD, _handle_wire_station_msgs };
+static const msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
+static const msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _handle_init_terminal };
+static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
+static const msg_handler_entry_t _display_in_code_window_entry = { MSG_CODE_TEXT, _handle_code_window_output };
+static const msg_handler_entry_t _force_to_code_window_entry = { MSG_DISPLAY_MESSAGE, _handle_code_window_output };
+static const msg_handler_entry_t _input_char_ready_handler_entry = { MSG_INPUT_CHAR_READY, _ui_term_handle_input_char_ready };
+static const msg_handler_entry_t _send_status_handler_entry = { MSG_SEND_UI_STATUS, _handle_send_ui_status };
+static const msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
+static const msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGED, _handle_wire_changed };
+static const msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
+static const msg_handler_entry_t _wire_current_sender_handler_entry = { MSG_WIRE_CURRENT_SENDER, _handle_wire_station_msgs };
+static const msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD, _handle_wire_station_msgs };
 
 /**
  * @brief List of handler entries.
@@ -63,7 +68,8 @@ msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD,
  * For performance, put these in the order that we expect to receive the most (most -> least).
  *
  */
-msg_handler_entry_t* _handler_entries[] = {
+static const msg_handler_entry_t* _handler_entries[] = {
+    &_display_in_code_window_entry,
     &_send_status_handler_entry,
     &_input_char_ready_handler_entry,
     &_cmd_key_pressed_handler_entry,
@@ -72,11 +78,13 @@ msg_handler_entry_t* _handler_entries[] = {
     &_wire_connected_state_handler_entry,
     &_wifi_status_handler_entry,
     &_wire_changed_handler_entry,
+    &_force_to_code_window_entry,
+    &_config_changed_handler_entry,
     &_cmd_init_terminal_handler_entry,
     ((msg_handler_entry_t*)0), // Last entry must be a NULL
 };
 
-idle_fn _ui_idle_functions[] = {
+static const idle_fn _ui_idle_functions[] = {
     (void (*)(void*))_ui_idle_function_1,
     (idle_fn)0, // Last entry must be a NULL
 };
@@ -90,7 +98,7 @@ msg_loop_cntx_t ui_msg_loop_cntx = {
 
 static char* _sender_id = NULL;
 
-void _ui_idle_function_1(ui_idle_fn_data_t* data) {
+static void _ui_idle_function_1(ui_idle_fn_data_t* data) {
     // Something to do when there are no messages to process.
     data->msg_burst = 0; // Reset our message burst count
     data->idle_num++;
@@ -100,6 +108,41 @@ void _ui_idle_function_1(ui_idle_fn_data_t* data) {
 // ============================================
 // Message handler functions
 // ============================================
+
+static void _handle_config_changed(cmt_msg_t* msg) {
+    // Update things that depend on the current configuration.
+    const config_t* cfg = config_current();
+    ui_disp_update_speed(cfg->text_speed);
+    ui_term_update_speed(cfg->text_speed);
+    LEAVE_MSG_HANDLER();
+}
+
+/**
+ * @brief Handles MSG_CODE_TEXT and MSG_DISPLAY_MESSAGE by
+ *        writing text into the code section of the display and terminal.
+ * @ingroup ui
+ *
+ * In both cases, the data contains a string to display in the scrolling (code)
+ * section of the UI. In the case of MSG_CODE_TEXT it is one or more spaces and
+ * then a character. In the case of MSG_DISPLAY_MESSAGE it is a message that
+ * the backend or an interrupt handler (non-UI) process wants to be displayed
+ * (for example, status, warning, etc).
+ *
+ * @param msg The data contains a string that needs to be freed once handled.
+ */
+static void _handle_code_window_output(cmt_msg_t* msg) {
+    char* str = msg->data.str;
+    if (MSG_CODE_TEXT == msg->id) {
+        ui_disp_put_codetext(str);
+        ui_term_put_codetext(str);
+    }
+    else {
+        ui_disp_puts(str);
+        ui_term_puts(str);
+    }
+    free(str);
+    LEAVE_MSG_HANDLER();
+}
 
 /**
  * @brief Message handler for MSG_INIT_TERMINAL
@@ -111,13 +154,13 @@ void _ui_idle_function_1(ui_idle_fn_data_t* data) {
  *
  * @param msg Nothing important in the message.
  */
-void _handle_init_terminal(cmt_msg_t* msg) {
+static void _handle_init_terminal(cmt_msg_t* msg) {
     _ui_init_terminal_shell();
     LEAVE_MSG_HANDLER();
 }
 
-cmt_msg_t _send_ui_status_msg;
-void _handle_send_ui_status(cmt_msg_t* msg) {
+static cmt_msg_t _send_ui_status_msg;
+static void _handle_send_ui_status(cmt_msg_t* msg) {
     // Post a message
     _send_ui_status_msg.id = MSG_BACKEND_NOOP;
     postBEMsgNoWait(&_send_ui_status_msg);
@@ -129,20 +172,20 @@ void _handle_send_ui_status(cmt_msg_t* msg) {
     LEAVE_MSG_HANDLER();
 }
 
-void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
+static void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
     uint32_t wifi_status = msg->data.status;
     printf_disp(Paint, "\nUI got msg: %d (%d)\n with data: %d", msg->id, _ui_idle_function_data.msg_burst + 1, wifi_status);
     LEAVE_MSG_HANDLER();
 }
 
-void _handle_wire_changed(cmt_msg_t* msg) {
+static void _handle_wire_changed(cmt_msg_t* msg) {
     uint16_t wire_no = msg->data.wire;
     ui_disp_update_wire(wire_no);
     ui_term_update_wire(wire_no);
     LEAVE_MSG_HANDLER();
 }
 
-void _handle_wire_connected_state(cmt_msg_t* msg) {
+static void _handle_wire_connected_state(cmt_msg_t* msg) {
     wire_connected_state_t state = (wire_connected_state_t)msg->data.status;
     ui_disp_update_connected_state(state);
     ui_term_update_connected_state(state);
@@ -167,7 +210,7 @@ void _handle_wire_connected_state(cmt_msg_t* msg) {
 /**
  * Handle both messages from the wire that involve a Station ID.
  */
-void _handle_wire_station_msgs(cmt_msg_t* msg) {
+static void _handle_wire_station_msgs(cmt_msg_t* msg) {
     char* msg_station_id = msg->data.station_id;
 
     if (MSG_WIRE_CURRENT_SENDER == msg->id) {

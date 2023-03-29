@@ -28,7 +28,7 @@ extern "C" {
  * using the Fifo, as it is used by the Pico runtime to support multicore operation.
  *
  * MuKOB acknowledges the warnings, and will take care to assure that the Fifo and
- * the MuKOB code is in an appropriate state when operations are performed that will
+ * the MuKOB code_seq is in an appropriate state when operations are performed that will
  * cause the Pico SDK/runtime to use them.
  *
  * For general purpose application communication between the functionality running on
@@ -152,6 +152,7 @@ void post_to_cores_blocking(cmt_msg_t* msg);
  *       that contain allocated resources, as both core's message handlers would try to free them.
  *
  * @param msg The message to post.
+ * @return 0 Could not post to either. 1 Posted to Core 0. 2 Posted to Core 1. 3 Posted to both cores.
  */
 uint16_t post_to_cores_nowait(cmt_msg_t* msg);
 
@@ -159,7 +160,7 @@ uint16_t post_to_cores_nowait(cmt_msg_t* msg);
  * @brief Start the Core 1 functionality.
  * @ingroup multi_core
  *
- * This starts the core1 `main` code (the message dispatching loop).
+ * This starts the core1 `main` code_seq (the message dispatching loop).
  */
 void start_core1();
 

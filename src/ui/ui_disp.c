@@ -12,6 +12,8 @@
 #include "hardware/rtc.h"
 #include "pico/printf.h"
 
+#include <string.h>
+
 // TODO - Have these adjust based on the screen and font sizes
 
 #define UI_DISP_TOP_FIXED_LINES 2
@@ -41,6 +43,8 @@
 #define UI_DISP_STATUS_LINE 19
 #define UI_DISP_STATUS_LOGO_COL 23
 #define UI_DISP_STATUS_TIME_COL 9
+
+static bool _displaying_code;
 
 static void _header_fill_fixed() {
     text_color_pair_t cp;
@@ -74,6 +78,7 @@ static void _status_fill_fixed() {
 }
 
 void ui_disp_build(void) {
+    _displaying_code = false;
     disp_set_text_colors(C16_WHITE, C16_BLACK);
     disp_clear(Paint);
     scroll_area_define(UI_DISP_TOP_FIXED_LINES, UI_DISP_BOTTOM_FIXED_LINES_INIT);
@@ -93,6 +98,29 @@ void ui_disp_display_speed() {
 void ui_disp_display_wire() {
     const config_t* config = config_current();
     ui_disp_update_wire(config->wire);
+}
+
+void ui_disp_put_codetext(char* str) {
+    if (!_displaying_code) {
+        print_crlf(0, No_Paint);
+        _displaying_code = true;
+    }
+    // If this is a '=' print a newline.
+    if (strchr(str, '=')) {
+        prints(str, No_Paint);
+        print_crlf(0, Paint);
+    }
+    else {
+        prints(str, Paint);
+    }
+}
+
+void ui_disp_puts(char* str) {
+    if (_displaying_code) {
+        print_crlf(0, No_Paint);
+        _displaying_code = false;
+    }
+    prints(str, Paint);
 }
 
 extern void ui_disp_update_connected_state(wire_connected_state_t state) {
