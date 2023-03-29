@@ -15,15 +15,19 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "morse.h"
 #include "pico/types.h"
 
 typedef enum _MSG_ID_ {
     // Common messages (used by both BE and UI)
     MSG_COMMON_NOOP = 0x0000,
+    MSG_CONFIG_CHANGED,
     MSG_DELAY_COMPLETE,
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_MORSE_DECODE_FLUSH,
+    MSG_MORSE_TO_DECODE,
     MSG_WIRE_CONNECT,
     MSG_WIRE_CONNECT_TOGGLE,
     MSG_WIRE_DISCONNECT,
@@ -35,6 +39,8 @@ typedef enum _MSG_ID_ {
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
     MSG_INPUT_CHAR_READY,
+    MSG_CODE_TEXT,
+    MSG_DISPLAY_MESSAGE,
     MSG_SEND_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
@@ -49,19 +55,10 @@ typedef enum _MSG_ID_ {
  * Union that can hold the data needed by the messages.
  */
 typedef union _MSG_DATA_VALUE {
-    // General purpose (non-specifically named) values
     char c;
-    unsigned char uc;
-    int16_t n;
-    uint16_t un;
-    int32_t d;
-    uint32_t ud;
-    int64_t l;
-    uint64_t ll;
-    char* str;
-    void* ex_data;
-    // Specific values (more readable, for use by specific messages)
+    mcode_seq_t* mcode_seq;
     char* station_id;
+    char* str;
     int32_t status;
     unsigned short wire;
 } msg_data_value_t;
@@ -88,6 +85,8 @@ typedef struct _CMT_MSG {
 #define postBEMsgNoWait( pmsg )         post_to_core0_nowait( pmsg )
 #define postUIMsgBlocking( pmsg )       post_to_core1_blocking( pmsg )
 #define postUIMsgNoWait( pmsg )         post_to_core1_nowait( pmsg )
+#define postBothMsgBlocking( pmsg )     post_to_cores_blocking( pmsg )
+#define postBothMsgNoWait( pmsg )       post_to_cores_nowait( pmsg )
 
 /**
  * @brief Function prototype for a message handler.
@@ -116,18 +115,40 @@ typedef struct _MSG_DISPATCH_CNTX {
 
 typedef struct _MSG_LOOP_CNTX {
     uint8_t corenum;                        // The core number the loop is running on
-    msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
-    idle_fn* idle_functions;                // Null terminated list of idle functions
+    const msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
+    const idle_fn* idle_functions;                // Null terminated list of idle functions
     void* idle_data;                        // Data to pass to the idle functions
 } msg_loop_cntx_t;
+
+typedef int alarm_index_t;
+#define ALARM_INDEX_INVALID -1
+
+/**
+ * @brief Cancel an alarm that was set using `alarm_set_ms`.
+ * @ingroup cmt
+ *
+ * This will attempt to cancel the alarm. It is possible that the alarm might have already
+ * triggered and posted the message.
+ *
+ * @param alarm_id The index returned from the `alarm_set_ms` function.
+ */
+extern void alarm_cancel(alarm_index_t alarm_index);
 
 /**
  * @brief Set an alarm to post a message when a millisecond period elapses.
  *
  * @param ms The time in milliseconds.
  * @param msg The cmt_msg_t message to post when the time period elapses.
+ *
+ * @return Timer index that can be used to cancel a timer.
  */
-extern void alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
+extern alarm_index_t alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
+
+/**
+ * @brief Initialize the Cooperative Multi-Tasking system.
+ * @ingroup cmt
+ */
+void cmt_init();
 
 /**
  * @brief Enter into a message processing loop.
@@ -138,7 +159,7 @@ extern void alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
  *
  * @param loop_context Loop context for processing.
  */
-extern void message_loop(msg_loop_cntx_t* loop_context);
+extern void message_loop(const msg_loop_cntx_t* loop_context);
 
 #ifdef __cplusplus
     }

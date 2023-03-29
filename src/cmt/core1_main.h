@@ -24,7 +24,7 @@ extern "C" {
  * using the Fifo, as it is used by the Pico runtime to support multicore operation.
  *
  * MuKOB acknowledges the warnings, and will take care to assure that the Fifo and
- * the MuKOB code is in an appropriate state when operations are performed that will
+ * the MuKOB code_seq is in an appropriate state when operations are performed that will
  * cause the Pico SDK/runtime to use them.
  *
  * For general purpose application communication between the functionality running on

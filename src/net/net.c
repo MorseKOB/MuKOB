@@ -10,6 +10,8 @@
 #include "hardware/rtc.h"
 #include "pico/time.h"
 
+#define ADDR_PORT_SEP ':'
+
 static char _wifi_ssid[NET_SSID_MAX_LEN];
 static char _wifi_password[NET_PASSWORD_MAX_LEN];
 
@@ -51,43 +53,43 @@ typedef struct _ntp_handler_data {
 } ntp_handler_data_t;
 
 
-// Public functions...
+// ====================================================================
+// Public functions
+// ====================================================================
 
-bool wifi_connect() {
-    if (!_wifi_connected) {
-        if (cyw43_arch_wifi_connect_timeout_ms(_wifi_ssid, _wifi_password, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
-            error_printf("failed to connect\n");
-            return (false);
-        }
-        _wifi_connected = true;
+int host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port) {
+    int len_of_host;
+
+    if (!host_and_port) {
+        *buf = '\000';
+        return (0);
     }
-    return (true);
-}
-
-bool wifi_connected() {
-    return (_wifi_connected);
-}
-
-void wifi_set_creds(const char* ssid, const char* pw) {
-    strncpy(_wifi_ssid, ssid, NET_SSID_MAX_LEN);
-    strncpy(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
-}
-
-err_enum_t network_update_rtc(double tz_offset) {
-    // Build the NTP request message...
-    struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_RAM);
-    uint8_t* req = (uint8_t*)p->payload;
-    memset(req, 0, NTP_MSG_LEN);
-    req[0] = 0x1b; // NTP Request: Version=3 Mode=3 (client)
-    ntp_handler_data_t* handler_data = (ntp_handler_data_t*)malloc(sizeof(ntp_handler_data_t));
-    handler_data->tz_offset = tz_offset;
-
-    err_enum_t status = udp_single_operation(NTP_SERVER, NTP_PORT, p, NTP_TIMEOUT, _ntp_response_handler, (void*)handler_data);
-    if (status != ERR_OK && status != ERR_INPROGRESS) {
-        // Operation initialization failed. Need to free the PBUF we created...
-        pbuf_free(p);
+    // See if there is a ':'
+    char* sep = strchr(host_and_port, ADDR_PORT_SEP);
+    if (sep) {
+        // There is a ':', get the string up to it
+        len_of_host = sep - host_and_port;
     }
-    return (status);
+    else {
+        len_of_host = strlen(host_and_port);
+    }
+    if (maxlen > len_of_host) {
+        strncpy(buf, host_and_port, len_of_host);
+    }
+    else {
+        strncpy(buf, host_and_port, maxlen);
+    }
+
+    return (len_of_host);
+}
+
+uint16_t port_from_hostport(const char* host_and_port, uint16_t port_default) {
+    // Is there a ':'?
+    char* sep = strchr(host_and_port, ADDR_PORT_SEP);
+    if (NULL == sep) {
+        return port_default;
+    }
+    return (atoi(sep + 1));
 }
 
 err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler_fn bind_handler) {
@@ -163,6 +165,49 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
 
     return (status);
 }
+
+bool wifi_connect() {
+    if (!_wifi_connected) {
+        if (cyw43_arch_wifi_connect_timeout_ms(_wifi_ssid, _wifi_password, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+            error_printf("failed to connect\n");
+            return (false);
+        }
+        _wifi_connected = true;
+    }
+    return (true);
+}
+
+bool wifi_connected() {
+    return (_wifi_connected);
+}
+
+void wifi_set_creds(const char* ssid, const char* pw) {
+    strncpy(_wifi_ssid, ssid, NET_SSID_MAX_LEN);
+    strncpy(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
+}
+
+err_enum_t network_update_rtc(double tz_offset) {
+    // Build the NTP request message...
+    struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_RAM);
+    uint8_t* req = (uint8_t*)p->payload;
+    memset(req, 0, NTP_MSG_LEN);
+    req[0] = 0x1b; // NTP Request: Version=3 Mode=3 (client)
+    ntp_handler_data_t* handler_data = (ntp_handler_data_t*)malloc(sizeof(ntp_handler_data_t));
+    handler_data->tz_offset = tz_offset;
+
+    err_enum_t status = udp_single_operation(NTP_SERVER, NTP_PORT, p, NTP_TIMEOUT, _ntp_response_handler, (void*)handler_data);
+    if (status != ERR_OK && status != ERR_INPROGRESS) {
+        // Operation initialization failed. Need to free the PBUF we created...
+        pbuf_free(p);
+    }
+    return (status);
+}
+
+
+// ====================================================================
+// Internal functions
+// ====================================================================
+
 
 // Called with pre-processed results of NTP operation
 static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, double tz_offset) {

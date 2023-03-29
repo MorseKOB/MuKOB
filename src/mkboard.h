@@ -54,7 +54,7 @@ void buzzer_on(bool on);
  * @param pattern Array of millisend values to beep the buzzer on, off, on, etc.
  *      The last element of the array must be 0.
 */
-void buzzer_on_off(int pattern[]);
+void buzzer_on_off(const int pattern[]);
 
 /**
  * @brief Turn the hardware backlight on or off.
@@ -92,7 +92,7 @@ void led_on(bool on);
  * @param pattern Array of millisend values to turn the LED on, off, on, etc.
  *      The last element of the array must be 0.
 */
-void led_on_off(int32_t pattern[]);
+void led_on_off(const int32_t pattern[]);
 
 /**
  * @brief Turn the LED on/off based on MorseKOB code array...
@@ -102,7 +102,7 @@ void led_on_off(int32_t pattern[]);
  * @param pattern Array of millisend values to turn the LED on, off, on, etc.
  *      The last element of the array must be 0. Negative values are off time, positive values are on time.
 */
-void led_blink_mcode(int32_t *code, uint32_t len);
+void led_blink_mcode(const int32_t *code, uint32_t len);
 
 /**
  * @brief Read the option switch

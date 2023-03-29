@@ -123,7 +123,7 @@ int int_from_str(const char* str, bool* success) {
 }
 
 bool is_leap_year(int16_t year) {
-    bool isleap = ((year % 100 == 0 || year % 4 == 0) && (year % 400 != 0));
+    bool isleap = ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));
 
     return (isleap);
 }

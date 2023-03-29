@@ -21,7 +21,7 @@ static uint16_t _translate_cursor_line(uint16_t curline);
 static uint16_t _translate_line(uint16_t line);
 
 /*! @brief Map of Color24 (RGB) values indexed by Color16 numbers. */
-rgb16_t _color16_map[] = {
+static const rgb16_t _color16_map[] = {
     ILI9341_BLACK,
     ILI9341_BLUE,
     ILI9341_GREEN,

@@ -21,7 +21,7 @@ extern "C" {
  * @brief Message loop context for use by the loop handler.
  * @ingroup backend
  */
-extern msg_loop_cntx_t be_msg_loop_cntx;
+extern const msg_loop_cntx_t be_msg_loop_cntx;
 
 /**
  * @brief Initialize the back-end

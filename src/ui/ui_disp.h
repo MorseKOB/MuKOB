@@ -35,6 +35,24 @@ extern void ui_disp_display_speed();
 extern void ui_disp_display_wire();
 
 /**
+ * @brief Print the code-text string. This is 0-n spaces and a character.
+ * @ingroup ui
+ *
+ * @param str The string to print.
+ */
+void ui_disp_put_codetext(char* str);
+
+/**
+ * @brief Print a string in the scrolling (code) area of the screen.
+ * @ingroup ui
+ *
+ * If code is displaying, this will print a newline and then the string.
+ *
+ * @param str The string to print.
+ */
+void ui_disp_puts(char* str);
+
+/**
  * @brief Update the Connected icon based on the state.
  * @ingroup ui
  *

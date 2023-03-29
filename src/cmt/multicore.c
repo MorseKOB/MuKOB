@@ -8,7 +8,7 @@
  *
 */
 #include "multicore.h"
-
+#include "cmt.h"
 #include "core1_main.h"
 
 #define CORE0_QUEUE_ENTRIES_MAX 32
@@ -36,6 +36,7 @@ bool get_core1_msg_nowait(cmt_msg_t* msg) {
 void multicore_init() {
     queue_init(&core0_queue, sizeof(cmt_msg_t), CORE0_QUEUE_ENTRIES_MAX);
     queue_init(&core1_queue, sizeof(cmt_msg_t), CORE1_QUEUE_ENTRIES_MAX);
+    cmt_init();
 }
 
 void post_to_core0_blocking(cmt_msg_t *msg) {
@@ -52,6 +53,22 @@ void post_to_core1_blocking(cmt_msg_t *msg) {
 
 bool post_to_core1_nowait(cmt_msg_t *msg) {
     return (queue_try_add(&core1_queue, msg));
+}
+
+void post_to_cores_blocking(cmt_msg_t* msg) {
+    queue_add_blocking(&core0_queue, msg);
+    queue_add_blocking(&core1_queue, msg);
+}
+
+uint16_t post_to_cores_nowait(cmt_msg_t* msg) {
+    uint16_t retval = 0;
+    if (post_to_core0_nowait(msg)) {
+        retval |= 0x01;
+    }
+    if (post_to_core1_nowait(msg)) {
+        retval |= 0x02;
+    }
+    return (retval);
 }
 
 void start_core1() {

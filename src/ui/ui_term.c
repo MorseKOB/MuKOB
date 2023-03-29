@@ -7,6 +7,7 @@
 */
 #include "ui_term.h"
 #include "config.h"
+#include "cmd.h"
 #include "cmt.h"
 #include "term.h"
 #include "util.h"
@@ -20,6 +21,7 @@
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
 static ui_term_control_char_handler _control_char_handler[32]; // Room for a handler for each control character
+static bool _displaying_code;
 static char _getline_buf[_UI_TERM_GETLINE_MAX_LEN_];
 static int16_t _getline_index;
 
@@ -146,6 +148,7 @@ static void _ui_term_getline_continue() {
 }
 
 static void _term_init() {
+    _displaying_code = false;
     _input_available_handler = NULL;
     memset(_control_char_handler, 0, sizeof(_control_char_handler));
     term_reset();
@@ -159,10 +162,6 @@ static void _term_init() {
     term_clear();
     term_cursor_on(false);
     ui_term_use_code_color();
-    // ZZZ Temp to count lines and see scroll...
-    for (int i = 1; i <= UI_TERM_LINES; i++) {
-        printf("Line %d\n", i);
-    }
 }
 
 void ui_term_build(void) {
@@ -234,7 +233,48 @@ bool ui_term_handle_control_character(char c) {
     return (false);
 }
 
-extern void ui_term_register_control_char_handler(char c, ui_term_control_char_handler handler_fn) {
+static void _printc_for_printf_term(char c, void* arg) {
+    putchar(c);
+}
+
+int ui_term_printf(const char* format, ...) {
+    int pl = 0;
+    if (_displaying_code) {
+        putchar('\n');
+        pl = 1;
+    }
+    va_list xArgs;
+    va_start(xArgs, format);
+    pl += vfctprintf(_printc_for_printf_term, NULL, format, xArgs);
+    va_end(xArgs);
+
+    return (pl);
+}
+
+void ui_term_put_codetext(char* str) {
+    // If the Command Shell is active, don't display Code.
+    if (CMD_SNOOZING == cmd_get_state()) {
+        if (!_displaying_code) {
+            putchar('\n');
+            _displaying_code = true;
+        }
+        printf("%s", str);
+        // If this is a '=' print a newline.
+        if (strchr(str, '=')) {
+            printf("\n");
+        }
+    }
+}
+
+void ui_term_puts(char* str) {
+    if (_displaying_code) {
+        putchar('\n');
+        _displaying_code = false;
+    }
+    printf("%s", str);
+}
+
+void ui_term_register_control_char_handler(char c, ui_term_control_char_handler handler_fn) {
     if (iscntrl(c)) {
         _control_char_handler[(int)c] = handler_fn;
     }

@@ -35,7 +35,7 @@ typedef struct _config_ {
     bool local;
     uint8_t char_speed_min;
     bool remote;
-    char* host_port; // host/addr:port of the MorseKOB Server
+    char* host_and_port; // host/addr:port of the MorseKOB Server
     bool sound;
     bool sounder;
     code_spacing_t spacing;

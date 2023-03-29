@@ -98,8 +98,8 @@ int board_init() {
     gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    // SPI 1 initialization for the display. Use SPI at 30MHz.
-    spi_init(SPI_DISPLAY_DEVICE, 30000 * 1000);
+    // SPI 1 initialization for the display. Use SPI at 20MHz.
+    spi_init(SPI_DISPLAY_DEVICE, 20000 * 1000);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
@@ -220,7 +220,7 @@ void buzzer_on(bool on) {
     gpio_put(SPKR_DRIVE, on);
 }
 
-void buzzer_on_off(int pattern[]) {
+void buzzer_on_off(const int pattern[]) {
     for (int i = 0; pattern[i] != 0; i++) {
         buzzer_beep(pattern[i++]);
         int off_time = pattern[i];
@@ -268,7 +268,7 @@ void led_on(bool on) {
     }
 }
 
-void led_on_off(int32_t pattern[]) {
+void led_on_off(const int32_t pattern[]) {
     for (int i = 0; pattern[i] != 0; i++) {
         led_flash(pattern[i++]);
         int off_time = pattern[i];
@@ -287,7 +287,7 @@ struct _led_blink_mcode_context {
 };
 static struct _led_blink_mcode_context _mcode_context = {0, 0, (alarm_id_t)0, (int*)NULL};
 
-int64_t _led_blink_mcode_handler(alarm_id_t id, void* request_state) {
+int64_t _led_blink_mcode_handler(const alarm_id_t id, void* request_state) {
     if (_mcode_context.alarm_id != 0) {
         cancel_alarm(_mcode_context.alarm_id);
         _mcode_context.alarm_id = 0;
@@ -316,7 +316,7 @@ int64_t _led_blink_mcode_handler(alarm_id_t id, void* request_state) {
     return 0;
 }
 
-void led_blink_mcode(int32_t* code, uint32_t len) {
+void led_blink_mcode(const int32_t* code, uint32_t len) {
     if (_mcode_context.alarm_id != 0) {
         cancel_alarm(_mcode_context.alarm_id);
         _mcode_context.alarm_id = 0;

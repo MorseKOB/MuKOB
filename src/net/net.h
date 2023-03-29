@@ -45,31 +45,23 @@ typedef void (*udp_bind_handler_fn)(err_enum_t status, struct udp_pcb* udp_pcb);
 typedef void (*udp_sop_result_handler_fn)(err_enum_t status, struct pbuf* p, void* handler_data);
 
 /**
- * @brief Connect to WiFi (if needed).
- * @ingroup wire
+ * @brief Get the 'host' portion of a 'host:port' identifier.
  *
- * @returns true if connected, false if failed to connect.
+ * @param buf Buffer to copy the 'host' portion into.
+ * @param maxlen Maximum length to copy.
+ * @param host_and_port The 'host:port' to process. The ':port' portion can be missing.
+ * @return The length of the host name (could be larger than maxlen)
  */
-bool wifi_connect();
+int host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port);
 
 /**
- * @brief Status of WiFi connection.
- * @ingroup wire
+ * @brief Get the 'port' from a 'host:port' identifier.
  *
- * This returns the stored state. It does not try to connect.
- *
- * @returns true if connected.
+ * @param host_and_port The 'host:port' to process.
+ * @param port_default The port number to return if the identifier didn't include a ':port' part.
+ * @return uint16_t The port.
  */
-bool wifi_connected();
-
-/**
- * @brief Set the ssid and password for the WiFi connection.
- * @ingroup wire
- *
- * @param ssid WiFi name.
- * @param pw WiFi password.
- */
-void wifi_set_creds(const char* ssid, const char* pw);
+uint16_t port_from_hostport(const char* host_and_port, uint16_t port_default);
 
 /**
  * @brief Make a NTP network call and use the result to update the board's RTC.
@@ -107,6 +99,33 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
  * @returns Error number (from err.h). ERR_OK or ERR_INPROGRESS is returned on success.
  */
 err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf* p, uint32_t timeout, udp_sop_result_handler_fn result_handler, void* handler_data);
+
+/**
+ * @brief Connect to WiFi (if needed).
+ * @ingroup wire
+ *
+ * @returns true if connected, false if failed to connect.
+ */
+bool wifi_connect();
+
+/**
+ * @brief Status of WiFi connection.
+ * @ingroup wire
+ *
+ * This returns the stored state. It does not try to connect.
+ *
+ * @returns true if connected.
+ */
+bool wifi_connected();
+
+/**
+ * @brief Set the ssid and password for the WiFi connection.
+ * @ingroup wire
+ *
+ * @param ssid WiFi name.
+ * @param pw WiFi password.
+ */
+void wifi_set_creds(const char* ssid, const char* pw);
 
 #ifdef __cplusplus
 }
