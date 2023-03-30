@@ -17,8 +17,8 @@ As defined, the pin assignments are
 | |  SD+Touch SPI0-RX |   6  |  |  35  | 'ADC_VREF'        |
 | |         SD Select |   7  |  |  34  | GP-28 (NU)        |
 | |             'GND' |   8  |  |  33  | 'GND/AGND'        |
-| |      Touch Select |   9  |  |  32  | Disp Backlight    |
-| |         Touch IRQ |  10  |  |  31  | Disp Reset        |
+| |      Touch Select |   9  |  |  32  | Display Backlight |
+| |         Touch IRQ |  10  |  |  31  | Display Reset     |
 | |  Display CMD/Data |  11  |  |  30  | 'RUN'             |
 | |    Display Select |  12  |  |  29  | Speaker           |
 | |             'GND' |  13  |  |  28  | 'GND'             |
