@@ -182,7 +182,7 @@ void mkwire_disconnect() {
         _udp_pcb = NULL;
         _connected_state = WIRE_NOT_CONNECTED;
     }
-    // Post a message to the UI letting it know we are connected
+    // Post a message to the UI letting it know we are disconnected
     cmt_msg_t msg;
     msg.id = MSG_WIRE_CONNECTED_STATE;
     msg.data.status = _connected_state;
@@ -447,6 +447,9 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
                     // ID packet, let the UI know the Station ID
                     mkspkt_id_t id_pkt;
                     _unpack_id_packet(&id_pkt, p);
+                    if (code_pkt.seqno == (_seqno_recv + 2)) {
+                        _seqno_recv = code_pkt.seqno; // Update sequence number from sender, ignore others.
+                    }
                     station_id = id_pkt.id;
                     msg.id = MSG_WIRE_STATION_ID_RCVD;
                     msg.data.station_id = str_value_create(station_id);

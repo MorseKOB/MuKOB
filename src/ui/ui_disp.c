@@ -8,6 +8,7 @@
 #include "ui_disp.h"
 #include "config.h"
 #include "display.h"
+#include "font.h"
 #include "util.h"
 #include "hardware/rtc.h"
 #include "pico/printf.h"
@@ -29,6 +30,10 @@
 #define UI_DISP_HEADER_SPEED_VALUE_COL 10
 #define UI_DISP_HEADER_WIRE_LABEL_COL 2
 #define UI_DISP_HEADER_WIRE_VALUE_COL 4
+// Header icon locations
+#define UI_DISP_HEADER_CLOSER_COL 13
+#define UI_DISP_HEADER_LOOP_COL 16
+#define UI_DISP_HEADER_WIFI_COL 19
 #define UI_DISP_HEADER_SETUP_COL 20
 #define UI_DISP_HEADER_MENU_COL 22
 
@@ -56,6 +61,9 @@ static void _header_fill_fixed() {
     // Fixed text
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIRE_LABEL_COL, "W:", false, No_Paint);
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_LABEL_COL, "S:", false, No_Paint);
+    disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_CLOSER_COL, "\020\021", false, No_Paint); // Closer LF/RT
+    disp_char(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_LOOP_COL, LOOP_OPEN_CHR, No_Paint); // Loop
+    disp_char(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_WIFI_COL, WIFI_CONNECTED_CHR, No_Paint); // WiFi
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SETUP_COL, "\012\013", false, No_Paint); // Gear LF/RT
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_MENU_COL, "\014\015", false, No_Paint);  // Lines LF/RT
     // Paint and put the colors back
