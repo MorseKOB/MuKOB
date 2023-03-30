@@ -133,8 +133,16 @@ static void _handle_config_changed(cmt_msg_t* msg) {
 static void _handle_code_window_output(cmt_msg_t* msg) {
     char* str = msg->data.str;
     if (MSG_CODE_TEXT == msg->id) {
-        ui_disp_put_codetext(str);
-        ui_term_put_codetext(str);
+        // The decoder tends to put in multiple leading spaces before a character.
+        // Since our screen space is limited, we reduce multiple leading spaces to one.
+        // If someone actually sent multiple spaces, then they'll be lost, but most
+        // of the time, it's just the decoding.
+        char* s = str;
+        while (strncmp(s, "  ", 2) == 0) {
+            s++;
+        }
+        ui_disp_put_codetext(s);
+        ui_term_put_codetext(s);
     }
     else {
         ui_disp_puts(str);
