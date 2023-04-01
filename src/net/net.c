@@ -49,7 +49,7 @@ typedef struct _udp_op_context {
 #define NTP_MSG_LEN 48
 #define NTP_DELTA 2208988800 // seconds between 1 Jan 1900 and 1 Jan 1970
 typedef struct _ntp_handler_data {
-    double tz_offset;
+    float tz_offset;
 } ntp_handler_data_t;
 
 
@@ -186,7 +186,7 @@ void wifi_set_creds(const char* ssid, const char* pw) {
     strncpy(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
 }
 
-err_enum_t network_update_rtc(double tz_offset) {
+err_enum_t network_update_rtc(float tz_offset) {
     // Build the NTP request message...
     struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_RAM);
     uint8_t* req = (uint8_t*)p->payload;
@@ -210,7 +210,7 @@ err_enum_t network_update_rtc(double tz_offset) {
 
 
 // Called with pre-processed results of NTP operation
-static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, double tz_offset) {
+static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, float tz_offset) {
     if (status == ERR_OK && seconds_from_epoch) {
         // Adjust by the tz_offset - hours from GMT
         time_t offset = (time_t)(3600.0 * tz_offset);
@@ -238,7 +238,7 @@ static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handl
         uint8_t mode = pbuf_get_at(p, 0) & 0x7;
         uint8_t stratum = pbuf_get_at(p, 1);
         ntp_handler_data_t* ntp_handler_data = (ntp_handler_data_t*)handler_data;
-        double tz_offset = ntp_handler_data->tz_offset;
+        float tz_offset = ntp_handler_data->tz_offset;
 
         if (status != ERR_OK) {
             _ntp_set_datetime(status, NULL, tz_offset);

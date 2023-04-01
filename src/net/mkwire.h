@@ -73,33 +73,15 @@ void mkwire_init(char *mkobs_url, uint16_t port, char *office_id, uint16_t wire_
 bool mkwire_is_connected();
 
 /**
- * @brief Return the host from a Host:Port, or the default.
+ * @brief Send the station ID to the MorseKOB Server if currently connected.
  * @ingroup wire
- *
- * Copy the host portion of a Host:Port, or the default.
- *
- * @param buf The buffer to copy the host into.
- * @param
- * @param host_and_port A string that is NULL, contains a Host, or a Host:Port
- * @return true It the buffer was large enough to contain the full host.
- * @return false If the complete host couldn't be copied into the buffer.
+ * 
  */
-bool mkwire_host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port);
-
-/**
- * @brief Return the port from a Host:Port, or the default.
- * @ingroup wire
- *
- * Returns the `port` part of a host:port, or the default MorseKOB
- * Server port if no port is included.
- *
- * @param host_and_port
- * @return uint16_t The port part or the default port.
- */
-uint16_t mkwire_port_from_hostport(const char* host_and_port);
+void mkwire_keep_alive_send();
 
 /*!
  * @brief Set the local Station/Office ID.
+ * @ingroup wire
  *
  * @param office_id The local Station/Office ID.
  */
@@ -107,6 +89,7 @@ void mkwire_set_office_id(char *office_id);
 
 /**
  * @brief Get the current wire number.
+ * @ingroup wire
  *
  * @return int16_t The wire number.
  */

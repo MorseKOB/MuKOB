@@ -70,7 +70,7 @@ uint16_t port_from_hostport(const char* host_and_port, uint16_t port_default);
  * @param tz_offset Hours offset from UTC. For a timezone like UTC−09:30, use a value of -9.5
  * @returns ERR_OK (0) on success
  */
-err_enum_t network_update_rtc(double tz_offset);
+err_enum_t network_update_rtc(float tz_offset);
 
 /**
  * @brief Send a UDP message and process the response message.

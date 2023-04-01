@@ -15,26 +15,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define _MAX_PENDING_ALARMS 16
+// TODO: Since this can be used by both cores, a mutex should be used to protect the methods
+//       that set/get/clear scheduled messages.
+
+#define _SCHEDULED_MESSAGES_MAX 16
+#define _INVALID_ALARM_ID ((alarm_id_t)-2)
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
 
 // microsecond overhead (typical/approx) for handling an alarm and posting a message.
-#define ALARM_HANDLER_OVERHEAD_US 300L
+#define ALARM_HANDLER_OVERHEAD_US (200L)
 
-typedef struct _alarm_handler_data_ {
+typedef struct _scheduled_msg_data_ {
+    bool in_use;
     uint8_t corenum;
-    cmt_msg_t* client_msg;
+    const cmt_msg_t* client_msg;
     alarm_id_t alarm_id;
-    alarm_index_t alarm_index;
+    scheduled_msg_id_t sched_msg_id;
     uint32_t ms;
     uint32_t created_ms;
-} alarm_handler_data_t;
+} _scheduled_msg_data_t;
 
-static alarm_handler_data_t* _pending_alarm_datas[_MAX_PENDING_ALARMS]; // Space for 16 pending timers (this way we don't need to malloc/free)
-static int _pending_alarms = ALARM_INDEX_INVALID;
+static _scheduled_msg_data_t _scheduled_message_datas[_SCHEDULED_MESSAGES_MAX]; // Pending alarms (no malloc/free)
+static int _scheduled_messages = SCHED_MSG_ID_INVALID;
 
-static void _alarm_handler_data_free(alarm_handler_data_t* alarm_handler_data_to_free);
+static void _scheduled_msg_clear(int sched_msg_id);
 
 /**
  * @brief Alarm callback handler.
@@ -48,114 +53,131 @@ static void _alarm_handler_data_free(alarm_handler_data_t* alarm_handler_data_to
  * @return 0 to not reschedule the alarm
  */
 int64_t _alarm_handler(alarm_id_t id, void* data) {
-    alarm_handler_data_t* handler_data = (alarm_handler_data_t*)data;
-    uint8_t corenum = handler_data->corenum;
-    cmt_msg_t* client_msg = handler_data->client_msg;
-    _alarm_handler_data_free(handler_data);
-    if (corenum == 0) {
-        post_to_core0_blocking(client_msg);
-    }
-    else if (corenum == 1) {
-        post_to_core1_blocking(client_msg);
-    }
-    else {
-        error_printf("CMT - `alarm_handler` got unknown core number: %d", (int)corenum);
+    _scheduled_msg_data_t* scheduled_msg_data = (_scheduled_msg_data_t*)data;
+    if (scheduled_msg_data) {
+        uint8_t corenum = scheduled_msg_data->corenum;
+        const cmt_msg_t* client_msg = scheduled_msg_data->client_msg;
+        _scheduled_msg_clear(scheduled_msg_data->sched_msg_id);
+        if (client_msg) {
+            if (corenum == 0) {
+                post_to_core0_blocking(client_msg);
+            }
+            else if (corenum == 1) {
+                post_to_core1_blocking(client_msg);
+            }
+            else {
+                error_printf("CMT - `alarm_handler` got unknown core number: %d", (int)corenum);
+            }
+        }
     }
 
     return (0L); // Don't reschedule
 }
 
-static void _alarm_free_stale() {
+static void _scheduled_msg_clear_stale() {
     uint32_t now = us_to_ms(time_us_64());
-    for (int ai = 0; ai < _MAX_PENDING_ALARMS; ai++) {
-        alarm_handler_data_t* alarm_handler_data = _pending_alarm_datas[ai];
-        if (alarm_handler_data) {
+    for (int id = 0; id < _SCHEDULED_MESSAGES_MAX; id++) {
+        _scheduled_msg_data_t* scheduled_msg_data = &_scheduled_message_datas[id];
+        if (scheduled_msg_data->in_use) {
             // If it is now more than 5 seconds later than the alarm time, cancel and free it.
-            if (now > (alarm_handler_data->created_ms + alarm_handler_data->ms + 5000)) {
+            if (now > (scheduled_msg_data->created_ms + scheduled_msg_data->ms + 5000)) {
                 // For some reason, this alarm still exists
-                if (alarm_handler_data->alarm_id > 0) {
-                    cancel_alarm(alarm_handler_data->alarm_id);
+                if (scheduled_msg_data->alarm_id > 0) {
+                    cancel_alarm(scheduled_msg_data->alarm_id);
                 }
-                _alarm_handler_data_free(alarm_handler_data);
+                _scheduled_msg_clear(id);
             }
         }
     }
 }
 
-static void _alarm_handler_data_free(alarm_handler_data_t* alarm_handler_data_to_free) {
-    alarm_index_t ai = (alarm_handler_data_to_free ? alarm_handler_data_to_free->alarm_index : ALARM_INDEX_INVALID);
-    if (ALARM_INDEX_INVALID != ai) {
-        alarm_handler_data_t* alarm_handler_data = _pending_alarm_datas[alarm_handler_data_to_free->alarm_index];
-        if (alarm_handler_data) {
-            free(alarm_handler_data);
-            _pending_alarm_datas[ai] = NULL;
-            _pending_alarms--;
-        }
+static void _scheduled_msg_clear(int id) {
+    if (SCHED_MSG_ID_INVALID != id) {
+        _scheduled_message_datas[id].in_use = false;
+        _scheduled_message_datas[id].alarm_id = _INVALID_ALARM_ID;
+        _scheduled_messages--;
     }
 }
 
-void alarm_cancel(alarm_index_t ai) {
+void scheduled_msg_cancel(scheduled_msg_id_t id) {
     // Find the alarm data
-    if (ALARM_INDEX_INVALID != ai) {
-        alarm_handler_data_t* alarm_handler_data = _pending_alarm_datas[ai];
-        if (alarm_handler_data) {
-            if (alarm_handler_data->alarm_id > 0) {
-                cancel_alarm(alarm_handler_data->alarm_id);
+    if (SCHED_MSG_ID_INVALID != id && id >= 0 && id < _SCHEDULED_MESSAGES_MAX) {
+        _scheduled_msg_data_t* scheduled_msg_data = &_scheduled_message_datas[id];
+        if (scheduled_msg_data->in_use) {
+            if (scheduled_msg_data->alarm_id > 0) {
+                cancel_alarm(scheduled_msg_data->alarm_id);
             }
-            _alarm_handler_data_free(alarm_handler_data);
+            _scheduled_msg_clear(id);
         }
     }
 }
 
-alarm_index_t alarm_set_ms(uint32_t ms, cmt_msg_t* msg) {
+scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
     // First, if we don't have any open slots - see if we can free one up
-    alarm_index_t ai = ALARM_INDEX_INVALID;
+    scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
     alarm_id_t alarm_id = -2;
-    if (_pending_alarms == _MAX_PENDING_ALARMS) {
-        _alarm_free_stale();
+    uint8_t core_num = (uint8_t)get_core_num();
+    if (_scheduled_messages == _SCHEDULED_MESSAGES_MAX) {
+        _scheduled_msg_clear_stale();
     }
     // Find a free slot
-    for (int i = 0; i < _MAX_PENDING_ALARMS; i++) {
-        if (!_pending_alarm_datas[i]) {
-            ai = i;
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        if (!_scheduled_message_datas[i].in_use) {
+            id = i;
             break;
         }
     }
-    uint64_t delay_us = (ms * 1000) - ALARM_HANDLER_OVERHEAD_US;
-    alarm_handler_data_t* handler_data = malloc(sizeof(alarm_handler_data_t));
-    handler_data->corenum = (uint8_t)get_core_num();
-    handler_data->client_msg = msg;
-    if (ALARM_INDEX_INVALID != ai) {
+    if (SCHED_MSG_ID_INVALID != id && ms > 0) {
+        _scheduled_msg_data_t* handler_data = &_scheduled_message_datas[id];
+        uint64_t delay_us = ((ms * 1000) - ALARM_HANDLER_OVERHEAD_US);
+        handler_data->corenum = core_num;
+        handler_data->client_msg = msg;
+        handler_data->ms = ms;
+        handler_data->created_ms = us_to_ms(time_us_64()); // 'now' in millis
+        // Store it in the slot
+        handler_data->sched_msg_id = id;
+        handler_data->in_use = true;
+        handler_data->alarm_id = alarm_id; // Store the 'flag' alarm ID
+        _scheduled_messages++;
         alarm_id = add_alarm_in_us(delay_us, _alarm_handler, handler_data, false);
+        handler_data->alarm_id = alarm_id; // Store the 'real' alarm ID
     }
-    handler_data->alarm_id = alarm_id;
-    handler_data->ms = ms;
-    handler_data->created_ms = us_to_ms(time_us_64());
-    // Store it in the slot
-    if (ALARM_INDEX_INVALID != ai) {
-        handler_data->alarm_index = ai;
-        _pending_alarm_datas[ai] = handler_data;
-        _pending_alarms++;
-    }
-    if (alarm_id < 0) {
-        error_printf("CMT - `alarm_set_ms` could not set alarm.");
+    if (SCHED_MSG_ID_INVALID == id || alarm_id < 1) {
+        char* reason = (SCHED_MSG_ID_INVALID == id ? "No alarm slots available" : "Call to `add_alarm_in_us` failed");
+        error_printf("CMT - `alarm_set_ms` could not set alarm due to: %s. Posting message immediately.\n", reason);
         // handle immediately so they get their message
-        _alarm_handler(alarm_id, handler_data);
-    }
-    else if (alarm_id == 0) {
-        // The time has already passed, handle immediately.
-        _alarm_handler(alarm_id, handler_data);
-    }
-    else {
-        // The alarm will trigger the handler, which will post the client message and free things up.
+        if (core_num == 0) {
+            post_to_core0_blocking(msg);
+        }
+        else if (core_num == 1) {
+            post_to_core1_blocking(msg);
+        }
+        _scheduled_msg_clear(id);
+        id = SCHED_MSG_ID_INVALID;
     }
 
-    return (ai);
+    return (id);
+}
+
+extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg) {
+    scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        if (_scheduled_message_datas[i].in_use && msg == _scheduled_message_datas[i].client_msg) {
+            id = i;
+            break;
+        }
+    }
+    return (id);
 }
 
 void cmt_init() {
-    memset(_pending_alarm_datas, 0, sizeof(_pending_alarm_datas));
-    _pending_alarms = 0;
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        _scheduled_message_datas[i].alarm_id = 0;
+        _scheduled_message_datas[i].sched_msg_id = i;
+        _scheduled_message_datas[i].client_msg = NULL;
+        _scheduled_message_datas[i].in_use = false;
+    }
+    _scheduled_messages = 0;
 }
 
 void message_loop(const msg_loop_cntx_t* loop_context) {

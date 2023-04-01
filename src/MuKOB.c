@@ -43,17 +43,6 @@ int main()
     bi_decl_if_func_used(bi_2pins_with_func(PICO_DEFAULT_UART_RX_PIN, PICO_DEFAULT_UART_TX_PIN, GPIO_FUNC_UART));
     bi_decl(bi_program_description("Micro version of MorseKOB, with built-in display and terminal UI"));
 
-    // // ZZZ Test Morse Decode
-    // mcode_seq_t mc;
-    // mc.code_seq = qbf;
-    // mc.len = (sizeof(qbf) / sizeof(int32_t));
-
-    // morse_init(20, 20, CODE_TYPE_AMERICAN, CODE_SPACING_NONE);
-
-    // while (1) {
-    //     morse_decode(&mc);
-    // }
-
     // Board/base level initialization
     board_init();
 

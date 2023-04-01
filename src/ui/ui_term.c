@@ -300,6 +300,9 @@ void ui_term_update_connected_state(wire_connected_state_t state) {
 void ui_term_update_sender(const char* id) {
     char buf[UI_TERM_COLUMNS + 1];
 
+    // Put a newline in the code window
+    putchar('\n');
+    // Save the current location and colors and update the 'Sender' line
     term_cursor_save();
     term_color_fg(UI_TERM_SENDER_COLOR_FG);
     term_color_bg(UI_TERM_SENDER_COLOR_BG);

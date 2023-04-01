@@ -38,7 +38,7 @@ static char _d_mstr_4[MSTRING_ALLOC_SIZE];
 static char* _d_code_buf[2]; // String buffer to build two Morse elements
 static float _d_space_buf[2]; // space before each character
 static float _d_mark_buf[2]; // length of last dot or dash in character
-static alarm_index_t _d_flusher_id; // Alarm to flush the decoder if more code isn't received
+static scheduled_msg_id_t _d_flusher_id; // Alarm to flush the decoder if more code isn't received
 static bool _d_latched; // True if cicuit has been latched closed by a +1 code element
 static int16_t _d_nchars; // number of complete characters in buffer
 static float _d_dot_len; // nominal dot length (ms)
@@ -250,8 +250,8 @@ void morse_decode(mcode_seq_t* mcode_seq) {
         return;
     }
     // Code received, so cancel a pending flush timer
-    alarm_cancel(_d_flusher_id);
-    _d_flusher_id = ALARM_INDEX_INVALID;
+    scheduled_msg_cancel(_d_flusher_id);
+    _d_flusher_id = SCHED_MSG_ID_INVALID;
     // _d_update_detected_wpm(mcode_seq);
     // Run through the code list
     for (int i = 0; i < mcode_seq->len; i++) {
@@ -320,7 +320,7 @@ void morse_decode(mcode_seq_t* mcode_seq) {
     }
     // Set up a 'flusher' alarm (skip if debugging decode)
     if (!(debugging_flags & DEBUGGING_MORSE_DECODE)) {
-        _d_flusher_id = alarm_set_ms((20 * _d_tru_dot), &_decode_flusher_msg);
+        _d_flusher_id = schedule_msg_in_ms((20 * _d_tru_dot), &_decode_flusher_msg);
     }
 }
 
@@ -421,7 +421,7 @@ void morse_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spac
     _d_wpm = (twpm > cwpm_min ? twpm : cwpm_min);
     _d_dot_len = (UNIT_DOT_TIME / _d_wpm);
     _d_tru_dot = _d_dot_len;
-    _d_flusher_id = ALARM_INDEX_INVALID;
+    _d_flusher_id = SCHED_MSG_ID_INVALID;
     _d_nchars = 0;
     _d_latched = false;
     _d_code_buf[0] = _d_mstr_1;

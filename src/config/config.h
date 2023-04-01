@@ -48,7 +48,7 @@ typedef struct _sys_config_ {
     uint16_t cfg_version;
     bool is_set;
     //
-    double tz_offset;
+    float tz_offset;
     char* user_cfg_filename;
     char* wifi_password;
     char* wifi_ssid;

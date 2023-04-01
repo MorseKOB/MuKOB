@@ -26,6 +26,7 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_MKS_KEEP_ALIVE_SEND,
     MSG_MORSE_DECODE_FLUSH,
     MSG_MORSE_TO_DECODE,
     MSG_WIRE_CONNECT,
@@ -41,7 +42,7 @@ typedef enum _MSG_ID_ {
     MSG_INPUT_CHAR_READY,
     MSG_CODE_TEXT,
     MSG_DISPLAY_MESSAGE,
-    MSG_SEND_UI_STATUS,
+    MSG_UPDATE_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
     MSG_WIRE_CONNECTED_STATE,
@@ -120,29 +121,40 @@ typedef struct _MSG_LOOP_CNTX {
     void* idle_data;                        // Data to pass to the idle functions
 } msg_loop_cntx_t;
 
-typedef int alarm_index_t;
-#define ALARM_INDEX_INVALID -1
+typedef int scheduled_msg_id_t;
+#define SCHED_MSG_ID_INVALID -1
 
 /**
- * @brief Cancel an alarm that was set using `alarm_set_ms`.
+ * @brief Cancel a scheduled message that was set using `alarm_set_ms`.
  * @ingroup cmt
  *
- * This will attempt to cancel the alarm. It is possible that the alarm might have already
- * triggered and posted the message.
+ * This will attempt to cancel the scheduled message. It is possible that the time might have already
+ * past and the message was posted.
  *
- * @param alarm_id The index returned from the `alarm_set_ms` function.
+ * @param alarm_id The ID returned from the `alarm_set_ms` function.
  */
-extern void alarm_cancel(alarm_index_t alarm_index);
+extern void scheduled_msg_cancel(scheduled_msg_id_t sched_msg_id);
 
 /**
- * @brief Set an alarm to post a message when a millisecond period elapses.
+ * @brief Schedule a message to post in the future.
  *
- * @param ms The time in milliseconds.
+ * @param ms The time in milliseconds from now.
  * @param msg The cmt_msg_t message to post when the time period elapses.
  *
- * @return Timer index that can be used to cancel a timer.
+ * @return ID that can be used to cancel a scheduled message.
  */
-extern alarm_index_t alarm_set_ms(uint32_t ms, cmt_msg_t* msg);
+extern scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg);
+
+/**
+ * @brief Get the ID of a scheduled message if one exists.
+ * @ingroup cmt
+ *
+ * Typically, this is used to keep from adding a scheduled message if one already exists.
+ *
+ * @param msg The message to check for.
+ * @return scheduled_msg_id_t The ID or SCHED_MSG_ID_INVALID if a scheduled message wasn't found.
+ */
+extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg);
 
 /**
  * @brief Initialize the Cooperative Multi-Tasking system.
