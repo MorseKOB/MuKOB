@@ -481,7 +481,7 @@ static int32_t _scih_tz_offset(config_sys_t* sys_cfg, const char* key, const cha
 
     if (key) {
         if (strcmp(key, our_key) == 0) {
-            double dv = atof(value);
+            float dv = (float)atof(value);
             sys_cfg->tz_offset = dv;
             retval = 1;
         }

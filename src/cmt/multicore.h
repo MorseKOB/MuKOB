@@ -91,7 +91,7 @@ void multicore_init();
  *
  * @param msg The message to post.
  */
-void post_to_core0_blocking(cmt_msg_t *msg);
+void post_to_core0_blocking(const cmt_msg_t* msg);
 
 /**
  * @brief Post a message to Core 0 (using the Core 0 queue). Do not wait if it can't be posted.
@@ -103,7 +103,7 @@ void post_to_core0_blocking(cmt_msg_t *msg);
  * @param msg The message to post.
  * @returns true if message was posted.
  */
-bool post_to_core0_nowait(cmt_msg_t *msg);
+bool post_to_core0_nowait(const cmt_msg_t* msg);
 
 /**
  * @brief Post a message to Core 1 (using the Core 1 queue).
@@ -113,7 +113,7 @@ bool post_to_core0_nowait(cmt_msg_t *msg);
  *
  * @param msg The message to post.
  */
-void post_to_core1_blocking(cmt_msg_t *msg);
+void post_to_core1_blocking(const cmt_msg_t* msg);
 
 /**
  * @brief Post a message to Core 1 (using the Core 1 queue). Do not wait if it can't be posted.
@@ -125,7 +125,7 @@ void post_to_core1_blocking(cmt_msg_t *msg);
  * @param msg The message to post.
  * @returns true if message was posted.
  */
-bool post_to_core1_nowait(cmt_msg_t *msg);
+bool post_to_core1_nowait(const cmt_msg_t* msg);
 
 /**
  * @brief Post a message to both Core 0 and Core 1 (using the Core 0 and Core 1 queues).
@@ -138,7 +138,7 @@ bool post_to_core1_nowait(cmt_msg_t *msg);
  *
  * @param msg The message to post.
  */
-void post_to_cores_blocking(cmt_msg_t* msg);
+void post_to_cores_blocking(const cmt_msg_t* msg);
 
 /**
  * @brief Post a message to both Core 0 and Core 1 (using the Core 0 and Core 1 queues). Do not
@@ -154,7 +154,7 @@ void post_to_cores_blocking(cmt_msg_t* msg);
  * @param msg The message to post.
  * @return 0 Could not post to either. 1 Posted to Core 0. 2 Posted to Core 1. 3 Posted to both cores.
  */
-uint16_t post_to_cores_nowait(cmt_msg_t* msg);
+uint16_t post_to_cores_nowait(const cmt_msg_t* msg);
 
 /**
  * @brief Start the Core 1 functionality.

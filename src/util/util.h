@@ -15,6 +15,8 @@ extern "C" {
 #include <stdint.h>
 #include "pico/types.h"
 
+#define HOUR_IN_MS (60 * 60 * 1000) // 1 hour
+
 typedef enum _STRDATETIME_CTRL_ {
     SDTC_TIME               = 0x0001,
     SDTC_TIME_SECONDS       = 0x0003, // indlude seconds (implies time)

@@ -56,7 +56,7 @@
 #define MuKOB_VERSION_INFO "MuKOB v0.1"  // ZZZ get from a central name/version string
 #define MKS_OP_NOTIMEOUT 0
 #define MKS_OP_TIMEOUT (15 * 1000)     // 15 second request/response timeout
-#define MKS_KEEP_ALIVE_TIME (20 * 1000) // Time period to send ID to keep us connected
+#define MKS_KEEP_ALIVE_TIME (18 * 1000) // Time period to send ID to keep us connected
 
 // *** Local function declarations...
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
@@ -65,7 +65,6 @@ static struct pbuf* _disconnect_req_builder();
 static struct pbuf* _send_id_req_builder();
 static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
 static void _send_id();
-static void _start_keep_alive();
 static void _stop_keep_alive();
 static void _wire_connect();
 
@@ -159,6 +158,8 @@ typedef struct mkspkt_code {
 #define MKSPKT_CODE_OFFSET_PAD3 488
 #define MKSPKT_CODE_LEN 496
 
+static const cmt_msg_t _msg_mks_keep_alive_send = { MSG_MKS_KEEP_ALIVE_SEND };
+
 static char *_office_id = NULL;
 static char* _mkserver_host = NULL;
 static uint16_t _mkserver_port = 0;
@@ -167,11 +168,11 @@ static int32_t _seqno_send = 0;
 static int32_t _seqno_recv = -1;
 static struct udp_pcb* _udp_pcb = NULL;
 static wire_connected_state_t _connected_state = WIRE_NOT_CONNECTED;
-static struct repeating_timer _keep_alive_timer;
-static bool _keep_alive_active = false;
+static scheduled_msg_id_t _keep_alive_id;
 static void (*_next_fn)(void) = NULL;
 
 void mkwire_disconnect() {
+    _stop_keep_alive();
     if (_udp_pcb) {
         // Send a disconnect message and free up the UDP connection.
         struct pbuf* p = _disconnect_req_builder();
@@ -187,7 +188,6 @@ void mkwire_disconnect() {
     msg.id = MSG_WIRE_CONNECTED_STATE;
     msg.data.status = _connected_state;
     postUIMsgBlocking(&msg);
-    _stop_keep_alive();
 }
 
 void mkwire_connect(unsigned short wire_no) {
@@ -212,6 +212,7 @@ wire_connected_state_t mkwire_connected_state() {
 }
 
 void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
+    _stop_keep_alive();
     if (_mkserver_host) {
         free(_mkserver_host);
         _mkserver_host = NULL;
@@ -229,6 +230,10 @@ void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_
 
 bool mkwire_is_connected() {
     return (_udp_pcb != NULL);
+}
+
+void mkwire_keep_alive_send() {
+    _send_id();
 }
 
 void mkwire_set_office_id(char* office_id) {
@@ -503,7 +508,6 @@ static void _send_id_2() {
         err_enum_t status = udp_send(_udp_pcb, p);
         debug_printf("MKS send_id send status: %d\n", status);
         pbuf_free(p);
-        _start_keep_alive();
     }
 }
 
@@ -515,26 +519,22 @@ static void _send_id() {
         debug_printf("MKS connect send status: %d\n", status);
         pbuf_free(p);
         _next_fn = _send_id_2;
-    }
-}
-
-bool _keep_alive_callback(struct repeating_timer* t) {
-    // debug_printf("Keep alive at %lld\n", time_us_64());
-    _send_id();
-    return true;
-}
-
-static void _start_keep_alive() {
-    if (!_keep_alive_active) {
-        add_repeating_timer_ms(MKS_KEEP_ALIVE_TIME, _keep_alive_callback, NULL, &_keep_alive_timer);
-        _keep_alive_active = true;
+        // Schedule to send again later
+        scheduled_msg_id_t id = scheduled_message_get(&_msg_mks_keep_alive_send);
+        if (SCHED_MSG_ID_INVALID == id) {
+            _keep_alive_id = schedule_msg_in_ms(MKS_KEEP_ALIVE_TIME, &_msg_mks_keep_alive_send);
+        }
+        else {
+            _keep_alive_id = id;
+        }
     }
 }
 
 static void _stop_keep_alive() {
-    if (_keep_alive_active) {
-        _keep_alive_active = !cancel_repeating_timer(&_keep_alive_timer);
+    if (SCHED_MSG_ID_INVALID != _keep_alive_id) {
+        scheduled_msg_cancel(_keep_alive_id);
     }
+    _keep_alive_id = SCHED_MSG_ID_INVALID;
 }
 
 static void _wire_connect() {

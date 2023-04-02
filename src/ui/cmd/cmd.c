@@ -452,6 +452,14 @@ void cmd_attn_handler(cmt_msg_t* msg) {
             _scr_color_save = ui_term_color_get();
             term_cursor_moveto(UI_TERM_CMDLINE, 1);
             ui_term_use_cmd_color();
+            if (_scr_cursor_position_save.line == UI_TERM_CMDLINE) {
+                // If we were already at the bottom, print a newline
+                putchar('\n');
+            }
+            else {
+                // Otherwise, erase this line in case there was something there
+                term_erase_line();
+            }
             putchar(CMD_PROMPT);
             term_cursor_on(true);
             // Get a command from the user...

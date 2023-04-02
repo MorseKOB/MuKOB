@@ -24,7 +24,6 @@
 #define UI_DISP_HEADER_COLOR_FG C16_YELLOW
 #define UI_DISP_HEADER_COLOR_BG C16_BLUE
 #define UI_DISP_HEADER_INFO_LINE 0
-//#define UI_DISP_HEADER_GAP_LINE 1
 #define UI_DISP_HEADER_CONNECTED_ICON_COL 0
 #define UI_DISP_HEADER_SPEED_LABEL_COL 8
 #define UI_DISP_HEADER_SPEED_VALUE_COL 10
@@ -141,6 +140,8 @@ void ui_disp_update_sender(const char* id) {
     text_color_pair_t cp;
     char buf[disp_info_columns() + 1];
 
+    // Put a newline in the code window
+    print_crlf(0, Paint);
     disp_get_text_colors(&cp);
     disp_set_text_colors(UI_DISP_SENDER_COLOR_FG, UI_DISP_SENDER_COLOR_BG);
     disp_line_clear(UI_DISP_SENDER_LINE, (id ? No_Paint : Paint));

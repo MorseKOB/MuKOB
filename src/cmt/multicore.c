@@ -39,28 +39,28 @@ void multicore_init() {
     cmt_init();
 }
 
-void post_to_core0_blocking(cmt_msg_t *msg) {
+void post_to_core0_blocking(const cmt_msg_t *msg) {
     queue_add_blocking(&core0_queue, msg);
 }
 
-bool post_to_core0_nowait(cmt_msg_t *msg) {
+bool post_to_core0_nowait(const cmt_msg_t *msg) {
     return (queue_try_add(&core0_queue, msg));
 }
 
-void post_to_core1_blocking(cmt_msg_t *msg) {
+void post_to_core1_blocking(const cmt_msg_t* msg) {
     queue_add_blocking(&core1_queue, msg);
 }
 
-bool post_to_core1_nowait(cmt_msg_t *msg) {
+bool post_to_core1_nowait(const cmt_msg_t* msg) {
     return (queue_try_add(&core1_queue, msg));
 }
 
-void post_to_cores_blocking(cmt_msg_t* msg) {
+void post_to_cores_blocking(const cmt_msg_t* msg) {
     queue_add_blocking(&core0_queue, msg);
     queue_add_blocking(&core1_queue, msg);
 }
 
-uint16_t post_to_cores_nowait(cmt_msg_t* msg) {
+uint16_t post_to_cores_nowait(const cmt_msg_t* msg) {
     uint16_t retval = 0;
     if (post_to_core0_nowait(msg)) {
         retval |= 0x01;
