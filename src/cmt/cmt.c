@@ -1,7 +1,7 @@
 /**
  * MuKOB Cooperative Multi-Tasking.
  *
- * Containes message loop, timer, and other CMT enablement functions.
+ * Containes message loop, scheduled message, and other CMT enablement functions.
  *
  * Copyright 2023 AESilky
  * SPDX-License-Identifier: MIT License
@@ -10,141 +10,205 @@
 #include "cmt.h"
 #include "mkboard.h"
 #include "util.h"
+#include "pico/mutex.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include <stdlib.h>
 #include <string.h>
 
-// TODO: Since this can be used by both cores, a mutex should be used to protect the methods
-//       that set/get/clear scheduled messages.
-
 #define _SCHEDULED_MESSAGES_MAX 16
-#define _INVALID_ALARM_ID ((alarm_id_t)-2)
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
 
-// microsecond overhead (typical/approx) for handling an alarm and posting a message.
-#define ALARM_HANDLER_OVERHEAD_US (200L)
-
 typedef struct _scheduled_msg_data_ {
     bool in_use;
+    struct _scheduled_msg_data_* next;
+    uint32_t remaining;
     uint8_t corenum;
     const cmt_msg_t* client_msg;
-    alarm_id_t alarm_id;
     scheduled_msg_id_t sched_msg_id;
-    uint32_t ms;
+    uint32_t ms_requested;
     uint32_t created_ms;
 } _scheduled_msg_data_t;
 
-static _scheduled_msg_data_t _scheduled_message_datas[_SCHEDULED_MESSAGES_MAX]; // Pending alarms (no malloc/free)
-static int _scheduled_messages = SCHED_MSG_ID_INVALID;
+static void _scheduled_msg_free(_scheduled_msg_data_t* smd);
 
-static void _scheduled_msg_clear(int sched_msg_id);
+auto_init_recursive_mutex(sm_mutex);
+static _scheduled_msg_data_t _scheduled_message_datas[_SCHEDULED_MESSAGES_MAX]; // Objects to use (no malloc/free)
+static volatile int _scheduled_msg_count = 0;
+static _scheduled_msg_data_t* _scheduled_msg_head = NULL;
+static _scheduled_msg_data_t* _scheduled_msg_free_list = NULL; // Set in `_scheduled_msg_init`
+static repeating_timer_t _schd_msg_timer_data;
 
 /**
- * @brief Alarm callback handler.
- * Handles the end of a add_alarm_in_us or add_alarm_in_ms call and posts a message to
- * the appropriate core.
+ * @brief Repeating alarm callback handler.
+ * Handles the from the repeating timer, adjusts the time left and posts a message to
+ * the appropriate core when time hits 0.
  *
- * @see alarm_callback_t
+ * @see repeating_timer_callback_t
  *
- * @return <0 to reschedule the same alarm this many us from the time the alarm was previously scheduled to fire
- * @return >0 to reschedule the same alarm this many us from the time this method returns
- * @return 0 to not reschedule the alarm
+ * \param rt repeating time structure containing information about the repeating time. user_data is of primary important to the user
+ * \return true to continue repeating, false to stop.
  */
-int64_t _alarm_handler(alarm_id_t id, void* data) {
-    _scheduled_msg_data_t* scheduled_msg_data = (_scheduled_msg_data_t*)data;
-    if (scheduled_msg_data) {
-        uint8_t corenum = scheduled_msg_data->corenum;
-        const cmt_msg_t* client_msg = scheduled_msg_data->client_msg;
-        _scheduled_msg_clear(scheduled_msg_data->sched_msg_id);
-        if (client_msg) {
-            if (corenum == 0) {
-                post_to_core0_blocking(client_msg);
-            }
-            else if (corenum == 1) {
-                post_to_core1_blocking(client_msg);
-            }
-            else {
-                error_printf("CMT - `alarm_handler` got unknown core number: %d", (int)corenum);
-            }
-        }
-    }
-
-    return (0L); // Don't reschedule
-}
-
-static void _scheduled_msg_clear_stale() {
-    uint32_t now = us_to_ms(time_us_64());
-    for (int id = 0; id < _SCHEDULED_MESSAGES_MAX; id++) {
-        _scheduled_msg_data_t* scheduled_msg_data = &_scheduled_message_datas[id];
-        if (scheduled_msg_data->in_use) {
-            // If it is now more than 5 seconds later than the alarm time, cancel and free it.
-            if (now > (scheduled_msg_data->created_ms + scheduled_msg_data->ms + 5000)) {
-                // For some reason, this alarm still exists
-                if (scheduled_msg_data->alarm_id > 0) {
-                    cancel_alarm(scheduled_msg_data->alarm_id);
+bool _schd_msg_timer_callback(repeating_timer_t* rt) {
+    recursive_mutex_enter_blocking(&sm_mutex);
+    // Get the head smd
+    if (_scheduled_msg_head) {
+        _scheduled_msg_head->remaining--; // Subtract a second
+        while (_scheduled_msg_head->remaining <= 0) { // Test for less-than or equal just in case
+            // This one is done. Free it, post its message and move on to the next.
+            _scheduled_msg_data_t* smd = _scheduled_msg_head;
+            const cmt_msg_t* client_msg = smd->client_msg;
+            uint8_t corenum = smd->corenum;
+            _scheduled_msg_head = smd->next;
+            _scheduled_msg_free(smd);
+            if (client_msg) {
+                if (corenum == 0) {
+                    post_to_core0_blocking(client_msg);
                 }
-                _scheduled_msg_clear(id);
+                else if (corenum == 1) {
+                    post_to_core1_blocking(client_msg);
+                }
+                else {
+                    error_printf("CMT - Scheduled Message alarm handler got unknown core number: %d Message: %d", (int)corenum, (int)client_msg->id);
+                }
             }
         }
+        if (0 == _scheduled_msg_count) {
+            _scheduled_msg_head = NULL; // Safeguard
+        }
+    }
+    recursive_mutex_exit(&sm_mutex);
+    return (true); // Repeat forever...
+}
+
+static inline int _id_from_user(int uid) {
+    return (SCHED_MSG_ID_INVALID != uid ? uid - 1 : SCHED_MSG_ID_INVALID);
+}
+static inline int _id_to_user(int id) {
+    return (SCHED_MSG_ID_INVALID != id ? id + 1 : SCHED_MSG_ID_INVALID);
+}
+
+void _scheduled_msg_free(_scheduled_msg_data_t* smd) {
+    // Put this smd back in the free list
+    smd->in_use = false;
+    smd->corenum = -1;
+    smd->client_msg = NULL;
+    smd->next = _scheduled_msg_free_list;
+    _scheduled_msg_free_list = smd;
+    _scheduled_msg_count--;
+    if (_scheduled_msg_count < 0) {
+        _scheduled_msg_count = 0; // Safeguard
     }
 }
 
-static void _scheduled_msg_clear(int id) {
-    if (SCHED_MSG_ID_INVALID != id) {
-        _scheduled_message_datas[id].in_use = false;
-        _scheduled_message_datas[id].alarm_id = _INVALID_ALARM_ID;
-        _scheduled_messages--;
+static void _scheduled_msg_init() {
+    _scheduled_msg_head = NULL;
+    _scheduled_msg_free_list = NULL;
+    _scheduled_msg_data_t* smd = NULL;
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        // Initialize these as 'free' and chain them together
+        smd = &_scheduled_message_datas[i];
+        smd->sched_msg_id = i;
+        _scheduled_msg_free(smd);
+    }
+    _scheduled_msg_count = 0;
+
+    bool success = add_repeating_timer_us(1000, _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
+    if (!success) {
+        error_printf("CMT - Could not create repeating timer for scheduled messages.\n");
     }
 }
 
 void scheduled_msg_cancel(scheduled_msg_id_t id) {
-    // Find the alarm data
+    id = _id_from_user(id);
     if (SCHED_MSG_ID_INVALID != id && id >= 0 && id < _SCHEDULED_MESSAGES_MAX) {
-        _scheduled_msg_data_t* scheduled_msg_data = &_scheduled_message_datas[id];
-        if (scheduled_msg_data->in_use) {
-            if (scheduled_msg_data->alarm_id > 0) {
-                cancel_alarm(scheduled_msg_data->alarm_id);
+        _scheduled_msg_data_t* smd = &_scheduled_message_datas[id];
+        recursive_mutex_enter_blocking(&sm_mutex);
+        if (smd->in_use) {
+            // See if it happens to be the head smd
+            if (_scheduled_msg_head == smd) {
+                // Yes... pull the 'next' up to the head
+                _scheduled_msg_head = smd->next;
+                // Adjust the remaining time on the next.
+                if (_scheduled_msg_head) {
+                    _scheduled_msg_head->remaining += smd->remaining;
+                }
             }
-            _scheduled_msg_clear(id);
+            else {
+                // Find the smd pointing to it
+                _scheduled_msg_data_t* prev = _scheduled_msg_head;
+                while (prev) {
+                    if (prev->next == smd) {
+                        break;
+                    }
+                    prev = prev->next;
+                }
+                if (prev) {
+                    prev->next = smd->next;
+                    if (prev->next) {
+                        prev->next->remaining += smd->remaining; // Add the cancelled time to the next.
+                    }
+                }
+            }
+            _scheduled_msg_free(smd);
         }
+        recursive_mutex_exit(&sm_mutex);
     }
 }
 
 scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
-    // First, if we don't have any open slots - see if we can free one up
-    scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
-    alarm_id_t alarm_id = -2;
     uint8_t core_num = (uint8_t)get_core_num();
-    if (_scheduled_messages == _SCHEDULED_MESSAGES_MAX) {
-        _scheduled_msg_clear_stale();
-    }
-    // Find a free slot
-    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
-        if (!_scheduled_message_datas[i].in_use) {
-            id = i;
-            break;
+    _scheduled_msg_data_t* smd = NULL;
+    if (ms > 0) {
+        recursive_mutex_enter_blocking(&sm_mutex);
+        // Get a free smd
+        smd = _scheduled_msg_free_list;
+
+        if (smd) {
+            // Take it
+            _scheduled_msg_count++;
+            _scheduled_msg_free_list = smd->next;
+
+            // Initialize it
+            smd->next = NULL;
+            smd->in_use = true;
+            smd->corenum = core_num;
+            smd->client_msg = msg;
+            smd->remaining = ms;
+            smd->ms_requested = ms;
+            smd->created_ms = us_to_ms(time_us_64()); // 'now' in millis
+
+            // Insert it into the chain
+            if (!_scheduled_msg_head) {
+                // Nothing in the queue. Make it the head.
+                _scheduled_msg_head = smd;
+            }
+            else {
+                _scheduled_msg_data_t* prev = _scheduled_msg_head;
+                _scheduled_msg_data_t** p_pnext = &_scheduled_msg_head;
+                while (prev) {
+                    if (smd->remaining < prev->remaining) {
+                        // This is where it should be inserted
+                        break;
+                    }
+                    smd->remaining -= prev->remaining; // Adjust remaining and move to the next
+                    p_pnext = &prev->next;
+                    prev = prev->next;
+                }
+                // `prev` is the spot to insert the new smd before, unless it is null.
+                if (prev) {
+                    smd->next = prev;
+                    prev->remaining -= smd->remaining;
+                }
+                *p_pnext = smd; // Store smd as the previous pointer's 'next'
+            }
         }
+        recursive_mutex_exit(&sm_mutex);
     }
-    if (SCHED_MSG_ID_INVALID != id && ms > 0) {
-        _scheduled_msg_data_t* handler_data = &_scheduled_message_datas[id];
-        uint64_t delay_us = ((ms * 1000) - ALARM_HANDLER_OVERHEAD_US);
-        handler_data->corenum = core_num;
-        handler_data->client_msg = msg;
-        handler_data->ms = ms;
-        handler_data->created_ms = us_to_ms(time_us_64()); // 'now' in millis
-        // Store it in the slot
-        handler_data->sched_msg_id = id;
-        handler_data->in_use = true;
-        handler_data->alarm_id = alarm_id; // Store the 'flag' alarm ID
-        _scheduled_messages++;
-        alarm_id = add_alarm_in_us(delay_us, _alarm_handler, handler_data, false);
-        handler_data->alarm_id = alarm_id; // Store the 'real' alarm ID
-    }
-    if (SCHED_MSG_ID_INVALID == id || alarm_id < 1) {
-        char* reason = (SCHED_MSG_ID_INVALID == id ? "No alarm slots available" : "Call to `add_alarm_in_us` failed");
-        error_printf("CMT - `alarm_set_ms` could not set alarm due to: %s. Posting message immediately.\n", reason);
+    if (!smd) {
+        char* reason = (ms <= 0 ? "Requested delay <= 0" : "No scheduled message slots available");
+        error_printf("CMT - `schedule_msg_in_secs` did not schedule: %s. Posting message immediately.\n", reason);
         // handle immediately so they get their message
         if (core_num == 0) {
             post_to_core0_blocking(msg);
@@ -152,32 +216,30 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
         else if (core_num == 1) {
             post_to_core1_blocking(msg);
         }
-        _scheduled_msg_clear(id);
-        id = SCHED_MSG_ID_INVALID;
     }
 
-    return (id);
+    return (smd ? _id_to_user(smd->sched_msg_id) : SCHED_MSG_ID_INVALID);
 }
 
 extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg) {
+    recursive_mutex_enter_blocking(&sm_mutex);
     scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
-    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
-        if (_scheduled_message_datas[i].in_use && msg == _scheduled_message_datas[i].client_msg) {
-            id = i;
+    _scheduled_msg_data_t* smd = _scheduled_msg_head;
+    while (smd) {
+        if (smd->in_use && msg == smd->client_msg) {
+            id = smd->sched_msg_id;
             break;
         }
+        smd = smd->next;
     }
-    return (id);
+    recursive_mutex_exit(&sm_mutex);
+    return (_id_to_user(id));
 }
 
 void cmt_init() {
-    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
-        _scheduled_message_datas[i].alarm_id = 0;
-        _scheduled_message_datas[i].sched_msg_id = i;
-        _scheduled_message_datas[i].client_msg = NULL;
-        _scheduled_message_datas[i].in_use = false;
-    }
-    _scheduled_messages = 0;
+    recursive_mutex_enter_blocking(&sm_mutex);
+    _scheduled_msg_init();
+    recursive_mutex_exit(&sm_mutex);
 }
 
 void message_loop(const msg_loop_cntx_t* loop_context) {
@@ -201,7 +263,7 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
             // No message available, allow next idle function to run
             const idle_fn idle_function = *idle_functions;
             if (idle_function) {
-                idle_function(loop_context->idle_data);
+                idle_function();
                 idle_functions++; // Next time do the next one...
             }
             else {

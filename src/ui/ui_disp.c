@@ -48,7 +48,7 @@
 #define UI_DISP_STATUS_LOGO_COL 23
 #define UI_DISP_STATUS_TIME_COL 9
 
-static bool _displaying_code;
+static bool _code_displaying;
 
 static void _header_fill_fixed() {
     text_color_pair_t cp;
@@ -85,7 +85,7 @@ static void _status_fill_fixed() {
 }
 
 void ui_disp_build(void) {
-    _displaying_code = false;
+    _code_displaying = false;
     disp_set_text_colors(C16_WHITE, C16_BLACK);
     disp_clear(Paint);
     scroll_area_define(UI_DISP_TOP_FIXED_LINES, UI_DISP_BOTTOM_FIXED_LINES_INIT);
@@ -108,9 +108,9 @@ void ui_disp_display_wire() {
 }
 
 void ui_disp_put_codetext(char* str) {
-    if (!_displaying_code) {
+    if (!_code_displaying) {
         print_crlf(0, No_Paint);
-        _displaying_code = true;
+        _code_displaying = true;
     }
     // If this is a '=' print a newline.
     if (strchr(str, '=')) {
@@ -123,9 +123,9 @@ void ui_disp_put_codetext(char* str) {
 }
 
 void ui_disp_puts(char* str) {
-    if (_displaying_code) {
+    if (_code_displaying) {
         print_crlf(0, No_Paint);
-        _displaying_code = false;
+        _code_displaying = false;
     }
     prints(str, Paint);
 }

@@ -39,7 +39,9 @@
     "utility": "c",
     "time.h": "c",
     "cmt.h": "c",
-    "cstdio": "c"
+    "cstdio": "c",
+    "ui_disp.h": "c",
+    "util.h": "c"
   },
   "cmake.buildBeforeRun": true,
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",

@@ -19,7 +19,7 @@
 #include "util.h"
 #include "hardware/rtc.h"
 
-#define STATUS_PULSE_PERIOD 8000
+#define _BE_STATUS_PULSE_PERIOD 6999
 
 typedef struct _BE_IDLE_FN_DATA_ {
     unsigned long int idle_num;
@@ -38,16 +38,18 @@ static void _handle_wire_disconnect(cmt_msg_t* msg);
 static void _handle_wire_set(cmt_msg_t* msg);
 
 // Idle functions...
-static void _be_idle_function_1(be_idle_fn_data_t* data);
-static void _be_idle_function_2(be_idle_fn_data_t* data);
+static void _be_idle_function_1();
+static void _be_idle_function_2();
+static void _be_idle_function_3();
 
 static cmt_msg_t _msg_be_send_status;
-static be_idle_fn_data_t _be_idle_function_data = { 0, 0 };
+static be_idle_fn_data_t _msg_activity_data = { 0, 0 };
 
 static uint32_t _last_rtc_update_ts; // ms timestamp of the last time we updated the RTC
+static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
-#define LEAVE_IDLE_FUNCTION()    {_be_idle_function_data.idle_num++; _be_idle_function_data.msg_burst = 0;}
-#define LEAVE_MSG_HANDLER()    {_be_idle_function_data.idle_num = 0; _be_idle_function_data.msg_burst++;}
+#define LEAVE_IDLE_FUNCTION()    {_msg_activity_data.idle_num++; _msg_activity_data.msg_burst = 0;}
+#define LEAVE_MSG_HANDLER()    {_msg_activity_data.idle_num = 0; _msg_activity_data.msg_burst++;}
 
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
@@ -77,6 +79,7 @@ static const idle_fn _be_idle_functions[] = {
     // Cast needed do to definition needed to avoid circular reference.
     (idle_fn)_be_idle_function_1,
     (idle_fn)_be_idle_function_2,
+    (idle_fn)_be_idle_function_3,
     (idle_fn)0, // Last entry must be a NULL
 };
 
@@ -84,25 +87,36 @@ const msg_loop_cntx_t be_msg_loop_cntx = {
     BE_CORE_NUM, // Back-end runs on Core 0
     _be_handler_entries,
     _be_idle_functions,
-    &_be_idle_function_data,
 };
 
 // ====================================================================
 // Idle functions
 // ====================================================================
-static void _be_idle_function_1(be_idle_fn_data_t* data) {
+static void _be_idle_function_1() {
     // Something to do when there are no messages to process.
     options_read();  // Re-read the option switches
     LEAVE_IDLE_FUNCTION();
 }
 
-static void _be_idle_function_2(be_idle_fn_data_t* data) {
+static void _be_idle_function_2() {
     // Something to do when there are no messages to process.
     uint32_t now = us_to_ms(time_us_64());
     if (_last_rtc_update_ts + HOUR_IN_MS < now) {
+        _last_rtc_update_ts = now;
         const config_sys_t* cfgsys = config_sys();
         network_update_rtc(cfgsys->tz_offset);
-        _last_rtc_update_ts = now;
+    }
+    LEAVE_IDLE_FUNCTION();
+}
+
+static void _be_idle_function_3() {
+    // Something to do when there are no messages to process.
+    uint32_t now = us_to_ms(time_us_64());
+    if (_last_status_update_ts + _BE_STATUS_PULSE_PERIOD < now) {
+        // Post update status message
+        _msg_be_send_status.id = MSG_SEND_BE_STATUS;
+        postBEMsgNoWait(&_msg_be_send_status); // Don't wait. We will do it again in a bit.
+        _last_status_update_ts = now;
     }
     LEAVE_IDLE_FUNCTION();
 }
@@ -143,14 +157,8 @@ static void _handle_morse_to_decode(cmt_msg_t* msg) {
     LEAVE_MSG_HANDLER();
 }
 
-static cmt_msg_t _send_be_status_msg;
 static void _handle_send_be_status(cmt_msg_t* msg) {
-    // Post a message
-    _send_be_status_msg.id = MSG_UI_NOOP;
-    postUIMsgNoWait(&_send_be_status_msg);
-    // Set up to send status in a while
-    _msg_be_send_status.id = MSG_SEND_BE_STATUS;
-    schedule_msg_in_ms(500, &_msg_be_send_status);
+    // Update our status
     LEAVE_MSG_HANDLER();
 }
 
@@ -188,7 +196,4 @@ void be_init() {
         mkwire_init(hostname, port, cfg->station, cfg->wire);
     }
     morse_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
-    // Set up to send status to UI regularly
-    _msg_be_send_status.id = MSG_SEND_BE_STATUS;
-    schedule_msg_in_ms(STATUS_PULSE_PERIOD, &_msg_be_send_status);
 }

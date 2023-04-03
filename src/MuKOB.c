@@ -52,9 +52,6 @@ int main()
     }
     led_on_off(say_hi);
 
-    // Initialize the multi-core system
-    multicore_init();
-
     // Set up the Backend
     be_init();
 

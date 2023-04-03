@@ -90,12 +90,10 @@ typedef struct _CMT_MSG {
 #define postBothMsgNoWait( pmsg )       post_to_cores_nowait( pmsg )
 
 /**
- * @brief Function prototype for a message handler.
+ * @brief Function prototype for an idle function.
  * @ingroup cmt
- *
- * @param cntx The message loop context.
  */
-typedef void (*idle_fn)(void* data);
+typedef void (*idle_fn)(void);
 
 /**
  * @brief Function prototype for a message handler.
@@ -115,10 +113,9 @@ typedef struct _MSG_DISPATCH_CNTX {
 } msg_dispatch_cntx_t;
 
 typedef struct _MSG_LOOP_CNTX {
-    uint8_t corenum;                        // The core number the loop is running on
-    const msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
-    const idle_fn* idle_functions;                // Null terminated list of idle functions
-    void* idle_data;                        // Data to pass to the idle functions
+    uint8_t corenum;                                // The core number the loop is running on
+    const msg_handler_entry_t** handler_entries;    // NULL terminated list of message handler entries
+    const idle_fn* idle_functions;                  // Null terminated list of idle functions
 } msg_loop_cntx_t;
 
 typedef int scheduled_msg_id_t;

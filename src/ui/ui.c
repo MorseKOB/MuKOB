@@ -12,6 +12,7 @@
 #include "cmd.h"
 #include "cmt.h"
 #include "display.h"
+#include "mkboard.h"
 #include "mkwire.h"
 #include "util.h"
 #include "ui_disp.h"
@@ -22,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define STATUS_PULSE_PERIOD 6000
+#define _UI_STATUS_PULSE_PERIOD 7001
 
 // Internal, non message handler, function declarations
 static void _ui_init_terminal_shell();
@@ -41,13 +42,15 @@ static void _handle_wifi_conn_status_update(cmt_msg_t* msg);
 static void _handle_wire_changed(cmt_msg_t* msg);
 static void _handle_wire_connected_state(cmt_msg_t* msg);
 static void _handle_wire_station_msgs(cmt_msg_t* msg);
-static void _ui_idle_function_1(ui_idle_fn_data_t* data);
+
+static void _ui_idle_function_1();
 
 static cmt_msg_t _msg_ui_update_status;
-static ui_idle_fn_data_t _ui_idle_function_data = { 0, 0 };
+static ui_idle_fn_data_t _msg_activity_data = { 0, 0 };
+static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
-#define LEAVE_IDLE_FUNCTION()    {_ui_idle_function_data.idle_num++; _ui_idle_function_data.msg_burst = 0;}
-#define LEAVE_MSG_HANDLER()    {_ui_idle_function_data.idle_num = 0; _ui_idle_function_data.msg_burst++;}
+#define LEAVE_IDLE_FUNCTION()    {_msg_activity_data.idle_num++; _msg_activity_data.msg_burst = 0;}
+#define LEAVE_MSG_HANDLER()    {_msg_activity_data.idle_num = 0; _msg_activity_data.msg_burst++;}
 
 static const msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
 static const msg_handler_entry_t _cmd_init_terminal_handler_entry = { MSG_CMD_INIT_TERMINAL, _handle_init_terminal };
@@ -94,7 +97,6 @@ msg_loop_cntx_t ui_msg_loop_cntx = {
     UI_CORE_NUM, // UI runs on Core 1
     _handler_entries,
     _ui_idle_functions,
-    &_ui_idle_function_data,
 };
 
 static char* _sender_id = NULL;
@@ -103,8 +105,15 @@ static char* _sender_id = NULL;
 // Idle functions
 // ============================================
 
-static void _ui_idle_function_1(ui_idle_fn_data_t* data) {
+static void _ui_idle_function_1() {
     // Something to do when there are no messages to process.
+    uint32_t now = us_to_ms(time_us_64());
+    if (_last_status_update_ts + _UI_STATUS_PULSE_PERIOD < now) {
+        // Post update status message
+        _msg_ui_update_status.id = MSG_UPDATE_UI_STATUS;
+        postUIMsgNoWait(&_msg_ui_update_status); // Don't wait. We will do it again in a bit.
+        _last_status_update_ts = now;
+    }
     LEAVE_IDLE_FUNCTION();
 }
 
@@ -174,17 +183,12 @@ static void _handle_init_terminal(cmt_msg_t* msg) {
 static void _handle_update_ui_status(cmt_msg_t* msg) {
     ui_disp_update_status();
     ui_term_update_status();
-    // set up to do it again in a while (if not already scheduled)
-    if (SCHED_MSG_ID_INVALID == scheduled_message_get(&_msg_ui_update_status)) {
-        _msg_ui_update_status.id = MSG_UPDATE_UI_STATUS;
-        schedule_msg_in_ms(STATUS_PULSE_PERIOD, &_msg_ui_update_status);
-    }
     LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
     uint32_t wifi_status = msg->data.status;
-    printf_disp(Paint, "\nUI got msg: %d (%d)\n with data: %d", msg->id, _ui_idle_function_data.msg_burst + 1, wifi_status);
+    debug_printf("UI - Update wifi status: %u\n", wifi_status);
     LEAVE_MSG_HANDLER();
 }
 
@@ -275,8 +279,4 @@ void ui_init() {
     msg.id = MSG_WIRE_CONNECTED_STATE;
     msg.data.status = connected_state;
     postUIMsgBlocking(&msg);
-
-    // Set up to update status every 6 seconds
-    _msg_ui_update_status.id = MSG_UPDATE_UI_STATUS;
-    schedule_msg_in_ms(STATUS_PULSE_PERIOD, &_msg_ui_update_status);
 }
