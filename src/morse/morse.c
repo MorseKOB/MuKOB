@@ -29,28 +29,45 @@ static void _mstr_clear(char* dds_buf);
 static code_type_t _code_type;
 
 // For 'DECODE' we use a few static string buffers, rather than calloc/free over and over.
-#define MSTRING_ALLOC_SIZE 32
-static char _d_mstr_1[MSTRING_ALLOC_SIZE];
-static char _d_mstr_2[MSTRING_ALLOC_SIZE];
-static char _d_mstr_3[MSTRING_ALLOC_SIZE];
-static char _d_mstr_4[MSTRING_ALLOC_SIZE];
+#define _MSTRING_ALLOC_SIZE 32
+static char _d_mstr_1[_MSTRING_ALLOC_SIZE];
+static char _d_mstr_2[_MSTRING_ALLOC_SIZE];
+static char _d_mstr_3[_MSTRING_ALLOC_SIZE];
+static char _d_mstr_4[_MSTRING_ALLOC_SIZE];
+
+/**
+ * @brief Decode morse (code duration) sequence processing data
+ * @ingroup morse
+ *
+ * This holds data to build morse elements into based on timings
+ * to allow them to be converted to a character (looked up from a code table).
+ */
+typedef struct _DECODE_PROC_DATA_ {
+    char* morse_elements; // String buffer to build the dots-dashes into
+    float space_before;   // space before each character
+    float mark_len;       // length of last dot or dash in character
+} decode_proc_data_t;
+
+#define _D_CHAR_ONE 0
+#define _D_CHAR_TWO 1
+#define _D_BOTH_CHARS 2
 // 'DECODE' data
-static char* _d_code_buf[2]; // String buffer to build two Morse elements
-static float _d_space_buf[2]; // space before each character
-static float _d_mark_buf[2]; // length of last dot or dash in character
-static scheduled_msg_id_t _d_flusher_id; // Alarm to flush the decoder if more code isn't received
-static bool _d_latched; // True if cicuit has been latched closed by a +1 code element
-static int16_t _d_nchars; // number of complete characters in buffer
+static decode_proc_data_t _d_process[_D_BOTH_CHARS]; // Processing data to build two Morse elements
+static bool _d_circuit_latched_closed; // True if cicuit has been latched closed by a +1 code element
+static int16_t _d_complete_chars; // number of complete characters in buffer
+static float _d_mark_len_total; // accumulates the length of a mark as positive code elements are received
+static float _d_space_len_total; // accumulates the length of a space as negative code elements are received
+// One-time calculated values based on the configured code speed
 static float _d_dot_len; // nominal dot length (ms)
-static float _d_mark; // accumulates the length of a mark as positive code elements are received
-static float _d_space; // accumulates the length of a space as negative code elements are received
 static float _d_tru_dot; // actual length of typical dot(ms)
 static uint8_t _d_wpm; // configured code speed (max of text and char speeds)
-static cmt_msg_t _decode_flusher_msg; // Message to trigger 'decode flush'
+// Scheduled message to cause character to be 'flushed' if time elapses before two have been received.
+static cmt_msg_t _decode_flusher_msg;
+static scheduled_msg_id_t _d_flusher_id;
 // Detected code speed values. Start with the configured speed and calculated values
 static float _d_detected_dot_len; // = _d_dot_len
 static float _d_detected_tru_dot; // = _d_truDot
-static uint8_t _d_detected_wpm; // = _d_wpm
+static uint8_t _d_detected_wpm;   // = _d_wpm
 
 // 'ENCODE' data
 static code_spacing_t _e_spacing;
@@ -69,28 +86,29 @@ static int32_t _e_word_space; // Time between words (ms)
  * @param next_space The next space time value
  */
 static void _d_decode_char(float next_space) {
-    float sp1 = _d_space_buf[0]; // space before 1st character
-    float sp2 = _d_space_buf[1]; // space before 2nd character
+    float sp1 = _d_process[ _D_CHAR_ONE ].space_before; // space before 1st character
+    float sp2 = _d_process[ _D_CHAR_TWO ].space_before; // space before 2nd character
     float sp3 = next_space; // space before next character
     char* code = _d_mstr_3; // use one of our Morse-String buffers
     char* cs = _d_mstr_4; // use another Morse-String buffers
     _mstr_clear(code);
     _mstr_clear(cs);
 
-    _d_nchars += 1; // number of complete characters in buffer (1 or 2)
-    if (_d_nchars == 2 && sp2 < (MD_MAX_MORSE_SPACE * _d_dot_len)
+    _d_complete_chars += 1; // number of complete characters in buffer (1 or 2)
+    if (_d_complete_chars == _D_BOTH_CHARS && sp2 < (MD_MAX_MORSE_SPACE * _d_dot_len)
         && (MD_MORSE_RATIO * sp1) > sp2 && sp2 < (MD_MORSE_RATIO * sp3)) {
         // could be two halves of a spaced character
-        strcat(code, _d_code_buf[0]); strcat(code, " "); strcat(code, _d_code_buf[1]); // try combining the two halves
+        // try combining the two halves
+        strcat(code, _d_process[ _D_CHAR_ONE ].morse_elements); strcat(code, " "); strcat(code, _d_process[ _D_CHAR_TWO ].morse_elements);
         *cs = _d_lookup_char(code);
         if (*cs != '\000' && *cs != '&') {
             // yes, it's a spaced character, clear the buffers
-            _mstr_clear(_d_code_buf[0]);
-            _d_mark_buf[0] = 0.0;
-            _mstr_clear(_d_code_buf[1]);
-            _d_space_buf[1] = 0.0;
-            _d_mark_buf[1] = 0.0;
-            _d_nchars = 0;
+            _d_process[ _D_CHAR_TWO ].space_before = 0.0;
+            _mstr_clear(_d_process[ _D_CHAR_ONE ].morse_elements);
+            _d_process[ _D_CHAR_ONE ].mark_len = 0.0;
+            _mstr_clear(_d_process[ _D_CHAR_TWO ].morse_elements);
+            _d_process[ _D_CHAR_TWO ].mark_len = 0.0;
+            _d_complete_chars = 0;
         }
         else {
             // it's not recognized as a spaced character,
@@ -98,43 +116,44 @@ static void _d_decode_char(float next_space) {
             *cs = '\000';
         }
     }
-    if (_d_nchars == 2 && sp2 < (MD_MIN_CHAR_SPACE * _d_dot_len)) {
+    if (_d_complete_chars == _D_BOTH_CHARS && sp2 < (MD_MIN_CHAR_SPACE * _d_dot_len)) {
         // it's a single character, merge the two halves
-        strcat(_d_code_buf[0], _d_code_buf[1]);
-        _d_mark_buf[0] = _d_mark_buf[1];
-        _mstr_clear(_d_code_buf[1]);
-        _d_space_buf[1] = 0.0;
-        _d_mark_buf[1] = 0.0;
-        _d_nchars = 1;
+        strcat(_d_process[ _D_CHAR_ONE ].morse_elements, _d_process[ _D_CHAR_TWO ].morse_elements);
+        _d_process[ _D_CHAR_ONE ].mark_len = _d_process[ _D_CHAR_TWO ].mark_len;
+        _mstr_clear(_d_process[ _D_CHAR_TWO ].morse_elements);
+        _d_process[ _D_CHAR_TWO ].space_before = 0.0;
+        _d_process[ _D_CHAR_TWO ].mark_len = 0.0;
+        _d_complete_chars = 1;
     }
-    if (_d_nchars == 2) {
+    if (_d_complete_chars == _D_BOTH_CHARS) {
         // decode the first character, otherwise wait for the next one to arrive
-        strcpy(code, _d_code_buf[0]);
+        strcpy(code, _d_process[ _D_CHAR_ONE ].morse_elements);
         *cs = _d_lookup_char(code);
-        if (*cs == 'T' && _d_mark_buf[0] > (MD_MAX_DASH_LEN * _d_dot_len)) {
+        if (*cs == 'T' && _d_process[ _D_CHAR_ONE ].mark_len > (MD_MAX_DASH_LEN * _d_dot_len)) {
             *cs = '_';
         }
-        else if (*cs == 'T' && _d_mark_buf[0] > (MD_MIN_L_LEN * _d_dot_len) && CODE_TYPE_AMERICAN == _code_type) {
+        else if (*cs == 'T' && _d_process[ _D_CHAR_ONE ].mark_len > (MD_MIN_L_LEN * _d_dot_len) &&
+                 CODE_TYPE_AMERICAN == _code_type) {
             *cs = 'L';
         }
         else if (*cs == 'E') {
-            if (_d_mark_buf[0] == 1.0) {
+            if (_d_process[ _D_CHAR_ONE ].mark_len == 1.0) {
                 *cs = '_';
             }
-            else if (_d_mark_buf[0] == 2.0) {
+            else if (_d_process[ _D_CHAR_ONE ].mark_len == 2.0) {
                 *cs = '_';
                 sp1 = 0; // ZZZ eliminate space between underscores
             }
         }
-        strcpy(_d_code_buf[0], _d_code_buf[1]);
-        _d_space_buf[0] = _d_space_buf[1];
-        _d_mark_buf[0] = _d_mark_buf[1];
-        _mstr_clear(_d_code_buf[1]);
-        _d_space_buf[1] = 0.0;
-        _d_mark_buf[1] = 0.0;
-        _d_nchars = 1;
+        strcpy(_d_process[ _D_CHAR_ONE ].morse_elements, _d_process[ _D_CHAR_TWO ].morse_elements);
+        _d_process[ _D_CHAR_ONE ].space_before = _d_process[ _D_CHAR_TWO ].space_before;
+        _d_process[ _D_CHAR_ONE ].mark_len = _d_process[ _D_CHAR_TWO ].mark_len;
+        _mstr_clear(_d_process[ _D_CHAR_TWO ].morse_elements);
+        _d_process[ _D_CHAR_TWO ].space_before = 0.0;
+        _d_process[ _D_CHAR_TWO ].mark_len = 0.0;
+        _d_complete_chars = 1;
     }
-    _d_space_buf[_d_nchars] = next_space;
+    _d_process[_d_complete_chars].space_before = next_space;
     float spacing = ((sp1 / (3.0 * _d_tru_dot)) - 1.0);
     if (*code && *cs == '\000') {
         strcpy(cs, "["); strcat(cs, code); strcat(cs, "]");
@@ -196,10 +215,10 @@ static void _d_update_detected_wpm(mcode_seq_t* mcode_seq) {
  * @brief Fill an Morse-String buffer with Nulls.
  * @ingroup morse
  *
- * @param mstr_buf A character buffer that is `MSTRING_ALLOC_SIZE` long.
+ * @param mstr_buf A character buffer that is `_MSTRING_ALLOC_SIZE` long.
  */
 static void _mstr_clear(char* mstr_buf) {
-    memset(mstr_buf, '\000', MSTRING_ALLOC_SIZE);
+    memset(mstr_buf, '\000', _MSTRING_ALLOC_SIZE);
 }
 
 /**
@@ -209,12 +228,12 @@ static void _mstr_clear(char* mstr_buf) {
  * This will append a character to a DD's buffer. This requires
  * that the DD's buffer started out filled with Nulls, including
  * the additional terminating Null. It accomplishes the 'append' by looking
- * for the first Null within the `MSTRING_ALLOC_SIZE` limit.
+ * for the first Null within the `_MSTRING_ALLOC_SIZE` limit.
  *
  * @param c The character to append.
  */
 static void _mstr_append(char* mstr_buf, char c) {
-    for (int i = 0; i < MSTRING_ALLOC_SIZE; i++) {
+    for (int i = 0; i < _MSTRING_ALLOC_SIZE; i++) {
         if (!mstr_buf[i]) {
             mstr_buf[i] = c;
             break;
@@ -259,37 +278,37 @@ void morse_decode(mcode_seq_t* mcode_seq) {
         if (c < 0) {
             // start or continuation of space, or continuation of mark (if latched)
             c = (-c);
-            if (_d_latched) {
+            if (_d_circuit_latched_closed) {
                 // circuit has been latched closed
-                _d_mark += (float)c;
+                _d_mark_len_total += (float)c;
             }
-            else if (_d_space > 0.0) {
+            else if (_d_space_len_total > 0.0) {
                 // continuation of space
-                _d_space += (float)c;
+                _d_space_len_total += (float)c;
             }
             else {
                 // end of mark
-                if (_d_mark > (MD_MIN_DASH_LEN * _d_tru_dot)) {
-                    _mstr_append(_d_code_buf[_d_nchars], '-'); // dash
+                if (_d_mark_len_total > (MD_MIN_DASH_LEN * _d_tru_dot)) {
+                    _mstr_append(_d_process[_d_complete_chars].morse_elements, '-'); // dash
                 }
                 else {
-                    _mstr_append(_d_code_buf[_d_nchars], '.'); // dot
+                    _mstr_append(_d_process[_d_complete_chars].morse_elements, '.'); // dot
                 }
-                _d_mark_buf[_d_nchars] = _d_mark;
-                _d_mark = 0.0;
-                _d_space = (float)c;
+                _d_process[_d_complete_chars].mark_len = _d_mark_len_total;
+                _d_mark_len_total = 0.0;
+                _d_space_len_total = (float)c;
             }
         }
         else if (c == MORSE_EXT_MARK_START_INDICATOR) {
             // start(or continuation) of extended mark
-            _d_latched = true;
-            if (_d_space > 0.0) {
+            _d_circuit_latched_closed = true;
+            if (_d_space_len_total > 0.0) {
                 // start of mark
-                if (_d_space > (MD_MIN_MORSE_SPACE * _d_dot_len)) {
+                if (_d_space_len_total > (MD_MIN_MORSE_SPACE * _d_dot_len)) {
                     // possible Morse or word space
-                    _d_decode_char(_d_space);
-                    _d_mark = 0.0;
-                    _d_space = 0.0;
+                    _d_decode_char(_d_space_len_total);
+                    _d_mark_len_total = 0.0;
+                    _d_space_len_total = 0.0;
                 }
                 else {
                     // continuation of mark
@@ -298,23 +317,23 @@ void morse_decode(mcode_seq_t* mcode_seq) {
         }
         else if (c == MORSE_MARK_END_INDICATOR) {
             // end of mark (or continuation of space)
-            _d_latched = false;
+            _d_circuit_latched_closed = false;
         }
         else if (c > 2) {
             // mark
-            _d_latched = false;
-            if (_d_space > 0.0) {
+            _d_circuit_latched_closed = false;
+            if (_d_space_len_total > 0.0) {
                 // start of new mark
-                if (_d_space > (MD_MIN_MORSE_SPACE * _d_dot_len)) {
+                if (_d_space_len_total > (MD_MIN_MORSE_SPACE * _d_dot_len)) {
                     // possible Morse or word space
-                    _d_decode_char(_d_space);
+                    _d_decode_char(_d_space_len_total);
                 }
-                _d_mark = (float)c;
-                _d_space = 0.0;
+                _d_mark_len_total = (float)c;
+                _d_space_len_total = 0.0;
             }
-            else if (_d_mark > 0.0) {
+            else if (_d_mark_len_total > 0.0) {
                 // continuation of mark
-                _d_mark += (float)c;
+                _d_mark_len_total += (float)c;
             }
         }
     }
@@ -325,27 +344,27 @@ void morse_decode(mcode_seq_t* mcode_seq) {
 }
 
 void morse_decode_flush() {
-    if (_d_mark > 0 || _d_latched) {
-        float spacing = _d_space_buf[_d_nchars];
-        if (_d_mark > (MD_MIN_DASH_LEN * _d_tru_dot)) {
-            _mstr_append(_d_code_buf[_d_nchars], '-'); // dash
+    if (_d_mark_len_total > 0 || _d_circuit_latched_closed) {
+        float spacing = _d_process[_d_complete_chars].space_before;
+        if (_d_mark_len_total > (MD_MIN_DASH_LEN * _d_tru_dot)) {
+            _mstr_append(_d_process[_d_complete_chars].morse_elements, '-'); // dash
         }
-        else if (_d_mark > 2.0) {
-            _mstr_append(_d_code_buf[_d_nchars], '.'); // dot
+        else if (_d_mark_len_total > 2.0) {
+            _mstr_append(_d_process[_d_complete_chars].morse_elements, '.'); // dot
         }
-        _d_mark_buf[_d_nchars] = _d_mark;
-        _d_mark = 0;
-        _d_space = 1; // to prevent circuit opening mistakenly decoding as 'E'
+        _d_process[_d_complete_chars].mark_len = _d_mark_len_total;
+        _d_mark_len_total = 0;
+        _d_space_len_total = 1; // to prevent circuit opening mistakenly decoding as 'E'
         _d_decode_char(MORSE_CODE_ELEMENT_VALUE_MAX);
         _d_decode_char(MORSE_CODE_ELEMENT_VALUE_MAX); // a second time, to flush both characters
-        _mstr_clear(_d_code_buf[0]);
-        _mstr_clear(_d_code_buf[1]);
-        _d_space_buf[0] = 0.0;
-        _d_space_buf[1] = 0.0;
-        _d_mark_buf[0] = 0.0;
-        _d_mark_buf[1] = 0.0;
-        _d_nchars = 0;
-        if (_d_latched) {
+        _mstr_clear(_d_process[ _D_CHAR_ONE ].morse_elements);
+        _d_process[ _D_CHAR_ONE ].space_before = 0.0;
+        _d_process[ _D_CHAR_ONE ].mark_len = 0.0;
+        _mstr_clear(_d_process[ _D_CHAR_TWO ].morse_elements);
+        _d_process[ _D_CHAR_TWO ].space_before = 0.0;
+        _d_process[ _D_CHAR_TWO ].mark_len = 0.0;
+        _d_complete_chars = 0;
+        if (_d_circuit_latched_closed) {
             _d_post_decoded_text("_", ((spacing / (3.0 * _d_tru_dot)) - 1.0));
         }
     }
@@ -422,14 +441,14 @@ void morse_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spac
     _d_dot_len = (UNIT_DOT_TIME / _d_wpm);
     _d_tru_dot = _d_dot_len;
     _d_flusher_id = SCHED_MSG_ID_INVALID;
-    _d_nchars = 0;
-    _d_latched = false;
-    _d_code_buf[0] = _d_mstr_1;
-    _d_code_buf[1] = _d_mstr_2;
-    _mstr_clear(_d_code_buf[0]);
-    _mstr_clear(_d_code_buf[1]);
-    _d_mark = 0.0;
-    _d_space = 1.0;
+    _d_complete_chars = 0;
+    _d_circuit_latched_closed = false;
+    _d_process[ _D_CHAR_ONE ].morse_elements = _d_mstr_1;
+    _d_process[ _D_CHAR_TWO ].morse_elements = _d_mstr_2;
+    _mstr_clear(_d_process[ _D_CHAR_ONE ].morse_elements);
+    _mstr_clear(_d_process[ _D_CHAR_TWO ].morse_elements);
+    _d_mark_len_total = 0.0;
+    _d_space_len_total = 1.0;
     _d_detected_wpm = _d_wpm;
     _d_detected_dot_len = _d_dot_len;
     _d_detected_tru_dot = _d_tru_dot;

@@ -9,6 +9,10 @@
 #include "config.h"
 #include "system_defs.h"
 
+#define _KOB_DEBOUNCE 0.015     // time to ignore transitions due to contact bounce(sec)
+#define _KOB_CODE_SPACE 0.120   // amount of space to signal end of code sequence(sec)
+#define _KOB_CKT_CLOSE 0.800    // length of mark to signal circuit closure(sec)
+
 static bool _key_closer_is_open = false;
 static bool _key_last_state = false; // 'false' means open
 static bool _sounder_energized = false;
