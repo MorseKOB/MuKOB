@@ -13,6 +13,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "cmt.h"
+#include "kob.h"
 #include "mkwire.h"
 #include "pico/types.h"
 
@@ -21,6 +22,14 @@ extern "C" {
  * @ingroup ui
  */
 extern void ui_disp_build(void);
+
+/**
+ * @brief Refresh the loop circuit closed indicator in the header.
+ * @ingroup ui
+ *
+ * @param closed True if loop circuit is closed. False if open.
+ */
+extern void ui_disp_update_circuit_closed(bool closed);
 
 /**
  * @brief Refresh the speed value display in the header.
@@ -53,12 +62,36 @@ void ui_disp_put_codetext(char* str);
 void ui_disp_puts(char* str);
 
 /**
+ * @brief Refresh the loop circuit closed indicator in the header.
+ * @ingroup ui
+ *
+ * @param closed True if loop circuit is closed. False if open.
+ */
+extern void ui_disp_update_circuit_closed(bool closed);
+
+/**
  * @brief Update the Connected icon based on the state.
  * @ingroup ui
  *
  * @param state The connected state
  */
 extern void ui_disp_update_connected_state(wire_connected_state_t state);
+
+/**
+ * @brief Refresh the key (closer) closed indicator in the header.
+ * @ingroup ui
+ *
+ * @param closed True if key (closer) is closed. False if open.
+ */
+extern void ui_disp_update_key_closed(bool closed);
+
+/**
+ * @brief Update the kob status indicators.
+ * @ingroup ui
+ *
+ * @param kob_status Current KOB status
+ */
+extern void ui_disp_update_kob_status(kob_status_t kob_status);
 
 /**
  * @brief Update the sender station ID in the top of the display.

@@ -70,6 +70,7 @@ static int32_t _cih_config_version(config_t* cfg, const char* key, const char* v
 static int32_t _cih_auto_connect(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_code_type(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* value, char* buf);
+static int32_t _cih_key_input_invert(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_local(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_char_speed_min(config_t* cfg, const char* key, const char* value, char* buf);
 static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, char* buf);
@@ -244,6 +245,25 @@ static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* v
         // format the value we are responsible for
         int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
         retval = snprintf(buf, max_len, "# Does the key have a physical closer.\n%s=%hd\n", our_key, binary_from_bool(cfg->key_has_closer));
+    }
+    return (retval);
+}
+
+static int32_t _cih_key_input_invert(config_t* cfg, const char* key, const char* value, char* buf) {
+    int32_t retval = 0;
+    char* our_key = "key_input_invert";
+
+    if (key) {
+        if (strcmp(key, our_key) == 0) {
+            bool b = bool_from_str(value);
+            cfg->invert_key_input = b;
+            retval = 1;
+        }
+    }
+    else if (buf) {
+        // format the value we are responsible for
+        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
+        retval = snprintf(buf, max_len, "# Invert the key input (used for modem input).\n%s=%hd\n", our_key, binary_from_bool(cfg->invert_key_input));
     }
     return (retval);
 }

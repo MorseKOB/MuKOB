@@ -153,14 +153,14 @@ static int _cmd_encode(int argc, char** argv) {
         while ('\000' != (c = *str++)) {
             mcode_seq_t* mcode_seq = morse_encode(c);
             // Post it to the backend to decode
-            msg.id = MSG_MORSE_TO_DECODE;
+            msg.id = MSG_MORSE_CODE_SEQUENCE;
             msg.data.mcode_seq = mcode_seq;
             postBEMsgBlocking(&msg);
         }
         if (i+1 < argc) {
             // Add a space
             mcode_space = morse_encode(' ');
-            msg.id = MSG_MORSE_TO_DECODE;
+            msg.id = MSG_MORSE_CODE_SEQUENCE;
             msg.data.mcode_seq = mcode_space;
             postBEMsgBlocking(&msg);
         }

@@ -17,6 +17,7 @@
 #include <string.h>
 
 #define _SCHEDULED_MESSAGES_MAX 16
+#define _OVERHEAD_US_PER_MS 30 // From testing
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
 
@@ -160,6 +161,13 @@ void scheduled_msg_cancel(scheduled_msg_id_t id) {
 scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
     uint8_t core_num = (uint8_t)get_core_num();
     _scheduled_msg_data_t* smd = NULL;
+
+    // Calculate our overhead and adjust if possible
+    uint64_t req_us = ms * 1000;
+    uint64_t overhead_us = req_us / _OVERHEAD_US_PER_MS;
+    uint32_t overhead_ms = overhead_us / 1000;
+    ms -= overhead_ms;
+
     if (ms > 0) {
         recursive_mutex_enter_blocking(&sm_mutex);
         // Get a free smd
@@ -177,7 +185,7 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
             smd->client_msg = msg;
             smd->remaining = ms;
             smd->ms_requested = ms;
-            smd->created_ms = us_to_ms(time_us_64()); // 'now' in millis
+            smd->created_ms = now_ms();
 
             // Insert it into the chain
             if (!_scheduled_msg_head) {

@@ -241,7 +241,7 @@ static void _mstr_append(char* mstr_buf, char c) {
     }
 }
 
-mcode_seq_t* mcode_seq_alloc(int32_t* code_seq, int len) {
+mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* code_seq, int len) {
     mcode_seq_t* mcode_seq = (mcode_seq_t*)malloc(sizeof(mcode_seq_t));
     mcode_seq->len = len;
     mcode_seq->code_seq = (int32_t*)malloc(len * sizeof(int32_t));
@@ -299,7 +299,7 @@ void morse_decode(mcode_seq_t* mcode_seq) {
                 _d_space_len_total = (float)c;
             }
         }
-        else if (c == MORSE_EXT_MARK_START_INDICATOR) {
+        else if (c == MORSE_EXTENDED_MARK_START_INDICATOR) {
             // start(or continuation) of extended mark
             _d_circuit_latched_closed = true;
             if (_d_space_len_total > 0.0) {
@@ -315,7 +315,7 @@ void morse_decode(mcode_seq_t* mcode_seq) {
                 }
             }
         }
-        else if (c == MORSE_MARK_END_INDICATOR) {
+        else if (c == MORSE_EXTENDED_MARK_END_INDICATOR) {
             // end of mark (or continuation of space)
             _d_circuit_latched_closed = false;
         }
@@ -384,7 +384,7 @@ mcode_seq_t* morse_encode(char c) {
                 break;
             case '~':
                 code_seq[cli++] = (-_e_space);
-                code_seq[cli++] = MORSE_MARK_END_INDICATOR;
+                code_seq[cli++] = MORSE_EXTENDED_MARK_END_INDICATOR;
                 break;
             default:
                 _e_space += (_e_word_space - _e_char_space);
@@ -428,7 +428,7 @@ mcode_seq_t* morse_encode(char c) {
         _e_space = _e_char_space;
     }
     // Allocate the codelist structure to return
-    mcode_seq_t* mcode_seq = mcode_seq_alloc(code_seq, cli);
+    mcode_seq_t* mcode_seq = mcode_seq_alloc(MCODE_SRC_UI, code_seq, cli);
 
     return (mcode_seq);
 }

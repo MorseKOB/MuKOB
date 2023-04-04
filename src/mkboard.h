@@ -105,6 +105,20 @@ void led_on_off(const int32_t pattern[]);
 void led_blink_mcode(const int32_t *code, uint32_t len);
 
 /**
+ * @brief Get a millisecond value of the time since the board was booted.
+ *
+ * @return uint32_t Time in milliseconds
+ */
+extern uint32_t now_ms();
+
+/**
+ * @brief Get a microsecond value of the time since the board was booted.
+ *
+ * @return uint64_t Time in microseconds
+ */
+extern uint64_t now_us();
+
+/**
  * @brief Read the option switch
  *
  * Reads the 4-position option switch, caches and returns
@@ -131,10 +145,13 @@ uint8_t options_read(void);
 */
 bool option_value(uint opt);
 
-
+/** @brief Printf like function that includes the datetime and type prefix */
 void debug_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+/** @brief Printf like function that includes the datetime and type prefix */
 void error_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+/** @brief Printf like function that includes the datetime and type prefix */
 void info_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+/** @brief Printf like function that includes the datetime and type prefix */
 void warn_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 
 #ifdef __cplusplus

@@ -30,12 +30,13 @@ typedef struct _config_ {
     uint16_t cfg_version;
     //
     bool auto_connect;
+    uint8_t char_speed_min;
     code_type_t code_type;
+    char* host_and_port; // host/addr:port of the MorseKOB Server
+    bool invert_key_input;
     bool key_has_closer;
     bool local;
-    uint8_t char_speed_min;
     bool remote;
-    char* host_and_port; // host/addr:port of the MorseKOB Server
     bool sound;
     bool sounder;
     code_spacing_t spacing;

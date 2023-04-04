@@ -483,7 +483,7 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
                     }
                     mcode_seq->len = code_len;
                     // Post it to the backend to decode
-                    msg.id = MSG_MORSE_TO_DECODE;
+                    msg.id = MSG_MORSE_CODE_SEQUENCE;
                     msg.data.mcode_seq = mcode_seq;
                     postBEMsgBlocking(&msg);
                     _seqno_recv = code_pkt.seqno;

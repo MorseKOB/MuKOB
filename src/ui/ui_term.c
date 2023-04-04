@@ -9,6 +9,7 @@
 #include "config.h"
 #include "cmd.h"
 #include "cmt.h"
+#include "kob.h"
 #include "term.h"
 #include "util.h"
 #include "hardware/rtc.h"
@@ -29,6 +30,8 @@ static int16_t _getline_index;
 static bool _code_displaying;
 static int _code_column;
 static char _code_displayed[2 * UI_TERM_COLUMNS];
+
+static kob_status_t _kob_status;
 
 static ui_term_input_available_handler _input_available_handler;
 static ui_term_getline_callback_fn _getline_callback; // Function pointer to be called when an input line is ready
@@ -199,13 +202,13 @@ void ui_term_color_set(term_color_t fg, term_color_t bg) {
 }
 
 void ui_term_display_speed() {
-    const config_t* config = config_current();
-    ui_term_update_speed(config->text_speed);
+    const config_t* cfg = config_current();
+    ui_term_update_speed(cfg->text_speed);
 }
 
 void ui_term_display_wire() {
-    const config_t* config = config_current();
-    ui_term_update_wire(config->wire);
+    const config_t* cfg = config_current();
+    ui_term_update_wire(cfg->wire);
 }
 
 static ui_term_control_char_handler ui_term_get_control_char_handler(char c) {
@@ -340,6 +343,10 @@ void ui_term_register_input_available_handler(ui_term_input_available_handler ha
     _input_available_handler = handler_fn;
 }
 
+void ui_term_update_circuit_closed(bool closed) {
+    // TODO
+}
+
 void ui_term_update_connected_state(wire_connected_state_t state) {
     char state_char = (WIRE_CONNECTED == state ? UI_TERM_CONNECTED_CHAR : UI_TERM_NOT_CONNECTED_CHAR);
 
@@ -351,6 +358,25 @@ void ui_term_update_connected_state(wire_connected_state_t state) {
     printf("[%c]", state_char);
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();
+}
+
+void ui_term_update_key_closed(bool closed) {
+    // TODO
+}
+
+void ui_term_update_kob_status(kob_status_t kob_status) {
+    if (kob_status.circuit_closed != _kob_status.circuit_closed) {
+        _kob_status.circuit_closed = kob_status.circuit_closed;
+        ui_term_update_circuit_closed(kob_status.circuit_closed);
+    }
+    if (kob_status.key_closed != _kob_status.key_closed) {
+        _kob_status.key_closed = kob_status.key_closed;
+        ui_term_update_key_closed(kob_status.key_closed);
+    }
+    if (kob_status.sounder_energized != _kob_status.sounder_energized) {
+        _kob_status.sounder_energized = kob_status.sounder_energized;
+        // ui_disp_update_sounder_energized(kob_status.sounder_energized);
+    }
 }
 
 void ui_term_update_sender(const char* id) {
