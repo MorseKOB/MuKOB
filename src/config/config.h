@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include "pico/types.h"
 
+#include "cmd_t.h"
+
 typedef enum _code_type_ {
     CODE_TYPE_AMERICAN = 0,
     CODE_TYPE_INTERNATIONAL = 1,
@@ -54,6 +56,9 @@ typedef struct _sys_config_ {
     char* wifi_password;
     char* wifi_ssid;
 } config_sys_t;
+
+extern const cmd_handler_entry_t cmd_cfg_entry;
+extern const cmd_handler_entry_t cmd_configure_entry;
 
 /**
  * @brief Get the current configuration.

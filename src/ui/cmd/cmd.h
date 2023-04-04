@@ -11,7 +11,9 @@
 extern "C" {
 #endif
 
+#include "cmd_t.h"
 #include "cmt.h"
+
 
 #define CMD_WAKEUP_CHAR ':'
 #define CMD_CONNECT_TOGGLE_CHAR '\003' // ^C
@@ -26,17 +28,6 @@ typedef enum _CMD_STATES_ {
     CMD_EXECUTING_COMMAND,
 } cmd_state_t;
 
-
-/**
- * @brief Function prototype for a command.
- * @ingroup ui
- *
- * @param argc The argument count (will be at least 1 - the command as entered).
- * @param argv Pointer to vector (array) of arguments. The value of `argv[0]` is the command).
- *
- * @return Value to pass back to shell.
- */
-typedef int (*command_fn)(int argc, char** argv);
 
 /**
  * @brief UI Message Loop handler to get a line of input and cause it to be processed.

@@ -10,6 +10,8 @@
 #include "pico/stdlib.h"
 
 #include "config.h"
+
+#include "cmd_t.h" // Command processing type definitions
 #include "sd_card.h"
 #include "string.h"
 #include "ff.h"
@@ -648,6 +650,37 @@ int32_t _process_sys_cfg_line(char* line) {
     warn_printf("System Config - Unknown key: '%s'\n", key);
     return (retval);
 }
+
+// ============================================================================
+// User command processing
+// ============================================================================
+
+static int _config_cmd_configure(int argc, char** argv, const char* unparsed) {
+    const config_t* cfg = config_current();
+    cmd_help_display(&cmd_cfg_entry, HELP_DISP_USAGE);
+    return (-1);
+}
+
+const cmd_handler_entry_t cmd_cfg_entry = {
+    _config_cmd_configure,
+    3,
+    "cfg",
+    "\001configure",
+    NULL,
+};
+
+const cmd_handler_entry_t cmd_configure_entry = {
+    _config_cmd_configure,
+    4,
+    "configure",
+    "[[opt1=value1] ... [optn=valuen]]",
+    "List current user configuration. Set configuration value(s).",
+};
+
+
+// ============================================================================
+// Public
+// ============================================================================
 
 const config_t* config_current() {
     return _current_cfg;

@@ -76,6 +76,8 @@ typedef struct _TERM_COLOR_PAIR_ {
     term_color_t bg;
 } term_color_pair_t;
 
+#define UI_TERM_GETLINE_MAX_LEN_  256 // Maximum line length (including /0) for the `term_getline` function
+
 /**
  * @brief Function prototype registered to handle control characters.
  * @ingroup ui
