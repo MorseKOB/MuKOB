@@ -14,6 +14,8 @@
 #define CORE0_QUEUE_ENTRIES_MAX 32
 #define CORE1_QUEUE_ENTRIES_MAX 32
 
+static bool _initialized = false;
+
 queue_t core0_queue;
 queue_t core1_queue;
 
@@ -34,6 +36,8 @@ bool get_core1_msg_nowait(cmt_msg_t* msg) {
 }
 
 void multicore_init() {
+    assert(!_initialized);
+    _initialized = true;
     queue_init(&core0_queue, sizeof(cmt_msg_t), CORE0_QUEUE_ENTRIES_MAX);
     queue_init(&core1_queue, sizeof(cmt_msg_t), CORE1_QUEUE_ENTRIES_MAX);
     cmt_init();

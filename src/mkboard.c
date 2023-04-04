@@ -199,9 +199,6 @@ int board_init() {
     disp_init();
     display_backlight_on(true);
 
-    // Initialize the KOB module
-    kob_init(config_current());
-
     // Initialize the multicore subsystem
     multicore_init();
 
@@ -331,6 +328,14 @@ void led_blink_mcode(const int32_t* code, uint32_t len) {
     _mcode_context.index = 0;
     _mcode_context.alarm_id = 0;
     _led_blink_mcode_handler(0, NULL);
+}
+
+uint32_t now_ms() {
+    return (us_to_ms(time_us_64()));
+}
+
+uint64_t now_us() {
+    return (time_us_64());
 }
 
 uint8_t options_read(void) {

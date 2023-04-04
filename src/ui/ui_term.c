@@ -9,6 +9,7 @@
 #include "config.h"
 #include "cmd.h"
 #include "cmt.h"
+#include "kob.h"
 #include "term.h"
 #include "util.h"
 #include "hardware/rtc.h"
@@ -20,10 +21,17 @@
 
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
+
 static ui_term_control_char_handler _control_char_handler[32]; // Room for a handler for each control character
-static bool _displaying_code;
+
 static char _getline_buf[_UI_TERM_GETLINE_MAX_LEN_];
 static int16_t _getline_index;
+
+static bool _code_displaying;
+static int _code_column;
+static char _code_displayed[2 * UI_TERM_COLUMNS];
+
+static kob_status_t _kob_status;
 
 static ui_term_input_available_handler _input_available_handler;
 static ui_term_getline_callback_fn _getline_callback; // Function pointer to be called when an input line is ready
@@ -148,7 +156,9 @@ static void _ui_term_getline_continue() {
 }
 
 static void _term_init() {
-    _displaying_code = false;
+    _code_displaying = false;
+    memset(_code_displayed, 0, sizeof(_code_displayed));
+    _code_column = 0;
     _input_available_handler = NULL;
     memset(_control_char_handler, 0, sizeof(_control_char_handler));
     term_reset();
@@ -192,13 +202,13 @@ void ui_term_color_set(term_color_t fg, term_color_t bg) {
 }
 
 void ui_term_display_speed() {
-    const config_t* config = config_current();
-    ui_term_update_speed(config->text_speed);
+    const config_t* cfg = config_current();
+    ui_term_update_speed(cfg->text_speed);
 }
 
 void ui_term_display_wire() {
-    const config_t* config = config_current();
-    ui_term_update_wire(config->wire);
+    const config_t* cfg = config_current();
+    ui_term_update_wire(cfg->wire);
 }
 
 static ui_term_control_char_handler ui_term_get_control_char_handler(char c) {
@@ -239,7 +249,7 @@ static void _printc_for_printf_term(char c, void* arg) {
 
 int ui_term_printf(const char* format, ...) {
     int pl = 0;
-    if (_displaying_code) {
+    if (_code_displaying) {
         putchar('\n');
         pl = 1;
     }
@@ -251,25 +261,74 @@ int ui_term_printf(const char* format, ...) {
     return (pl);
 }
 
+static void _putchar_for_code(char c) {
+    if ('\n' == c) {
+        putchar(c);
+        _code_column = 0;
+        return;
+    }
+    if (_code_column == UI_TERM_COLUMNS) {
+        // Printing this will cause a wrap.
+        if (' ' == c) {
+            // It's a space. Just print a newline instead.
+            putchar('\n');
+            _code_column = 0;
+            return;
+        }
+        else {
+            // See if we can move back to a space
+            int i = 0;
+            for (; i < _code_column; i++) {
+                if (' ' == _code_displayed[_code_column - i]) {
+                    break;
+                }
+            }
+            if (i < _code_column) {
+                // Yes there was a space in the line. Backup, print a '\n', then reprint to the end of line.
+                term_cursor_left(i-1);
+                term_erase_eol();
+                putchar('\n');
+                int nc = 0;
+                for (int j = ((_code_column - i) + 1); j < _code_column; j++) {
+                    putchar(_code_displayed[j]);
+                    nc++;
+                }
+                _code_column = nc;
+            }
+            else {
+                // No spaces in the current line. Just print a '\n' (breaking the word).
+                putchar('\n');
+                _code_column = 0;
+            }
+        }
+    }
+    _code_displayed[_code_column] = c;
+    putchar(c);
+    _code_column++;
+    if ('=' == c) {
+        putchar('\n');
+        _code_column = 0;
+    }
+}
+
 void ui_term_put_codetext(char* str) {
     // If the Command Shell is active, don't display Code.
     if (CMD_SNOOZING == cmd_get_state()) {
-        if (!_displaying_code) {
-            putchar('\n');
-            _displaying_code = true;
+        if (!_code_displaying) {
+            _putchar_for_code('\n');
+            _code_displaying = true;
         }
-        printf("%s", str);
-        // If this is a '=' print a newline.
-        if (strchr(str, '=')) {
-            printf("\n");
+        char c;
+        while ('\0' != (c = *str++)) {
+            _putchar_for_code(c);
         }
     }
 }
 
 void ui_term_puts(char* str) {
-    if (_displaying_code) {
+    if (_code_displaying) {
         putchar('\n');
-        _displaying_code = false;
+        _code_displaying = false;
     }
     printf("%s", str);
 }
@@ -284,6 +343,10 @@ void ui_term_register_input_available_handler(ui_term_input_available_handler ha
     _input_available_handler = handler_fn;
 }
 
+void ui_term_update_circuit_closed(bool closed) {
+    // TODO
+}
+
 void ui_term_update_connected_state(wire_connected_state_t state) {
     char state_char = (WIRE_CONNECTED == state ? UI_TERM_CONNECTED_CHAR : UI_TERM_NOT_CONNECTED_CHAR);
 
@@ -295,6 +358,25 @@ void ui_term_update_connected_state(wire_connected_state_t state) {
     printf("[%c]", state_char);
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();
+}
+
+void ui_term_update_key_closed(bool closed) {
+    // TODO
+}
+
+void ui_term_update_kob_status(kob_status_t kob_status) {
+    if (kob_status.circuit_closed != _kob_status.circuit_closed) {
+        _kob_status.circuit_closed = kob_status.circuit_closed;
+        ui_term_update_circuit_closed(kob_status.circuit_closed);
+    }
+    if (kob_status.key_closed != _kob_status.key_closed) {
+        _kob_status.key_closed = kob_status.key_closed;
+        ui_term_update_key_closed(kob_status.key_closed);
+    }
+    if (kob_status.sounder_energized != _kob_status.sounder_energized) {
+        _kob_status.sounder_energized = kob_status.sounder_energized;
+        // ui_disp_update_sounder_energized(kob_status.sounder_energized);
+    }
 }
 
 void ui_term_update_sender(const char* id) {

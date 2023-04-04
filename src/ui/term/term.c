@@ -208,7 +208,7 @@ inline void term_cursor_up_1(void) {
 }
 
 inline void term_erase_bol() {
-    printf("%s0K", CSI);
+    printf("%s1K", CSI);
 }
 
 inline void term_erase_char(uint16_t n) {
@@ -216,7 +216,7 @@ inline void term_erase_char(uint16_t n) {
 }
 
 inline void term_erase_eol() {
-    printf("%s1K", CSI);
+    printf("%s0K", CSI);
 }
 
 inline void term_erase_line() {

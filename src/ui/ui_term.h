@@ -253,12 +253,36 @@ extern void ui_term_register_control_char_handler(char c, ui_term_control_char_h
 extern void ui_term_register_input_available_handler(ui_term_input_available_handler handler_fn);
 
 /**
+ * @brief Refresh the loop circuit closed indicator in the header.
+ * @ingroup ui
+ *
+ * @param closed True if loop circuit is closed. False if open.
+ */
+extern void ui_term_update_circuit_closed(bool closed);
+
+/**
  * @brief Update the Connected icon based on the state.
  * @ingroup ui
  *
  * @param state The connected state
  */
 extern void ui_term_update_connected_state(wire_connected_state_t state);
+
+/**
+ * @brief Refresh the key (closer) closed indicator in the header.
+ * @ingroup ui
+ *
+ * @param closed True if key (closer) is closed. False if open.
+ */
+extern void ui_term_update_key_closed(bool closed);
+
+/**
+ * @brief Update the kob status indicators.
+ * @ingroup ui
+ *
+ * @param kob_status Current KOB status
+ */
+extern void ui_term_update_kob_status(kob_status_t kob_status);
 
 /**
  * @brief Update the sender station ID in the top of the terminal.

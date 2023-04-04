@@ -13,15 +13,20 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "kob_t.h"
 #include "config.h"
+#include "cmt.h"
 
 /**
  * @brief Initialize the KOB functionality.
  * @ingroup kob
  *
- * @param config configuration to use to initialize the kob module.
+ * Sets the configuration and starts the loop to read code from the key.
+ *
+ * @param invert_key_input True if the key input should be inverted (used for modem input)
+ * @param key_has_closer True if the key has a circuit closer that should be followed
  */
-void kob_init(const config_t* config);
+extern void kob_init(bool invert_key_input, bool key_has_closer);
 
 /**
  * @brief Read the key and return `true` if it is closed.
@@ -30,7 +35,16 @@ void kob_init(const config_t* config);
  * @return true if closed
  * @return false if open
  */
-bool kob_key_is_closed(void);
+extern bool kob_key_is_closed(void);
+
+/**
+ * @brief Message handler to start/continue/finish reading code from the key.
+ * @ingroup kob
+ *
+ * This is a message handler, so it does not block. As code is collected, a
+ * message is posted with the code sequence.
+ */
+extern void kob_read_code_from_key(cmt_msg_t* msg);
 
 /**
  * @brief Energize/deenergize the sounder
@@ -40,7 +54,7 @@ bool kob_key_is_closed(void);
  *
  * @param energize True to energize, False to deenergize.
  */
-void kob_sounder_energize(bool energize);
+extern void kob_sounder_energize(bool energize);
 
 #ifdef __cplusplus
     }

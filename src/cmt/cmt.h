@@ -15,6 +15,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "kob_t.h"
 #include "morse.h"
 #include "pico/types.h"
 
@@ -26,9 +27,11 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_KEY_READ,
     MSG_MKS_KEEP_ALIVE_SEND,
     MSG_MORSE_DECODE_FLUSH,
-    MSG_MORSE_TO_DECODE,
+    MSG_MORSE_CODE_SEQUENCE,
+    MSG_UI_INITIALIZED,
     MSG_WIRE_CONNECT,
     MSG_WIRE_CONNECT_TOGGLE,
     MSG_WIRE_DISCONNECT,
@@ -37,11 +40,13 @@ typedef enum _MSG_ID_ {
     //
     // Front-End/UI messages
     MSG_UI_NOOP = 0x8000,
+    MSG_BE_INITIALIZED,
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
     MSG_INPUT_CHAR_READY,
     MSG_CODE_TEXT,
     MSG_DISPLAY_MESSAGE,
+    MSG_KOB_STATUS,
     MSG_UPDATE_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
@@ -57,6 +62,10 @@ typedef enum _MSG_ID_ {
  */
 typedef union _MSG_DATA_VALUE {
     char c;
+    uint32_t ts_ms;
+    uint64_t ts_us;
+    key_read_state_t key_read_state;
+    kob_status_t kob_status;
     mcode_seq_t* mcode_seq;
     char* station_id;
     char* str;
@@ -90,12 +99,10 @@ typedef struct _CMT_MSG {
 #define postBothMsgNoWait( pmsg )       post_to_cores_nowait( pmsg )
 
 /**
- * @brief Function prototype for a message handler.
+ * @brief Function prototype for an idle function.
  * @ingroup cmt
- *
- * @param cntx The message loop context.
  */
-typedef void (*idle_fn)(void* data);
+typedef void (*idle_fn)(void);
 
 /**
  * @brief Function prototype for a message handler.
@@ -115,10 +122,9 @@ typedef struct _MSG_DISPATCH_CNTX {
 } msg_dispatch_cntx_t;
 
 typedef struct _MSG_LOOP_CNTX {
-    uint8_t corenum;                        // The core number the loop is running on
-    const msg_handler_entry_t** handler_entries;  // NULL terminated list of message handler entries
-    const idle_fn* idle_functions;                // Null terminated list of idle functions
-    void* idle_data;                        // Data to pass to the idle functions
+    uint8_t corenum;                                // The core number the loop is running on
+    const msg_handler_entry_t** handler_entries;    // NULL terminated list of message handler entries
+    const idle_fn* idle_functions;                  // Null terminated list of idle functions
 } msg_loop_cntx_t;
 
 typedef int scheduled_msg_id_t;

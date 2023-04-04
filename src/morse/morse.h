@@ -33,12 +33,18 @@ extern "C" {
 #define MD_MIN_L_LEN 5.0           // minimum length of L character(in dots)
 #define MD_MORSE_RATIO 0.95        // length of Morse space relative to surrounding spaces
 
-#define MORSE_EXT_MARK_START_INDICATOR 1
-#define MORSE_MARK_END_INDICATOR 2
+#define MORSE_EXTENDED_MARK_START_INDICATOR 1   // Closer/Circuit closed indicator
+#define MORSE_EXTENDED_MARK_END_INDICATOR 2     // Closer/Circuit open indicator
 
 #define MORSE_MAX_DDS_IN_CHAR 9 // Maximum number of dits, dahs (& intra-char-space) in a character
 
 #define MORSE_CODE_ELEMENT_VALUE_MAX (FLT_MAX)
+
+typedef enum _MCODE_SEQ_SOURCE_ {
+    MCODE_SRC_UI,
+    MCODE_SRC_KEY,
+    MCODE_SRC_WIRE,
+} mcode_seq_source_t;
 
 /**
  * @brief Structure to contain a sequence of code elements and the length of the sequence.
@@ -48,6 +54,7 @@ extern "C" {
  * (This doesn't exist in morse.py, as Python can give you the length of an array of integers.)
  */
 typedef struct _MCODE_SEQ {
+    mcode_seq_source_t source;
     int len;
     int32_t* code_seq;
 } mcode_seq_t;
@@ -62,7 +69,7 @@ typedef struct _MCODE_SEQ {
  * @param len  The length of the code sequence.
  * @return mcode_seq_t* Pointer to an allocated and initialized mcode_seq_t.
  */
-extern mcode_seq_t* mcode_seq_alloc(int32_t* codeseq, int len);
+extern mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* codeseq, int len);
 
 /**
  * @brief Free an allocated mcode_seq_t.

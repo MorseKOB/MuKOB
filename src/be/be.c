@@ -12,6 +12,7 @@
 #include "config.h"
 #include "cmt.h"
 #include "display.h"
+#include "kob.h"
 #include "mkboard.h"
 #include "mkwire.h"
 #include "morse.h"
@@ -19,7 +20,7 @@
 #include "util.h"
 #include "hardware/rtc.h"
 
-#define STATUS_PULSE_PERIOD 8000
+#define _BE_STATUS_PULSE_PERIOD 6999
 
 typedef struct _BE_IDLE_FN_DATA_ {
     unsigned long int idle_num;
@@ -27,33 +28,43 @@ typedef struct _BE_IDLE_FN_DATA_ {
 } be_idle_fn_data_t;
 
 // Message handler functions...
+static void _handle_be_noop(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
+static void _handle_key_read(cmt_msg_t* msg);
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg);
 static void _handle_morse_decode_flush(cmt_msg_t* msg);
 static void _handle_morse_to_decode(cmt_msg_t* msg);
 static void _handle_send_be_status(cmt_msg_t* msg);
+static void _handle_ui_initialized(cmt_msg_t* msg);
 static void _handle_wire_connect(cmt_msg_t* msg);
 static void _handle_wire_connect_toggle(cmt_msg_t* msg);
 static void _handle_wire_disconnect(cmt_msg_t* msg);
 static void _handle_wire_set(cmt_msg_t* msg);
 
 // Idle functions...
-static void _be_idle_function_1(be_idle_fn_data_t* data);
-static void _be_idle_function_2(be_idle_fn_data_t* data);
+static void _be_idle_function_1();
+static void _be_idle_function_2();
+static void _be_idle_function_3();
 
 static cmt_msg_t _msg_be_send_status;
-static be_idle_fn_data_t _be_idle_function_data = { 0, 0 };
+static cmt_msg_t _msg_be_initialized;
+
+static be_idle_fn_data_t _msg_activity_data = { 0, 0 };
 
 static uint32_t _last_rtc_update_ts; // ms timestamp of the last time we updated the RTC
+static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
-#define LEAVE_IDLE_FUNCTION()    {_be_idle_function_data.idle_num++; _be_idle_function_data.msg_burst = 0;}
-#define LEAVE_MSG_HANDLER()    {_be_idle_function_data.idle_num = 0; _be_idle_function_data.msg_burst++;}
+#define LEAVE_IDLE_FUNCTION()    {_msg_activity_data.idle_num++; _msg_activity_data.msg_burst = 0;}
+#define LEAVE_MSG_HANDLER()    {_msg_activity_data.idle_num = 0; _msg_activity_data.msg_burst++;}
 
+static const msg_handler_entry_t _be_noop_handler_entry = { MSG_BACKEND_NOOP, _handle_be_noop };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
+static const msg_handler_entry_t _key_read_handler_entry = { MSG_KEY_READ, _handle_key_read };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
 static const msg_handler_entry_t _morse_decode_flush_handler_entry = { MSG_MORSE_DECODE_FLUSH, _handle_morse_decode_flush };
-static const msg_handler_entry_t _morse_to_decode_handler_entry = { MSG_MORSE_TO_DECODE, _handle_morse_to_decode };
+static const msg_handler_entry_t _morse_to_decode_handler_entry = { MSG_MORSE_CODE_SEQUENCE, _handle_morse_to_decode };
 static const msg_handler_entry_t _send_be_status_handler_entry = { MSG_SEND_BE_STATUS, _handle_send_be_status };
+static const msg_handler_entry_t _ui_initialized_handler_entry = { MSG_UI_INITIALIZED, _handle_ui_initialized };
 static const msg_handler_entry_t _wire_connect_handler_entry = { MSG_WIRE_CONNECT, _handle_wire_connect };
 static const msg_handler_entry_t _wire_connect_toggle_handler_entry = { MSG_WIRE_CONNECT_TOGGLE, _handle_wire_connect_toggle };
 static const msg_handler_entry_t _wire_disconnect_handler_entry = { MSG_WIRE_DISCONNECT, _handle_wire_disconnect };
@@ -63,6 +74,7 @@ static const msg_handler_entry_t _wire_set_handler_entry = { MSG_WIRE_SET, _hand
 static const msg_handler_entry_t* _be_handler_entries[] = {
     &_morse_to_decode_handler_entry,
     &_morse_decode_flush_handler_entry,
+    &_key_read_handler_entry,
     &_send_be_status_handler_entry,
     &_mks_keep_alive_send_handler_entry,
     &_wire_connect_handler_entry,
@@ -70,6 +82,8 @@ static const msg_handler_entry_t* _be_handler_entries[] = {
     &_wire_disconnect_handler_entry,
     &_wire_set_handler_entry,
     &_config_changed_handler_entry,
+    &_ui_initialized_handler_entry,
+    &_be_noop_handler_entry,
     ((msg_handler_entry_t*)0), // Last entry must be a NULL
 };
 
@@ -77,6 +91,7 @@ static const idle_fn _be_idle_functions[] = {
     // Cast needed do to definition needed to avoid circular reference.
     (idle_fn)_be_idle_function_1,
     (idle_fn)_be_idle_function_2,
+    (idle_fn)_be_idle_function_3,
     (idle_fn)0, // Last entry must be a NULL
 };
 
@@ -84,25 +99,36 @@ const msg_loop_cntx_t be_msg_loop_cntx = {
     BE_CORE_NUM, // Back-end runs on Core 0
     _be_handler_entries,
     _be_idle_functions,
-    &_be_idle_function_data,
 };
 
 // ====================================================================
 // Idle functions
 // ====================================================================
-static void _be_idle_function_1(be_idle_fn_data_t* data) {
+static void _be_idle_function_1() {
     // Something to do when there are no messages to process.
     options_read();  // Re-read the option switches
     LEAVE_IDLE_FUNCTION();
 }
 
-static void _be_idle_function_2(be_idle_fn_data_t* data) {
+static void _be_idle_function_2() {
     // Something to do when there are no messages to process.
-    uint32_t now = us_to_ms(time_us_64());
+    uint32_t now = now_ms();
     if (_last_rtc_update_ts + HOUR_IN_MS < now) {
+        _last_rtc_update_ts = now;
         const config_sys_t* cfgsys = config_sys();
         network_update_rtc(cfgsys->tz_offset);
-        _last_rtc_update_ts = now;
+    }
+    LEAVE_IDLE_FUNCTION();
+}
+
+static void _be_idle_function_3() {
+    // Something to do when there are no messages to process.
+    uint32_t now = now_ms();
+    if (_last_status_update_ts + _BE_STATUS_PULSE_PERIOD < now) {
+        // Post update status message
+        _msg_be_send_status.id = MSG_SEND_BE_STATUS;
+        postBEMsgNoWait(&_msg_be_send_status); // Don't wait. We will do it again in a bit.
+        _last_status_update_ts = now;
     }
     LEAVE_IDLE_FUNCTION();
 }
@@ -112,11 +138,38 @@ static void _be_idle_function_2(be_idle_fn_data_t* data) {
 // Message handler functions
 // ====================================================================
 
+static void _handle_be_noop(cmt_msg_t* msg) {
+    // Typically nothing ('noop'), but a place to put testing, etc.
+    // ZZZ Test `scheduled_msg_ms` overhead
+    // static int times = 0;
+    // static cmt_msg_t msg_time;
+    // static uint64_t first_t = 0;
+
+    // uint64_t now = now_us();
+    // if (first_t == 0) { first_t = now; }
+
+    // uint64_t last_time = msg->data.status;
+    // int64_t overhead = ((now - last_time) - 60000000);
+    // int64_t total_delta = (now - (first_t + (times * 60000000)));
+    // int32_t delay_per_ms = (60000000 / overhead);
+    // info_printf("%5d : %6lld (%ld) : %lld\n", times, overhead, delay_per_ms, total_delta);
+
+    // msg_time.id = MSG_BACKEND_NOOP;
+    // msg_time.data.ts_us = now_us(); // Get the 'next' -> 'last_time' fresh
+    // schedule_msg_in_ms(60000, &msg_time);
+
+    // times++;
+}
+
 static void _handle_config_changed(cmt_msg_t* msg) {
     // Update things that depend on the current configuration.
     const config_t* cfg = config_current();
     morse_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
     LEAVE_MSG_HANDLER();
+}
+
+static void _handle_key_read(cmt_msg_t* msg) {
+    kob_read_code_from_key(msg);
 }
 
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg) {
@@ -143,15 +196,22 @@ static void _handle_morse_to_decode(cmt_msg_t* msg) {
     LEAVE_MSG_HANDLER();
 }
 
-static cmt_msg_t _send_be_status_msg;
 static void _handle_send_be_status(cmt_msg_t* msg) {
-    // Post a message
-    _send_be_status_msg.id = MSG_UI_NOOP;
-    postUIMsgNoWait(&_send_be_status_msg);
-    // Set up to send status in a while
-    _msg_be_send_status.id = MSG_SEND_BE_STATUS;
-    schedule_msg_in_ms(500, &_msg_be_send_status);
+    // Update our status
     LEAVE_MSG_HANDLER();
+}
+
+static void _handle_ui_initialized(cmt_msg_t* msg) {
+    // The UI has reported that it is initialized.
+    // Since we are responding to a message, it means we
+    // are also initialized, so -
+    //
+    // Start things running.
+
+    // Kick off our key code reading
+    msg->id = MSG_KEY_READ;
+    msg->data.key_read_state.phase = KEY_READ_START;
+    kob_read_code_from_key(msg);
 }
 
 static void _handle_wire_disconnect(cmt_msg_t* msg) {
@@ -188,7 +248,9 @@ void be_init() {
         mkwire_init(hostname, port, cfg->station, cfg->wire);
     }
     morse_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
-    // Set up to send status to UI regularly
-    _msg_be_send_status.id = MSG_SEND_BE_STATUS;
-    schedule_msg_in_ms(STATUS_PULSE_PERIOD, &_msg_be_send_status);
+    kob_init(cfg->invert_key_input, cfg->key_has_closer);
+
+    // Done with the Backend Initialization - Let the UI know.
+    _msg_be_initialized.id = MSG_BE_INITIALIZED;
+    postUIMsgBlocking(&_msg_be_initialized);
 }
