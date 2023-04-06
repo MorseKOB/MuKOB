@@ -52,7 +52,7 @@ typedef struct _sys_config_ {
     bool is_set;
     //
     float tz_offset;
-    char* user_cfg_filename;
+    uint8_t boot_cfg_number;
     char* wifi_password;
     char* wifi_ssid;
 } config_sys_t;

@@ -19,6 +19,9 @@
 #include "net.h"
 #include "util.h"
 #include "mkwire.h"
+#include "ui_term.h"
+
+#define _CFG_VERSION_KEY "cfg_version"
 
 #define _CFG_MEM_MARKER_ 3224 // *Magic* & *Air*
 
@@ -34,7 +37,7 @@
  * method must be used. It correctly free's the additional malloc'ed objects as well
  * as the main object.
  */
-typedef struct _CFG_W_MARKER {
+typedef struct _CFG_W_MARKER_ {
     uint16_t marker;
     config_t config;
 } _cfg_w_marker_t;
@@ -66,52 +69,118 @@ typedef struct _CFG_W_MARKER {
  *  @param value The string 'value' from a line of a config file (Read operation). NULL (Write operation)
  *  @param buf The buffer to write the key=value into. NULL (Read operation)
  */
-typedef int32_t (*cfg_item_handler_fn)(config_t* cfg, const char* key, const char* value, char* buf);
+struct _CFG_ITEM_HANDLER_CLASS_;
 
-static int32_t _cih_config_version(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_auto_connect(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_code_type(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_key_input_invert(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_local(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_char_speed_min(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_sound(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_sounder(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_spacing(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_station(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_text_speed(config_t* cfg, const char* key, const char* value, char* buf);
-static int32_t _cih_wire(config_t* cfg, const char* key, const char* value, char* buf);
+typedef int(*cfg_item_reader_fn)(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+typedef int(*cfg_item_writer_fn)(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+
+struct _CFG_ITEM_HANDLER_CLASS_ {
+    const char* key;
+    const char short_opt;
+    const char* long_opt;
+    const cfg_item_reader_fn reader;
+    const cfg_item_writer_fn writer;
+};
+typedef struct _CFG_ITEM_HANDLER_CLASS_ cfg_item_handler_class_t;
+
+static int _cih_config_version_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_config_version_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_config_version =
+{ _CFG_VERSION_KEY, '\000', NULL, _cih_config_version_reader, _cih_config_version_writer };
+
+static int _cih_auto_connect_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_auto_connect_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_auto_connect =
+{ "auto_connect", 'C', "autoconnect", _cih_auto_connect_reader, _cih_auto_connect_writer };
+
+static int _cih_char_speed_min_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_char_speed_min_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_char_speed_min =
+{ "char_speed_min", 'c', "charspeed", _cih_char_speed_min_reader, _cih_char_speed_min_writer };
+
+static int _cih_code_type_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_code_type_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_code_type =
+{ "code_type", 'T', "type", _cih_code_type_reader, _cih_code_type_writer };
+
+static int _cih_host_port_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_host_port_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_host_port =
+{ "server_host_port", 'U', "url", _cih_host_port_reader, _cih_host_port_writer };
+
+static int _cih_key_has_closer_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_key_has_closer_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_key_has_closer =
+{ "key_has_closer", 'K', "keycloser", _cih_key_has_closer_reader, _cih_key_has_closer_writer };
+
+static int _cih_key_input_invert_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_key_input_invert_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_key_input_invert =
+{ "invert_key_input", 'M', "iki", _cih_key_input_invert_reader, _cih_key_input_invert_writer };
+
+static int _cih_local_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_local_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_local =
+{ "local", 'L', "local", _cih_local_reader, _cih_local_writer };
+
+static int _cih_remote_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_remote_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_remote =
+{ "remote", 'R', "remote", _cih_remote_reader, _cih_remote_writer };
+
+static int _cih_sound_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_sound_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_sound =
+{ "sound", 'a', "sound", _cih_sound_reader, _cih_sound_writer };
+
+static int _cih_sounder_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_sounder_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_sounder =
+{ "sounder", 'A', "sounder", _cih_sounder_reader, _cih_sounder_writer };
+
+static int _cih_spacing_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_spacing_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_spacing =
+{ "spacing", 's', "spacing", _cih_spacing_reader, _cih_spacing_writer };
+
+static int _cih_station_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_station_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_station =
+{ "station", 'S', "station", _cih_station_reader, _cih_station_writer };
+
+static int _cih_text_speed_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_text_speed_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_text_speed =
+{ "text_speed", 't', "textspeed", _cih_text_speed_reader, _cih_text_speed_writer };
+
+static int _cih_wire_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value);
+static int _cih_wire_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf);
+static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_wire =
+{ "wire", 'W', "wire", _cih_wire_reader, _cih_wire_writer };
 
 /**
- * @brief Array of config item handlers.
+ * @brief Array of config item class instances.
  * @ingroup config
  *
- * When processing a config file into a config object, each of these is called until one returns non-zero
- * (which means that it handled it (>0 success, <0 error)).
- *
- * When processing a config object into a config file (writing to the file), each handler is called and is
- * expected to write the value it handles into the file.
- *
- * The handlers should be in the order that the config lines should show up in the config file.
+ * The entries should be in the order that the config lines should be written to the config file.
  */
-static const cfg_item_handler_fn cfg_handlers[] = {
-    _cih_config_version,
-    _cih_auto_connect,
-    _cih_code_type,
-    _cih_key_has_closer,
-    _cih_local,
-    _cih_char_speed_min,
-    _cih_remote,
-    _cih_host_port,
-    _cih_sound,
-    _cih_sounder,
-    _cih_spacing,
-    _cih_station,
-    _cih_text_speed,
-    _cih_wire,
-    ((cfg_item_handler_fn)0), // NULL last item to signify end
+static const struct _CFG_ITEM_HANDLER_CLASS_* cfg_handlers[] = {
+    & _cihc_config_version,
+    & _cihc_auto_connect,
+    & _cihc_code_type,
+    & _cihc_key_has_closer,
+    & _cihc_key_input_invert,
+    & _cihc_local,
+    & _cihc_char_speed_min,
+    & _cihc_remote,
+    & _cihc_host_port,
+    & _cihc_sound,
+    & _cihc_sounder,
+    & _cihc_spacing,
+    & _cihc_station,
+    & _cihc_text_speed,
+    & _cihc_wire,
+    ((const struct _CFG_ITEM_HANDLER_CLASS_*)0), // NULL last item to signify end
 };
 
 /**
@@ -141,64 +210,90 @@ static const cfg_item_handler_fn cfg_handlers[] = {
  *  @param value The string 'value' from a line of a system config file (Read operation). NULL (Write operation)
  *  @param buf The buffer to write the key=value into. NULL (Read operation)
  */
-typedef int32_t(*sys_cfg_item_handler_fn)(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
+struct _SYS_CFG_ITEM_HANDLER_CLASS_;
+typedef int(*sys_cfg_item_reader_fn)(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+typedef int(*sys_cfg_item_writer_fn)(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
 
-static int32_t _scih_config_version(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
-static int32_t _scih_tz_offset(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
-static int32_t _scih_user_cfg_filename(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
-static int32_t _scih_wifi_password(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
-static int32_t _scih_ssid(config_sys_t* sys_cfg, const char* key, const char* value, char* buf);
+struct _SYS_CFG_ITEM_HANDLER_CLASS_ {
+    const char* key;
+    const sys_cfg_item_reader_fn reader;
+    const sys_cfg_item_writer_fn writer;
+};
 
-static const sys_cfg_item_handler_fn sys_cfg_handlers[] = {
-    _scih_config_version,
-    _scih_tz_offset,
-    _scih_user_cfg_filename,
-    _scih_wifi_password,
-    _scih_ssid,
-    ((sys_cfg_item_handler_fn)0), // NULL last item to signify end
+
+static int _scih_config_version_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+static int _scih_config_version_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_config_version =
+{ _CFG_VERSION_KEY, _scih_config_version_reader, _scih_config_version_writer };
+
+static int _scih_tz_offset_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+static int _scih_tz_offset_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_tz_offset =
+{ "tz_offset", _scih_tz_offset_reader, _scih_tz_offset_writer };
+
+static int _scih_boot_cfg_number_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+static int _scih_boot_cfg_number_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_boot_cfg_number =
+{ "bcfg_number", _scih_boot_cfg_number_reader, _scih_boot_cfg_number_writer };
+
+static int _scih_wifi_password_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+static int _scih_wifi_password_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_wifi_password =
+{ "wifi_pw", _scih_wifi_password_reader, _scih_wifi_password_writer };
+
+static int _scih_ssid_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value);
+static int _scih_ssid_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_ssid =
+{ "wifi_ssid", _scih_ssid_reader, _scih_ssid_writer };
+
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_* sys_cfg_handlers[] = {
+    & _scihc_config_version,
+    & _scihc_tz_offset,
+    & _scihc_boot_cfg_number,
+    & _scihc_wifi_password,
+    & _scihc_ssid,
+    ((const struct _SYS_CFG_ITEM_HANDLER_CLASS_*)0), // NULL last item to signify end
 };
 
 static const char* _sys_cfg_filename = "mukob.sys.cfg";
-static char* _current_cfg_filename = NULL;
+static config_sys_t _system_cfg = { 1, false, 0.0, -1, NULL, NULL };
 
-static config_sys_t _system_cfg = { 1, false, 0.0, NULL, NULL, NULL };
+#define _CFG_BOOT_FILENAME_FORMAT "mukob.%hu.cfg"
+static int _current_cfg_number;
+static char _boot_cfg_filename[16];
+static char _current_cfg_filename[16];
 static config_t* _current_cfg;
 
-static int32_t _cih_config_version(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "cfg_version";
+static int _cih_config_version_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int iv = atoi(value);
+    cfg->cfg_version = (uint16_t)iv;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            int iv = atoi(value);
-            cfg->cfg_version = (uint16_t)iv;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 10 + 2; // key=value\n
-        retval = snprintf(buf, max_len, "# Config file/format version.\n%s=%hd\n\n", our_key, cfg->cfg_version);
-    }
+    return (1);
+}
+
+static int _cih_config_version_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    // format the value we are responsible for
+    int retval = sprintf(buf, "# Config file/format version.\n%s=%hd", self->key, cfg->cfg_version);
+
     return (retval);
 }
 
-static int32_t _cih_auto_connect(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "auto_connect";
+static int _cih_auto_connect_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->auto_connect = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Autoconnect to wire on startup.\n%s=%hd\n", our_key, binary_from_bool(cfg->auto_connect));
-    }
+    bool b = bool_from_str(value);
+    cfg->auto_connect = b;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_auto_connect_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Autoconnect to wire on startup.\n%s=%hd", self->key, binary_from_bool(cfg->auto_connect));
+
     return (retval);
 }
 
@@ -207,183 +302,180 @@ static const char* _code_type_enum_names[] = {
     "INTERNATIONAL",
 };
 
-static int32_t _cih_code_type(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "code_type";
+static int _cih_code_type_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            retval = -1;
-            for (int i = 0; i < sizeof(_code_type_enum_names); i++) {
-                if (strcmp(_code_type_enum_names[i], value) == 0) {
-                    cfg->code_type = (code_type_t)i;
-                        retval = 1;
-                        break;
-                }
-            }
+    for (int i = 0; i < sizeof(_code_type_enum_names); i++) {
+        if (strcmp(_code_type_enum_names[i], value) == 0) {
+            cfg->code_type = (code_type_t)i;
+            retval = 1;
+            break;
         }
     }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 13 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Code type (AMERICAN | INTERNATIONAL).\n%s=%s\n", our_key, _code_type_enum_names[cfg->code_type]);
-    }
+
     return (retval);
 }
 
-static int32_t _cih_key_has_closer(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "key_has_closer";
+static int _cih_code_type_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->key_has_closer = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Does the key have a physical closer.\n%s=%hd\n", our_key, binary_from_bool(cfg->key_has_closer));
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Code type (AMERICAN | INTERNATIONAL).\n%s=%s", self->key, _code_type_enum_names[cfg->code_type]);
+
     return (retval);
 }
 
-static int32_t _cih_key_input_invert(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "key_input_invert";
+static int _cih_key_has_closer_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->invert_key_input = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Invert the key input (used for modem input).\n%s=%hd\n", our_key, binary_from_bool(cfg->invert_key_input));
-    }
+    bool b = bool_from_str(value);
+    cfg->key_has_closer = b;
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _cih_local(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "local";
+static int _cih_key_has_closer_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->local = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Sound key input locally.\n%s=%hd\n", our_key, binary_from_bool(cfg->local));
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Does the key have a physical closer.\n%s=%hd", self->key, binary_from_bool(cfg->key_has_closer));
+
     return (retval);
 }
 
-static int32_t _cih_char_speed_min(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "char_speed_min";
+static int _cih_key_input_invert_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            int iv = atoi(value);
-            cfg->char_speed_min = (uint8_t)iv;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# The minimum character speed. Used for Farnsworth.\n%s=%hd\n", our_key, cfg->char_speed_min);
-    }
+    bool b = bool_from_str(value);
+    cfg->invert_key_input = b;
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _cih_remote(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "remote";
+static int _cih_key_input_invert_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->remote = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Send key input to the remote server.\n%s=%hd\n", our_key, binary_from_bool(cfg->remote));
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Invert the key input (used for modem input).\n%s=%hd", self->key, binary_from_bool(cfg->invert_key_input));
+
     return (retval);
 }
 
-static int32_t _cih_host_port(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "host_and_port";
+static int _cih_local_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            if (cfg->host_and_port) {
-                free(cfg->host_and_port);
-            }
-            cfg->host_and_port = str_value_create(value);
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + NET_URL_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# host:port of MorseKOB Server.\n%s=%s\n", our_key, cfg->host_and_port);
-    }
+    bool b = bool_from_str(value);
+    cfg->local = b;
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _cih_sound(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "sound";
+static int _cih_local_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->sound = b;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Use the board sound (tone) for code sounding.\n%s=%hd\n", our_key, binary_from_bool(cfg->sound));
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Sound key input locally.\n%s=%hd", self->key, binary_from_bool(cfg->local));
+
     return (retval);
 }
 
-static int32_t _cih_sounder(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "sounder";
+static int _cih_char_speed_min_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            bool b = bool_from_str(value);
-            cfg->sounder = b;
-            retval = 1;
-        }
+    int iv = atoi(value);
+    cfg->char_speed_min = (uint8_t)iv;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_char_speed_min_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# The minimum character speed. Used for Farnsworth.\n%s=%hd", self->key, cfg->char_speed_min);
+
+    return (retval);
+}
+
+static int _cih_remote_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
+
+    bool b = bool_from_str(value);
+    cfg->remote = b;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_remote_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Send key input to the remote server.\n%s=%hd", self->key, binary_from_bool(cfg->remote));
+
+    return (retval);
+}
+
+static int _cih_host_port_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
+
+    if (cfg->host_and_port) {
+        free(cfg->host_and_port);
     }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 1 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Use the sounder for code sounding.\n%s=%hd\n", our_key, binary_from_bool(cfg->sounder));
-    }
+    cfg->host_and_port = str_value_create(value);
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_host_port_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# host:port of MorseKOB Server.\n%s=%s", self->key, cfg->host_and_port);
+
+    return (retval);
+}
+
+static int _cih_sound_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
+
+    bool b = bool_from_str(value);
+    cfg->sound = b;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_sound_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Use the board sound (tone) for code sounding.\n%s=%hd", self->key, binary_from_bool(cfg->sound));
+
+    return (retval);
+}
+
+static int _cih_sounder_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
+
+    bool b = bool_from_str(value);
+    cfg->sounder = b;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _cih_sounder_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Use the sounder for code sounding.\n%s=%hd", self->key, binary_from_bool(cfg->sounder));
+
     return (retval);
 }
 
@@ -393,197 +485,195 @@ static const char* _spacing_enum_names[] = {
     "WORD",
 };
 
-static int32_t _cih_spacing(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "spacing";
+static int _cih_spacing_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            retval = -1;
-            for (int i = 0; i < sizeof(_spacing_enum_names); i++) {
-                if (strcmp(_spacing_enum_names[i], value) == 0) {
-                    cfg->spacing = (code_spacing_t)i;
-                    retval = 1;
-                    break;
-                }
-            }
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 4 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Where to insert space for Farnsworth (NONE | CHAR | WORD).\n%s=%s\n", our_key, _spacing_enum_names[cfg->spacing]);
-    }
-    return (retval);
-}
-
-static int32_t _cih_station(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "station";
-
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            if (cfg->station) {
-                free(cfg->station);
-            }
-            cfg->station = str_value_create(value);
+    for (int i = 0; i < sizeof(_spacing_enum_names); i++) {
+        if (strcmp(_spacing_enum_names[i], value) == 0) {
+            cfg->spacing = (code_spacing_t)i;
             retval = 1;
+            break;
         }
     }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + MKOBSERVER_STATION_ID_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Station ID.\n%s=%s\n", our_key, cfg->station);
-    }
+
     return (retval);
 }
 
-static int32_t _cih_text_speed(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "text_speed";
+static int _cih_spacing_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            int iv = atoi(value);
-            cfg->text_speed = (uint8_t)iv;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Text speed (in WPM).\n%s=%hd\n", our_key, cfg->text_speed);
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Where to insert space for Farnsworth (NONE | CHAR | WORD).\n%s=%s", self->key, _spacing_enum_names[cfg->spacing]);
+
     return (retval);
 }
 
-static int32_t _cih_wire(config_t* cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "wire";
+static int _cih_station_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            int iv = atoi(value);
-            cfg->wire = (uint16_t)iv;
-            retval = 1;
-        }
+    if (cfg->station) {
+        free(cfg->station);
     }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 10 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# MorseKOB Wire.\n%s=%hd\n", our_key, cfg->wire);
-    }
+    cfg->station = str_value_create(value);
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _scih_config_version(config_sys_t* sys_cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "cfg_version";
+static int _cih_station_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            int iv = atoi(value);
-            sys_cfg->cfg_version = (uint16_t)iv;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 10 + 2; // key=value\n
-        retval = snprintf(buf, max_len, "# Config file/format version.\n%s=%hd\n\n", our_key, sys_cfg->cfg_version);
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Station ID.\n%s=%s", self->key, cfg->station);
+
     return (retval);
 }
 
-static int32_t _scih_tz_offset(config_sys_t* sys_cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "tz_offset";
+static int _cih_text_speed_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        if (strcmp(key, our_key) == 0) {
-            float dv = (float)atof(value);
-            sys_cfg->tz_offset = dv;
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + 5 + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# Timezone offset (hours from GMT).\n%s=%.1f\n", our_key, sys_cfg->tz_offset);
-    }
+    int iv = atoi(value);
+    cfg->text_speed = (uint8_t)iv;
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _scih_user_cfg_filename(config_sys_t* sys_cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "ucfg_filename";
+static int _cih_text_speed_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            if (sys_cfg->user_cfg_filename) {
-                free(sys_cfg->user_cfg_filename);
-            }
-            sys_cfg->user_cfg_filename = str_value_create(value);
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + FF_MAX_LFN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# User config file to load initially.\n%s=%s\n", our_key, sys_cfg->user_cfg_filename);
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Text speed (in WPM).\n%s=%hd", self->key, cfg->text_speed);
+
     return (retval);
 }
 
-static int32_t _scih_wifi_password(config_sys_t* sys_cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "wifi_pw";
+static int _cih_wire_reader(const struct _CFG_ITEM_HANDLER_CLASS_* self, config_t* cfg, const char* value) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            if (sys_cfg->wifi_password) {
-                free(sys_cfg->wifi_password);
-            }
-            sys_cfg->wifi_password = str_value_create(value);
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + NET_PASSWORD_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# WiFi password.\n%s=%s\n", our_key, sys_cfg->wifi_password);
-    }
+    int iv = atoi(value);
+    cfg->wire = (uint16_t)iv;
+    retval = 1;
+
     return (retval);
 }
 
-static int32_t _scih_ssid(config_sys_t* sys_cfg, const char* key, const char* value, char* buf) {
-    int32_t retval = 0;
-    char* our_key = "wifi_ssid";
+static int _cih_wire_writer(const struct _CFG_ITEM_HANDLER_CLASS_* self, const config_t* cfg, char* buf) {
+    int retval = 0;
 
-    if (key) {
-        // See if it is the key we handle
-        if (strcmp(key, our_key) == 0) {
-            if (sys_cfg->wifi_ssid) {
-                free(sys_cfg->wifi_ssid);
-            }
-            sys_cfg->wifi_ssid = str_value_create(value);
-            retval = 1;
-        }
-    }
-    else if (buf) {
-        // format the value we are responsible for
-        int max_len = strlen(our_key) + 1 + NET_SSID_MAX_LEN + 1; // key=value\n
-        retval = snprintf(buf, max_len, "# WiFi SSID (name)\n%s=%s\n", our_key, sys_cfg->wifi_ssid);
-    }
+    // format the value we are responsible for
+    retval = sprintf(buf, "# MorseKOB Wire.\n%s=%hd", self->key, cfg->wire);
+
     return (retval);
 }
 
-int32_t _process_cfg_line(config_t* config, char* line) {
-    int32_t retval = 0;
+static int _scih_config_version_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value) {
+    int retval = 0;
+
+    int iv = atoi(value);
+    _system_cfg.cfg_version = (uint16_t)iv;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _scih_config_version_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Config file/format version.\n%s=%hd", self->key, _system_cfg.cfg_version);
+
+    return (retval);
+}
+
+static int _scih_tz_offset_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value) {
+    int retval = 0;
+
+    float dv = (float)atof(value);
+    _system_cfg.tz_offset = dv;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _scih_tz_offset_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Timezone offset (hours from GMT).\n%s=%.1f", self->key, _system_cfg.tz_offset);
+
+    return (retval);
+}
+
+static int _scih_boot_cfg_number_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value) {
+    int retval = 0;
+
+    int n = atoi(value);
+    if (n > 0 && n < 10) {
+        _system_cfg.boot_cfg_number = n;
+    }
+    else {
+        _system_cfg.boot_cfg_number = 0; // Flag as invalid
+        error_printf("Config - Invalid value for boot_cfg_number: %s\n", value);
+        retval = (-1);
+    }
+
+    return (retval);
+}
+
+static int _scih_boot_cfg_number_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# Config file to load at boot.\n%s=%hu", self->key, _system_cfg.boot_cfg_number);
+
+    return (retval);
+}
+
+static int _scih_wifi_password_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value) {
+    int retval = 0;
+
+    if (_system_cfg.wifi_password) {
+        free(_system_cfg.wifi_password);
+    }
+    _system_cfg.wifi_password = str_value_create(value);
+    retval = 1;
+
+    return (retval);
+}
+
+static int _scih_wifi_password_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# WiFi password.\n%s=%s", self->key, _system_cfg.wifi_password);
+
+    return (retval);
+}
+
+static int _scih_ssid_reader(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, const char* value) {
+    int retval = 0;
+
+    if (_system_cfg.wifi_ssid) {
+        free(_system_cfg.wifi_ssid);
+    }
+    _system_cfg.wifi_ssid = str_value_create(value);
+    retval = 1;
+
+    return (retval);
+}
+
+static int _scih_ssid_writer(const struct _SYS_CFG_ITEM_HANDLER_CLASS_* self, char* buf) {
+    int retval = 0;
+
+    // format the value we are responsible for
+    retval = sprintf(buf, "# WiFi SSID (name)\n%s=%s", self->key, _system_cfg.wifi_ssid);
+
+    return (retval);
+}
+
+int _process_cfg_line(config_t* config, char* line) {
+    int retval = 0;
     char* cfgline = strnltonull(strskipws(line));
     char *key;
     char *value;
@@ -601,23 +691,24 @@ int32_t _process_cfg_line(config_t* config, char* line) {
     }
 
     // Run through the handlers and see if one handles it...
-    const cfg_item_handler_fn* handlers = cfg_handlers;
+    const struct _CFG_ITEM_HANDLER_CLASS_** handlers = cfg_handlers;
     while (*handlers) {
-        cfg_item_handler_fn handler = *handlers;
-        retval = handler(config, key, value, NULL);
-        if (0 != retval) {
+        const struct _CFG_ITEM_HANDLER_CLASS_* handler = *handlers;
+        if (strcmp(handler->key, key) == 0) {
+            retval = handler->reader(handler, config, value);
             return (retval);
         }
         handlers++;
     }
+    // No handler found for this key
     retval = (-1);
 
     warn_printf("Config - Unknown key: '%s'\n", key);
     return (retval);
 }
 
-int32_t _process_sys_cfg_line(char* line) {
-    int32_t retval = 0;
+int _process_sys_cfg_line(char* line) {
+    int retval = 0;
     char* cfgline = strnltonull(strskipws(line));
     char* key;
     char* value;
@@ -636,15 +727,16 @@ int32_t _process_sys_cfg_line(char* line) {
 
 
     // Run through the handlers and see if one handles it...
-    const sys_cfg_item_handler_fn* handlers = sys_cfg_handlers;
+    const struct _SYS_CFG_ITEM_HANDLER_CLASS_** handlers = sys_cfg_handlers;
     while (*handlers) {
-        const sys_cfg_item_handler_fn handler = *handlers;
-        retval = handler(&_system_cfg, key, value, NULL);
-        if (0 != retval) {
+        const struct _SYS_CFG_ITEM_HANDLER_CLASS_* handler = *handlers;
+        if (strcmp(handler->key, key) == 0) {
+            retval = handler->reader(handler, value);
             return (retval);
         }
         handlers++;
     }
+    // No handler found for this key
     retval = (-1);
 
     warn_printf("System Config - Unknown key: '%s'\n", key);
@@ -657,8 +749,21 @@ int32_t _process_sys_cfg_line(char* line) {
 
 static int _config_cmd_configure(int argc, char** argv, const char* unparsed) {
     const config_t* cfg = config_current();
-    cmd_help_display(&cmd_cfg_entry, HELP_DISP_USAGE);
-    return (-1);
+    static char buf[512];
+
+    // List the current configuration
+    ui_term_printf("Current Config: %d  Boot Config: %d\n", _current_cfg_number, _system_cfg.boot_cfg_number);
+    // Run through the handlers and have each list the configuration value...
+    const struct _CFG_ITEM_HANDLER_CLASS_** handlers = cfg_handlers;
+    while (*handlers) {
+        const struct _CFG_ITEM_HANDLER_CLASS_* handler = *handlers;
+        int len = sprintf(buf, "(-%c | --%s)  ", handler->short_opt, handler->long_opt);
+        handler->writer(handler, cfg, &buf[len-1]);
+        ui_term_printf("%s\n", buf);
+        handlers++;
+    }
+
+    return (0);
 }
 
 const cmd_handler_entry_t cmd_cfg_entry = {
@@ -673,7 +778,7 @@ const cmd_handler_entry_t cmd_configure_entry = {
     _config_cmd_configure,
     4,
     "configure",
-    "[[opt1=value1] ... [optn=valuen]]",
+    "[(optname=value | -<flag>/--<longflag> value) [...]]",
     "List current user configuration. Set configuration value(s).",
 };
 
@@ -711,7 +816,7 @@ void config_free(config_t* cfg) {
 int config_init(void) {
     // Set default values in the system config
     _system_cfg.cfg_version = CONFIG_VERSION;
-    _system_cfg.user_cfg_filename = NULL;
+    _system_cfg.boot_cfg_number = -1; // Invalid number as flag
     _system_cfg.wifi_ssid = NULL;
     _system_cfg.wifi_password = NULL;
     // Create a config object to use as the current
@@ -733,7 +838,7 @@ int config_init(void) {
             fr = f_mount(&fs, "0:", 1);
             if (fr != FR_OK) {
                 ret = 1;
-                error_printf("Config: Could not mount filesystem (%d)\r\n", fr);
+                error_printf("Config - Could not mount filesystem (%d)\r\n", fr);
                 break;
             }
 
@@ -741,7 +846,7 @@ int config_init(void) {
             fr = f_open(&fil, _sys_cfg_filename, FA_READ);
             if (fr != FR_OK) {
                 ret = 2;
-                error_printf("Config: Could not open file (%d)\r\n", fr);
+                error_printf("Config - Could not open file (%d)\r\n", fr);
                 break;
             }
             while (f_gets(buf, sizeof(buf), &fil)) {
@@ -751,7 +856,7 @@ int config_init(void) {
             fr = f_close(&fil);
             if (FR_OK != fr) {
                 ret = 3;
-                error_printf("Config: Could not close file (%d)\r\n", fr);
+                error_printf("Config - Could not close file (%d)\r\n", fr);
                 break;
             }
             // See if we got values for all needed settigs
@@ -779,26 +884,49 @@ int config_init(void) {
             _system_cfg.is_set = is_set;
 
             // Now read a user config
-            fr = f_open(&fil, _system_cfg.user_cfg_filename, FA_READ);
+            _current_cfg_number = _system_cfg.boot_cfg_number;
+            if (_current_cfg_number < 1) {
+                _current_cfg_number = 1;
+                error_printf("Config - Boot configuration number is not valid. Using '1'.\n");
+            }
+            sprintf(_boot_cfg_filename, _CFG_BOOT_FILENAME_FORMAT, _current_cfg_number);
+            fr = f_open(&fil, _boot_cfg_filename, FA_READ);
             if (FR_OK != fr) {
                 ret = 2;
-                error_printf("Config: Could not open file (%d)\r\n", fr);
+                error_printf("Config - Could not open file '%s' (Error: %d). Trying others...\n", _boot_cfg_filename, fr);
+                // Try others...
+                int cn = _current_cfg_number;
+                _current_cfg_number = -1;
+                for (int i = 1; i < 10; i++) {
+                    if (i == cn) {
+                        continue; // No need to try this one
+                    }
+                    sprintf(_boot_cfg_filename, _CFG_BOOT_FILENAME_FORMAT, i);
+                    fr = f_open(&fil, _boot_cfg_filename, FA_READ);
+                    if (FR_OK == fr) {
+                        // We can open this one.
+                        error_printf(
+                            "Config - Using '%s' (instead of '%u')...\n", _boot_cfg_filename, cn
+                        );
+                        _current_cfg_number = i;
+                        break;
+                    }
+                }
+            }
+            if (_current_cfg_number < 1) {
+                error_printf("Config - Could not find a user config file to use. Using default values.\n");
                 break;
             }
             while (f_gets(buf, sizeof(buf), &fil)) {
                 _process_cfg_line(config, buf);
             }
             // Save the filename we used
-            if (_current_cfg_filename) {
-                free(_current_cfg_filename);
-            }
-            _current_cfg_filename = str_value_create(_system_cfg.user_cfg_filename);
+            strcpy(_current_cfg_filename, _boot_cfg_filename);
             // Close file
             fr = f_close(&fil);
             if (FR_OK != fr) {
                 ret = 3;
-                error_printf("Config: Could not close file (%d)\r\n", fr);
-                break;
+                error_printf("Config - Could not close file '%s' (Error: %d)\n", _boot_cfg_filename, fr);
             }
 
             // Unmount drive
