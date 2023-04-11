@@ -100,7 +100,7 @@ extern void morse_decode_flush();
  * @ingroup morse
  *
  * This encodes a character into a list of code elements based on the configuration
- * that was set in the `morse_init`.
+ * that was set in the `morse_module_init`.
  *
  * @param c The character to encode.
  * @return mcode_seq_t Structure of code elements. The structure and the code list must be free'd.
@@ -119,7 +119,7 @@ extern mcode_seq_t* morse_encode(char c);
  * @param code_type Code type to use - American or International
  * @param spacing Where to insert space for Farnsworth timing (None, between characters, between words).
  */
-extern void morse_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spacing_t spacing);
+extern void morse_module_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spacing_t spacing);
 
 #ifdef __cplusplus
     }

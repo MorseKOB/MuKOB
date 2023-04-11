@@ -18,9 +18,9 @@ char o1306_full_screen_text[DISP_CHAR_LINES * DISP_CHAR_COLS];
 /*
  * This must be called before using the display.
  */
-void disp_init(void) {
+void disp_module_init(void) {
     // run through the complete initialization process
-    oled_init();
+    oled_module_init();
     disp_clear(true);
 }
 

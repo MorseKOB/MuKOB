@@ -62,7 +62,7 @@ wire_connected_state_t mkwire_connected_state();
  * @param office_id The local Station/Office ID.
  * @param wire_no The wire number to use for connect.
  */
-void mkwire_init(char *mkobs_url, uint16_t port, char *office_id, uint16_t wire_no);
+void mkwire_module_init(char *mkobs_url, uint16_t port, char *office_id, uint16_t wire_no);
 
 /*!
  * @brief Connected to KOB Server status.

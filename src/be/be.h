@@ -27,7 +27,14 @@ extern const msg_loop_cntx_t be_msg_loop_cntx;
  * @brief Initialize the back-end
  * @ingroup backend
  */
-extern void be_init(void);
+extern void be_module_init(void);
+
+/**
+ * @brief Start the Backend (core 0 (endless) message-loop).
+ * @ingroup backend
+ */
+extern void start_be(void);
+
 
 #ifdef __cplusplus
 }

@@ -56,7 +56,7 @@ extern "C" {
 #define UI_TERM_STATUS_COLOR_FG TERM_CHR_COLOR_BR_YELLOW
 #define UI_TERM_STATUS_COLOR_BG TERM_CHR_COLOR_BLUE
 #define UI_TERM_STATUS_LINE (UI_TERM_LINES)
-#define UI_TERM_STATUS_LOGO_COL (UI_TERM_COLUMNS - 3)
+#define UI_TERM_STATUS_LOGO_COL (UI_TERM_COLUMNS - 2)
 #define UI_TERM_STATUS_TIME_COL ((UI_TERM_COLUMNS / 2) - 3)
 
 // Scroll margins
@@ -69,12 +69,14 @@ extern "C" {
 // Labels
 #define UI_TERM_WIRE_LABEL "Wire:"
 #define UI_TERM_SPEED_LABEL "Speed:"
-#define AES_LOGO "AES"
+#define AES_LOGO "ÆS"
 
 typedef struct _TERM_COLOR_PAIR_ {
     term_color_t fg;
     term_color_t bg;
 } term_color_pair_t;
+
+#define UI_TERM_GETLINE_MAX_LEN_  256 // Maximum line length (including /0) for the `term_getline` function
 
 /**
  * @brief Function prototype registered to handle control characters.

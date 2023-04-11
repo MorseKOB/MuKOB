@@ -433,7 +433,7 @@ mcode_seq_t* morse_encode(char c) {
     return (mcode_seq);
 }
 
-void morse_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spacing_t spacing) {
+void morse_module_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, code_spacing_t spacing) {
     _code_type = code_type;
 
     // Decode values

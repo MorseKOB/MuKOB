@@ -68,7 +68,7 @@ void oled_send_buf(uint8_t buf[], int buflen) {
     free(temp_buf);
 }
 
-void oled_init() {
+void oled_module_init() {
     // some of these commands are not strictly necessary as the reset
     // process defaults to some of these but they are shown here
     // to demonstrate what the initialization sequence looks like

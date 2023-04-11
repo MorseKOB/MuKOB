@@ -76,6 +76,10 @@ typedef enum _STRDATETIME_BIT_ {
 // SDTC_YEAR_2DIGITS = 0x1008, // 2 digit year (implies date)
 
 
+bool binary_from_int(int b) {
+    return (0 == b ? 0 : 1);
+}
+
 bool bool_from_str(const char* str) {
     char upstr[strlen(str)+1];
 
@@ -148,9 +152,11 @@ const char* num_ordinal(int num){
 }
 
 char* str_value_create(const char* value) {
-    char* malloced_value;
-    malloced_value = malloc(strlen(value) + 1);
-    strcpy(malloced_value, value);
+    char* malloced_value = NULL;
+    if (value) {
+        malloced_value = malloc(strlen(value) + 1);
+        strcpy(malloced_value, value);
+    }
 
     return (malloced_value);
 }
@@ -233,8 +239,8 @@ extern char* strnltonull(char* str){
     return (retstr);
 }
 
-char* strskipws(char* str) {
-    char* retstr = str;
+const char* strskipws(const char* str) {
+    const char* retstr = str;
     while (*retstr && (*retstr == ' ' || *retstr == '\t')) {
         retstr++;
     }

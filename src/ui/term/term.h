@@ -376,7 +376,7 @@ extern int term_getc(void);
  * This initializes the terminal type and screen size and sets up an input handler
  * from the standard input device.
  */
-extern void term_init(void);
+extern void term_module_init(void);
 
 /**
  * @brief Return status of available input.

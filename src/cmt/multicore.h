@@ -81,7 +81,7 @@ bool get_core1_msg_nowait(cmt_msg_t* msg);
  * @see start_core1()
  *
  */
-void multicore_init();
+void multicore_module_init();
 
 /**
  * @brief Post a message to Core 0 (using the Core 0 queue). Block until it can be posted.

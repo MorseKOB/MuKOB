@@ -100,7 +100,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
     }
     udp_op_context_t* op_context = malloc(sizeof(udp_op_context_t));
     if (!op_context) {
-        error_printf("UDP Single Operation - failed to allocate context\n");
+        error_printf(false, "UDP Single Operation - failed to allocate context\n");
         return ERR_MEM;
     }
 
@@ -122,7 +122,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
         _udp_bind_dns_found(hostname, &op_context->ipaddr, (void*)op_context);
     }
     else if (status != ERR_INPROGRESS) { // ERR_INPROGRESS means expect a callback
-        error_printf("DNS request failed\n");
+        error_printf(false, "DNS request failed\n");
         op_context->status = status;
     }
 
@@ -137,7 +137,7 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
     }
     udp_op_context_t* op_context = malloc(sizeof(udp_op_context_t));
     if (!op_context) {
-        error_printf("UDP Single Operation - failed to allocate context\n");
+        error_printf(false, "UDP Single Operation - failed to allocate context\n");
         return ERR_MEM;
     }
 
@@ -159,7 +159,7 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
         _udp_sop_dns_found(hostname, &op_context->ipaddr, op_context);
     }
     else if (status != ERR_INPROGRESS) { // ERR_INPROGRESS means expect a callback
-        error_printf("UDP Single Operation DNS request failed\n");
+        error_printf(false, "UDP Single Operation DNS request failed\n");
         free(op_context);
     }
 
@@ -169,7 +169,7 @@ err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf
 bool wifi_connect() {
     if (!_wifi_connected) {
         if (cyw43_arch_wifi_connect_timeout_ms(_wifi_ssid, _wifi_password, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
-            error_printf("failed to connect\n");
+            error_printf(false, "failed to connect\n");
             return (false);
         }
         _wifi_connected = true;
@@ -252,7 +252,7 @@ static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handl
             _ntp_set_datetime(status, &seconds_from_epoch, tz_offset);
         }
         else {
-            error_printf("invalid NTP response\n");
+            error_printf(false, "invalid NTP response\n");
             _ntp_set_datetime(ERR_VAL, NULL, tz_offset);
         }
         if (p->ref > 0) {
@@ -288,21 +288,21 @@ static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, v
                 if (status != ERR_OK) {
                     udp_remove(udp_pcb);
                     udp_pcb = NULL;
-                    error_printf("UDP Bind could not connect to %s:%hu\n", hostname, op_context->port);
+                    error_printf(false, "UDP Bind could not connect to %s:%hu\n", hostname, op_context->port);
                 }
             }
             else {
                 udp_remove(udp_pcb);
                 udp_pcb = NULL;
-                error_printf("UDP Bind could not bind to local interface\n");
+                error_printf(false, "UDP Bind could not bind to local interface\n");
             }
         }
         else {
-            error_printf("UDP Bind could not allocate a UDP PCB\n");
+            error_printf(false, "UDP Bind could not allocate a UDP PCB\n");
         }
     }
     else {
-        error_printf("UDP Bind DNS request failed for hostname: '%s'\n", hostname);
+        error_printf(false, "UDP Bind DNS request failed for hostname: '%s'\n", hostname);
         status = ERR_RTE;
     }
 
@@ -317,7 +317,7 @@ static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state)
     udp_bind_handler_fn bind_handler = op_context->bind_handler;
 
     cancel_alarm(id);
-    error_printf("UDP Bind DNS request failed with timeout (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
+    error_printf(false, "UDP Bind DNS request failed with timeout (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
 
     free(op_context);
 
@@ -356,21 +356,21 @@ static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, vo
                     return;
                 }
                 // status set
-                error_printf("UDP Op - Error sending message: %d\n", status);
+                error_printf(false, "UDP Op - Error sending message: %d\n", status);
             }
             else {
                 // status set
-                error_printf("UDP Op - Cannot bind\n");
+                error_printf(false, "UDP Op - Cannot bind\n");
             }
         }
         else {
             status = ERR_MEM;
-            error_printf("UDP Op - Cannot create PCB\n");
+            error_printf(false, "UDP Op - Cannot create PCB\n");
         }
     }
     else {
         status = ERR_RTE;
-        error_printf("UDP Op - DNS request failed for hostname: '%s'\n", hostname);
+        error_printf(false, "UDP Op - DNS request failed for hostname: '%s'\n", hostname);
     }
     // If we get here it means that there was a problem. Free resources.
     free(op_context);
@@ -413,7 +413,7 @@ static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state) {
     udp_op_context_t* op_context = (udp_op_context_t*)request_state;
 
     cancel_alarm(id);
-    error_printf("UDP - Single operation, timeout waiting for response (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
+    error_printf(false, "UDP - Single operation, timeout waiting for response (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
 
     struct pbuf* p = op_context->p;
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;

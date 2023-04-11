@@ -42,7 +42,7 @@ int test_config_new_free(){
     config_t* cfg = config_new(NULL);
     if (NULL == cfg) {
         errors++;
-        error_printf("Test - Config: config_new returned NULL.\n");
+        error_printf(true, "Test - Config: config_new returned NULL.\n");
         return (errors);
     }
     cfg->cfg_version = 9876;
@@ -50,18 +50,18 @@ int test_config_new_free(){
     config_t* cfg_copy = config_new(cfg);
     if (NULL == cfg_copy) {
         errors++;
-        error_printf("Test - Config: config_new returned NULL when creating copy.\n");
+        error_printf(true, "Test - Config: config_new returned NULL when creating copy.\n");
         config_free(cfg);
         return (errors);
     }
     if (cfg_copy->cfg_version != cfg->cfg_version) {
         errors++;
-        error_printf("Test - Config: config copy cfg_version not correct.\n");
+        error_printf(true, "Test - Config: config copy cfg_version not correct.\n");
     }
     struct _TEST_CFG_W_MARKER* cfgwm = (struct _TEST_CFG_W_MARKER*)((uint8_t*)cfg - (sizeof(struct _TEST_CFG_W_MARKER) - sizeof(config_t)));
     if (cfgwm->marker != _TEST_CFG_MEM_MARKER_) {
         errors++;
-        error_printf("Test - Config: Config structure memory marker not found.\n");
+        error_printf(true, "Test - Config: Config structure memory marker not found.\n");
     }
     config_free(cfg_copy);
     config_free(cfg);
@@ -69,7 +69,7 @@ int test_config_new_free(){
         debug_printf("Test - Config: No errors running `test_config_new_free`\n");
     }
     else {
-        error_printf("Test - Config: %d errors running `test_config_new_free`\n");
+        error_printf(true, "Test - Config: %d errors running `test_config_new_free`\n");
     }
 
     return (errors);
@@ -106,7 +106,7 @@ void test_disp_show_half_width_scroll_barberpoll() {
 }
 
 void test_error_printf() {
-    error_printf("Test of printing an error: %d.\n", 15u);
+    error_printf(false, "Test of printing an error: %d.\n", 15u);
 }
 
 void test_ili9341_show_scroll() {
@@ -236,7 +236,7 @@ static void _test_term_notify_on_input(void) {
 static int64_t _test_term_notify_on_input_to(alarm_id_t id, void* not_used) {
     cancel_alarm(id);
     _test_term_notify_on_input_to_id = 0;
-    error_printf("\nTEST - test_term_notify_on_input timed out.\n");
+    error_printf(false, "\nTEST - test_term_notify_on_input timed out.\n");
     _input = -1;
     term_register_notify_on_input(NULL);
     _test_term_notify_on_input_called = true; // Say this was called, but the char is '-1'

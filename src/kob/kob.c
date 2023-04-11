@@ -115,7 +115,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
     return;
 }
 
-void kob_init(bool invert_key_input, bool key_has_closer) {
+void kob_module_init(bool invert_key_input, bool key_has_closer) {
     _invert_key_input = invert_key_input;
     _key_has_closer = key_has_closer;
     _key_closer_is_open = false; // Assume the key closer is starting out closed

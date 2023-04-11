@@ -148,11 +148,11 @@ bool option_value(uint opt);
 /** @brief Printf like function that includes the datetime and type prefix */
 void debug_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
-void error_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+void error_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
 void info_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
-void warn_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+void warn_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 
 #ifdef __cplusplus
 }

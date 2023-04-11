@@ -24,11 +24,14 @@ extern "C" {
 extern msg_loop_cntx_t ui_msg_loop_cntx;
 
 /**
+ * @brief Start the UI (core 1 main and (endless) message-loop).
+ */
+extern void start_ui(void);
+
+/**
  * @brief Initialize the UI
  */
-extern void ui_init(void);
-
-extern void ui_register_input_char_ready_handler();
+extern void ui_module_init(void);
 
 #ifdef __cplusplus
 }

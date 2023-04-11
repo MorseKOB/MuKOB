@@ -222,7 +222,7 @@ ili9341_disp_info_t* ili9341_info(void);
  * @brief Initialize the display.
  * @ingroup display
 */
-void ili9341_init(void);
+void ili9341_module_init(void);
 
 /**
  * @brief Paint a buffer of rgb16_t values to one horizontal line

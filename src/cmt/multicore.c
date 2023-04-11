@@ -35,12 +35,12 @@ bool get_core1_msg_nowait(cmt_msg_t* msg) {
     return (queue_try_remove(&core1_queue, msg));
 }
 
-void multicore_init() {
+void multicore_module_init() {
     assert(!_initialized);
     _initialized = true;
     queue_init(&core0_queue, sizeof(cmt_msg_t), CORE0_QUEUE_ENTRIES_MAX);
     queue_init(&core1_queue, sizeof(cmt_msg_t), CORE1_QUEUE_ENTRIES_MAX);
-    cmt_init();
+    cmt_module_init();
 }
 
 void post_to_core0_blocking(const cmt_msg_t *msg) {

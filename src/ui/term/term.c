@@ -267,7 +267,7 @@ int term_getc(void) {
     return (c);
 }
 
-void term_init() {
+void term_module_init() {
     // Input handler...
     stdio_set_chars_available_callback(_stdio_chars_available, NULL);   // We can pass a parameter if we want
     // Terminal type and screen size...
@@ -275,13 +275,13 @@ void term_init() {
     sleep_ms(100); // Allow the terminal to reset
     // Ask for the terminal ID and see what we got
     if (term_get_type_info(_term_info, _TERM_INFO_MAX_) < 2) {
-        error_printf("Term - Terminal did not respond with info.\n");
+        error_printf(false, "Term - Terminal did not respond with info.\n");
     }
     // Maybe process the response? For now, just store it and print it.
     info_printf("Term - Info/ID: %s\n", (_term_info + 1)); // Skip the ESC
     // Ask for the terminal name and see what we got
     if (term_get_name(_term_name, _TERM_NAME_MAX_) < 1) {
-        error_printf("Term - Terminal did not respond with a name.\n");
+        error_printf(false, "Term - Terminal did not respond with a name.\n");
     }
     // Maybe process the response? For now, just store it and print it.
     info_printf("Term - Name: %s\n", (_term_name));

@@ -17,14 +17,12 @@
 #include <ctype.h>
 #include <string.h>
 
-#define _UI_TERM_GETLINE_MAX_LEN_  256 // Maximum line length (including /0) for the `term_getline` function
-
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
 
 static ui_term_control_char_handler _control_char_handler[32]; // Room for a handler for each control character
 
-static char _getline_buf[_UI_TERM_GETLINE_MAX_LEN_];
+static char _getline_buf[UI_TERM_GETLINE_MAX_LEN_];
 static int16_t _getline_index;
 
 static bool _code_displaying;
@@ -132,7 +130,7 @@ static void _ui_term_getline_continue() {
             ui_term_handle_control_character(c);
         }
         else if (c >= ' ' && c < DEL) {
-            if (_getline_index < (_UI_TERM_GETLINE_MAX_LEN_ - 1)) {
+            if (_getline_index < (UI_TERM_GETLINE_MAX_LEN_ - 1)) {
                 _getline_buf[_getline_index++] = c;
                 putchar(c);
             }

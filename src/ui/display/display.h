@@ -285,7 +285,7 @@ uint16_t disp_info_scroll_lines();
  * This must be called before using the display.
  *
  */
-void disp_init(void);
+void disp_module_init(void);
 
 /**
  * @brief Clear the character line.

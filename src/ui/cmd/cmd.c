@@ -7,6 +7,8 @@
  */
 
 #include "cmd.h"
+
+#include "config.h"
 #include "mkwire.h"
 #include "morse.h"
 #include "term.h"
@@ -18,22 +20,17 @@
 
 #define CMD_LINE_MAX_ARGS 64
 
+// Buffer to copy the input line into to be parsed.
+static char _cmdline_parsed[UI_TERM_GETLINE_MAX_LEN_];
+
 // Command processor declarations
-static int _cmd_connect(int argc, char** argv);
-static int _cmd_encode(int argc, char** argv);
-static int _cmd_help(int argc, char** argv);
-static int _cmd_speed(int argc, char** argv);
-static int _cmd_wire(int argc, char** argv);
+static int _cmd_connect(int argc, char** argv, const char* unparsed);
+static int _cmd_encode(int argc, char** argv, const char* unparsed);
+static int _cmd_help(int argc, char** argv, const char* unparsed);
+static int _cmd_speed(int argc, char** argv, const char* unparsed);
+static int _cmd_wire(int argc, char** argv, const char* unparsed);
 
 // Command processors framework
-typedef struct _CMD_HANDLER_ENTRY {
-    command_fn cmd; // Command function to call
-    int min_match; // Minimum number of characters to match of the command name.
-    char* name;
-    char* usage;
-    char* description;
-} cmd_handler_entry_t;
-
 static const cmd_handler_entry_t _cmd_connect_entry = {
     _cmd_connect,
     1,
@@ -74,24 +71,23 @@ static const cmd_handler_entry_t _cmd_wire_entry = {
  * @brief List of Command Handlers
  */
 static const cmd_handler_entry_t* _command_entries[] = {
-    &_cmd_connect_entry,
-    &_cmd_encode_entry,
-    &_cmd_help_entry,
-    &_cmd_speed_entry,
-    &_cmd_wire_entry,
+    & cmd_bootcfg_entry,
+    & cmd_cfg_entry,
+    & cmd_configure_entry,
+    & _cmd_connect_entry,
+    & _cmd_encode_entry,
+    & _cmd_help_entry,
+    & cmd_load_entry,
+    & cmd_save_entry,
+    & _cmd_speed_entry,
+    & cmd_station_entry,
+    & _cmd_wire_entry,
     ((cmd_handler_entry_t*)0), // Last entry must be a NULL
 };
 
 
 // Internal (non-command) declarations
 
-typedef enum _CMD_HELP_DISPLAY_FMT_ {
-    HELP_DISP_NAME,
-    HELP_DISP_LONG,
-    HELP_DISP_USAGE,
-} cmd_help_display_format_t;
-
-static void _help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_format_t type);
 static void _hook_keypress();
 static int _skip_to_ws_eol(const char* line);
 
@@ -105,9 +101,9 @@ static scr_position_t _scr_cursor_position_save;
 
 // Command functions
 
-static int _cmd_connect(int argc, char** argv) {
+static int _cmd_connect(int argc, char** argv, const char* unparsed) {
     if (argc > 2) {
-        _help_display(&_cmd_connect_entry, HELP_DISP_USAGE);
+        cmd_help_display(&_cmd_connect_entry, HELP_DISP_USAGE);
         return (-1);
     }
     int16_t current_wire = mkwire_wire_get();
@@ -140,9 +136,9 @@ static int _cmd_connect(int argc, char** argv) {
     return (0);
 }
 
-static int _cmd_encode(int argc, char** argv) {
+static int _cmd_encode(int argc, char** argv, const char* unparsed) {
     if (argc < 2) {
-        _help_display(&_cmd_encode_entry, HELP_DISP_USAGE);
+        cmd_help_display(&_cmd_encode_entry, HELP_DISP_USAGE);
         return (-1);
     }
     cmt_msg_t msg;
@@ -169,14 +165,14 @@ static int _cmd_encode(int argc, char** argv) {
     return (0);
 }
 
-static int _cmd_help(int argc, char** argv) {
+static int _cmd_help(int argc, char** argv, const char* unparsed) {
     const cmd_handler_entry_t** cmds = _command_entries;
     const cmd_handler_entry_t* cmd;
     if (1 == argc) {
         // List all of the commands with thier usage.
         ui_term_puts("Commands:\n");
         while (NULL != (cmd = *cmds++)) {
-            _help_display(cmd, HELP_DISP_NAME);
+            cmd_help_display(cmd, HELP_DISP_NAME);
         }
     }
     else {
@@ -193,7 +189,7 @@ static int _cmd_help(int argc, char** argv) {
                     if (0 == strncmp(cmd->name, user_cmd, user_cmd_len)) {
                         // This command matches
                         command_matched = true;
-                        _help_display(cmd, HELP_DISP_LONG);
+                        cmd_help_display(cmd, HELP_DISP_LONG);
                         break;
                     }
                 }
@@ -221,9 +217,9 @@ static int _cmd_speed_get_value(const char* v) {
     return (sp);
 }
 
-static int _cmd_speed(int argc, char** argv) {
+static int _cmd_speed(int argc, char** argv, const char* unparsed) {
     if (argc > 3) {
-        _help_display(&_cmd_speed_entry, HELP_DISP_USAGE);
+        cmd_help_display(&_cmd_speed_entry, HELP_DISP_USAGE);
         return (-1);
     }
     config_t* cfg = config_current_for_modification();
@@ -255,16 +251,14 @@ static int _cmd_speed(int argc, char** argv) {
         // Value(s) changed - set them both.
         cfg->text_speed = new_text_sp;
         cfg->char_speed_min = new_char_sp;
-        cmt_msg_t msg;
-        msg.id = MSG_CONFIG_CHANGED;
-        postBothMsgBlocking(&msg);
+        config_indicate_changed();
     }
     return (0);
 }
 
-static int _cmd_wire(int argc, char** argv) {
+static int _cmd_wire(int argc, char** argv, const char* unparsed) {
     if (argc > 2) {
-        _help_display(&_cmd_wire_entry, HELP_DISP_USAGE);
+        cmd_help_display(&_cmd_wire_entry, HELP_DISP_USAGE);
         return (-1);
     }
     if (argc == 2) {
@@ -278,10 +272,11 @@ static int _cmd_wire(int argc, char** argv) {
             ui_term_puts("Wire number must be 1 to 999.\n");
             return (-1);
         }
-        cmt_msg_t msg;
-        msg.id = MSG_WIRE_SET;
-        msg.data.wire = wire;
-        postBEMsgBlocking(&msg);
+        config_t* cfg = config_current_for_modification();
+        if (wire != cfg->wire) {
+            cfg->wire = wire;
+            config_indicate_changed();
+        }
     }
     else {
         ui_term_printf("%hd\n", mkwire_wire_get());
@@ -316,28 +311,6 @@ void _handle_reinit_terminal_char(char c) {
     msg.id = MSG_CMD_INIT_TERMINAL;
     msg.data.c = c;
     postUIMsgBlocking(&msg);
-}
-
-static void _help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_format_t type) {
-    term_color_pair_t tc = ui_term_color_get();
-    term_color_default();
-    if (HELP_DISP_USAGE == type) {
-        ui_term_puts("Usage: ");
-    }
-    int name_min = cmd->min_match;
-    char* name_rest = ((cmd->name) + name_min);
-    char format[16];
-    // Print the minimum required characters bold and the rest normal.
-    snprintf(format, 16, " %%.%ds", name_min);
-    term_text_bold();
-    ui_term_printf(format, cmd->name);
-    term_text_normal();
-    ui_term_printf("%s %s\n", name_rest, cmd->usage);
-    if (HELP_DISP_LONG == type || HELP_DISP_USAGE == type) {
-        ui_term_printf("     %s\n", cmd->description);
-    }
-    term_color_fg(tc.fg);
-    term_color_bg(tc.bg);
 }
 
 void _notified_of_keypress() {
@@ -380,7 +353,10 @@ static void _process_line(char* line) {
 
     ui_term_puts("\n");
 
-    int argc = parse_line(line, argv, CMD_LINE_MAX_ARGS);
+    // Copy the line into a buffer for parsing
+    strcpy(_cmdline_parsed, line);
+
+    int argc = parse_line(_cmdline_parsed, argv, CMD_LINE_MAX_ARGS);
     char* user_cmd = argv[0];
     int user_cmd_len = strlen(user_cmd);
     bool command_matched = false;
@@ -396,7 +372,7 @@ static void _process_line(char* line) {
                     // This command matches
                     command_matched = true;
                     _cmd_state = CMD_EXECUTING_COMMAND;
-                    cmd->cmd(argc, argv);
+                    cmd->cmd(argc, argv, line);
                     break;
                 }
             }
@@ -491,7 +467,54 @@ const cmd_state_t cmd_get_state() {
     return _cmd_state;
 }
 
-void cmd_init() {
+void cmd_help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_format_t type) {
+    term_color_pair_t tc = ui_term_color_get();
+    term_color_default();
+    if (HELP_DISP_USAGE == type) {
+        ui_term_puts("Usage: ");
+    }
+    int name_min = cmd->min_match;
+    char* name_rest = ((cmd->name) + name_min);
+    // Print the minimum required characters bold and the rest normal.
+    term_text_bold();
+    // ui_term_printf(format, cmd->name);
+    ui_term_printf("%.*s", name_min, cmd->name);
+    term_text_normal();
+    // See if this is an alias for another command...
+    bool alias = (CMD_ALIAS_INDICATOR == *cmd->usage);
+    if (!alias) {
+        ui_term_printf("%s %s\n", name_rest, cmd->usage);
+        if (HELP_DISP_LONG == type || HELP_DISP_USAGE == type) {
+            ui_term_printf("  %s\n", cmd->description);
+        }
+    }
+    else {
+        const char* aliased_for_name = ((cmd->usage) + 1);
+        ui_term_printf("%s  Alias for: %s\n", name_rest, aliased_for_name);
+        if (HELP_DISP_NAME != type) {
+            // Find the aliased entry
+            const cmd_handler_entry_t* aliased_cmd = NULL;
+            const cmd_handler_entry_t* cmd_chk;
+            const cmd_handler_entry_t** cmds = _command_entries;
+            while (NULL != (cmd_chk = *cmds++)) {
+                if (strcmp(cmd_chk->name, aliased_for_name) == 0) {
+                    aliased_cmd = cmd_chk;
+                    break;
+                }
+            }
+            if (aliased_cmd) {
+                // Put the terminal colors back, and call this again with the aliased command
+                term_color_fg(tc.fg);
+                term_color_bg(tc.bg);
+                cmd_help_display(aliased_cmd, type);
+            }
+        }
+    }
+    term_color_fg(tc.fg);
+    term_color_bg(tc.bg);
+}
+
+void cmd_module_init() {
     _cmd_state = CMD_SNOOZING;
     // Register the control character handlers.
     ui_term_register_control_char_handler(CMD_CONNECT_TOGGLE_CHAR, _handle_connect_toggle_char);
@@ -500,17 +523,19 @@ void cmd_init() {
     _hook_keypress();
 }
 
-int parse_line(char* line, char** argv, int maxargs) {
+int parse_line(char* line, char* argv[], int maxargs) {
     for (int i = 0; i < maxargs; i++) {
         argv[i] = line; // Store the argument
         int chars_skipped = _skip_to_ws_eol(line);
         // See if this would be the EOL
         if ('\000' == *(line + chars_skipped)) {
+            argv[i+1] = NULL;
             return (i + 1);
         }
         // Store a '\000' for the arg and move to the next
         *(line + chars_skipped) = '\000';
-        line = strskipws(line + chars_skipped + 1);
+        line = (char*)strskipws(line + chars_skipped + 1);
     }
+    argv[maxargs] = NULL;
     return (maxargs);
 }

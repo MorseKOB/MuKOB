@@ -294,7 +294,7 @@ ili9341_disp_info_t* ili9341_info(void) {
     return (&_ili9341_disp_info);
 }
 
-void ili9341_init(void) {
+void ili9341_module_init(void) {
     // Take reset low, then high
     gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
     sleep_ms(20);

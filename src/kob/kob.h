@@ -26,7 +26,7 @@ extern "C" {
  * @param invert_key_input True if the key input should be inverted (used for modem input)
  * @param key_has_closer True if the key has a circuit closer that should be followed
  */
-extern void kob_init(bool invert_key_input, bool key_has_closer);
+extern void kob_module_init(bool invert_key_input, bool key_has_closer);
 
 /**
  * @brief Read the key and return `true` if it is closed.

@@ -163,10 +163,21 @@ extern scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg);
 extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg);
 
 /**
+ * @brief Get the ID of a scheduled message by the message ID, if one exists.
+ * @ingroup cmt
+ *
+ * Typically, this is used to keep from adding a scheduled message if one already exists.
+ *
+ * @param msg The message ID to check for.
+ * @return scheduled_msg_id_t The ID or SCHED_MSG_ID_INVALID if a scheduled message wasn't found.
+ */
+extern scheduled_msg_id_t scheduled_message_get_by_id(msg_id_t msg);
+
+/**
  * @brief Initialize the Cooperative Multi-Tasking system.
  * @ingroup cmt
  */
-void cmt_init();
+void cmt_module_init();
 
 /**
  * @brief Enter into a message processing loop.
