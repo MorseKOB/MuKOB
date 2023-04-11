@@ -372,10 +372,10 @@ uint16_t disp_info_scroll_lines() {
  *
  * This must be called before using the display, but should only be called once.
  */
-void disp_init(void) {
+void disp_module_init(void) {
     // run through the complete initialization process
 
-    ili9341_init();
+    ili9341_module_init();
     ili9341_disp_info_t* disp_info = ili9341_info();
 
     // If in debug mode, print info about the display...
@@ -396,7 +396,7 @@ void disp_init(void) {
     }
 
     if (_scr_ctx != NULL) {
-        warn_printf("`disp_init` called multiple times!\n");
+        warn_printf(false, "`disp_module_init` called multiple times!\n");
         return;
     }
 
@@ -598,7 +598,7 @@ void prints(char* str, paint_control_t paint) {
 
 void screen_close() {
     if (!_has_scr_context()) {
-        warn_printf("Display - Trying to close main screen context. Ignoring `screen_close()` call.");
+        warn_printf(false, "Display - Trying to close main screen context. Ignoring `screen_close()` call.");
         return;
     }
     // Free the buffers from the current context...
@@ -625,7 +625,7 @@ bool screen_new() {
     }
     scr_context_t* scr_context = malloc(sizeof(scr_context_t));
     if (scr_context == NULL) {
-        error_printf("Display - Could not allocate a screen context.");
+        error_printf(false, "Display - Could not allocate a screen context.");
         return false;
     }
     // For now, we only have one font - get its info
@@ -668,7 +668,7 @@ void scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size) {
     uint16_t fixed_lines = top_fixed_size + bottom_fixed_size;
     int16_t scroll_lines = screen_lines - fixed_lines;
     if (scroll_lines < 0) {
-        error_printf("Display - Attempting to set fixed regions of screen larger than total screen lines.");
+        error_printf(false, "Display - Attempting to set fixed regions of screen larger than total screen lines.");
         return;
     }
     else if (scroll_lines == 0) {

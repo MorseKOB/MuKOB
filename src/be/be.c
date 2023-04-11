@@ -22,6 +22,9 @@
 
 #define _BE_STATUS_PULSE_PERIOD 6999
 
+static config_t* _last_cfg;
+static cmt_msg_t _msg_wire_set = { MSG_WIRE_SET, {0} };
+
 typedef struct _BE_IDLE_FN_DATA_ {
     unsigned long int idle_num;
     unsigned long int msg_burst;
@@ -103,17 +106,20 @@ const msg_loop_cntx_t be_msg_loop_cntx = {
 
 // ====================================================================
 // Idle functions
+//
+// Something to do when there are no messages to process.
+// (These are cycled through, so do one task.)
 // ====================================================================
+
 static void _be_idle_function_1() {
-    // Something to do when there are no messages to process.
     options_read();  // Re-read the option switches
     LEAVE_IDLE_FUNCTION();
 }
 
 static void _be_idle_function_2() {
-    // Something to do when there are no messages to process.
     uint32_t now = now_ms();
     if (_last_rtc_update_ts + HOUR_IN_MS < now) {
+        // Keep the RTC set correctly by making a NTP call.
         _last_rtc_update_ts = now;
         const config_sys_t* cfgsys = config_sys();
         network_update_rtc(cfgsys->tz_offset);
@@ -122,13 +128,24 @@ static void _be_idle_function_2() {
 }
 
 static void _be_idle_function_3() {
-    // Something to do when there are no messages to process.
     uint32_t now = now_ms();
     if (_last_status_update_ts + _BE_STATUS_PULSE_PERIOD < now) {
         // Post update status message
         _msg_be_send_status.id = MSG_SEND_BE_STATUS;
         postBEMsgNoWait(&_msg_be_send_status); // Don't wait. We will do it again in a bit.
         _last_status_update_ts = now;
+    }
+    LEAVE_IDLE_FUNCTION();
+}
+
+static void _be_idle_function_4() {
+    // For troubleshooting - if we are connected, make sure there is a
+    // 'keep-alive' message waiting.
+    if (mkwire_is_connected()) {
+        scheduled_msg_id_t id = scheduled_message_get_by_id(MSG_MKS_KEEP_ALIVE_SEND);
+        if (SCHED_MSG_ID_INVALID == id) {
+            error_printf(true, "\nConnected, but no keep-alive scheduled.\n");
+        }
     }
     LEAVE_IDLE_FUNCTION();
 }
@@ -164,7 +181,18 @@ static void _handle_be_noop(cmt_msg_t* msg) {
 static void _handle_config_changed(cmt_msg_t* msg) {
     // Update things that depend on the current configuration.
     const config_t* cfg = config_current();
-    morse_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
+    // See if things we care about have changed
+    if (cfg->wire != _last_cfg->wire) {
+        _msg_wire_set.data.wire = cfg->wire;
+        postBothMsgBlocking(&_msg_wire_set);
+    }
+    if (cfg->text_speed != _last_cfg->text_speed
+     || cfg->char_speed_min != _last_cfg->char_speed_min
+     || cfg->code_type != _last_cfg->code_type
+     || cfg->spacing != _last_cfg->spacing) {
+        morse_module_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
+    }
+    _last_cfg = config_copy(_last_cfg, cfg);
     LEAVE_MSG_HANDLER();
 }
 
@@ -212,6 +240,11 @@ static void _handle_ui_initialized(cmt_msg_t* msg) {
     msg->id = MSG_KEY_READ;
     msg->data.key_read_state.phase = KEY_READ_START;
     kob_read_code_from_key(msg);
+
+    // Autoconnect?
+    if (config_current()->auto_connect) {
+        mkwire_connect(config_current()->wire);
+    }
 }
 
 static void _handle_wire_disconnect(cmt_msg_t* msg) {
@@ -235,22 +268,31 @@ static void _handle_wire_set(cmt_msg_t* msg) {
     mkwire_wire_set(wire);
 }
 
-void be_init() {
+void be_module_init() {
     _last_rtc_update_ts = 0;
     char hostname[NET_URL_MAX_LEN + 1];
     const config_t* cfg = config_current();
+    _last_cfg = config_new(cfg);
     const char* host_and_port = cfg->host_and_port;
     uint16_t port = port_from_hostport(host_and_port, MKOBSERVER_PORT_DEFAULT);
     if (0 == host_from_hostport(hostname, NET_URL_MAX_LEN, host_and_port)) {
-        mkwire_init(MKOBSERVER_DEFAULT, port, cfg->station, cfg->wire);
+        mkwire_module_init(MKOBSERVER_DEFAULT, port, cfg->station, cfg->wire);
     }
     else {
-        mkwire_init(hostname, port, cfg->station, cfg->wire);
+        mkwire_module_init(hostname, port, cfg->station, cfg->wire);
     }
-    morse_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
-    kob_init(cfg->invert_key_input, cfg->key_has_closer);
+    morse_module_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
+    kob_module_init(cfg->invert_key_input, cfg->key_has_closer);
 
     // Done with the Backend Initialization - Let the UI know.
     _msg_be_initialized.id = MSG_BE_INITIALIZED;
     postUIMsgBlocking(&_msg_be_initialized);
+}
+
+void start_be() {
+    static bool _started = false;
+    // Make sure we aren't already started and that we are being called from core-0.
+    assert(!_started && 0 == get_core_num());
+    _started = true;
+    message_loop(&be_msg_loop_cntx);
 }

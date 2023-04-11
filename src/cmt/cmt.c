@@ -71,7 +71,7 @@ bool _schd_msg_timer_callback(repeating_timer_t* rt) {
                     post_to_core1_blocking(client_msg);
                 }
                 else {
-                    error_printf("CMT - Scheduled Message alarm handler got unknown core number: %d Message: %d", (int)corenum, (int)client_msg->id);
+                    error_printf(false, "CMT - Scheduled Message alarm handler got unknown core number: %d Message: %d", (int)corenum, (int)client_msg->id);
                 }
             }
         }
@@ -117,7 +117,7 @@ static void _scheduled_msg_init() {
 
     bool success = add_repeating_timer_us(1000, _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
     if (!success) {
-        error_printf("CMT - Could not create repeating timer for scheduled messages.\n");
+        error_printf(false, "CMT - Could not create repeating timer for scheduled messages.\n");
     }
 }
 
@@ -216,7 +216,7 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
     }
     if (!smd) {
         char* reason = (ms <= 0 ? "Requested delay <= 0" : "No scheduled message slots available");
-        error_printf("CMT - `schedule_msg_in_secs` did not schedule: %s. Posting message immediately.\n", reason);
+        error_printf(false, "CMT - `schedule_msg_in_secs` did not schedule: %s. Posting message immediately.\n", reason);
         // handle immediately so they get their message
         if (core_num == 0) {
             post_to_core0_blocking(msg);
@@ -244,10 +244,19 @@ extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg) {
     return (_id_to_user(id));
 }
 
-void cmt_init() {
+scheduled_msg_id_t scheduled_message_get_by_id(msg_id_t msg) {
     recursive_mutex_enter_blocking(&sm_mutex);
-    _scheduled_msg_init();
+    scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
+    _scheduled_msg_data_t* smd = _scheduled_msg_head;
+    while (smd) {
+        if (smd->in_use && msg == smd->client_msg->id) {
+            id = smd->sched_msg_id;
+            break;
+        }
+        smd = smd->next;
+    }
     recursive_mutex_exit(&sm_mutex);
+    return (_id_to_user(id));
 }
 
 void message_loop(const msg_loop_cntx_t* loop_context) {
@@ -280,4 +289,10 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
             }
         }
     }
+}
+
+void cmt_module_init() {
+    recursive_mutex_enter_blocking(&sm_mutex);
+    _scheduled_msg_init();
+    recursive_mutex_exit(&sm_mutex);
 }

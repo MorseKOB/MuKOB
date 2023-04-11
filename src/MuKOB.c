@@ -9,10 +9,10 @@
 //
 #include "system_defs.h" // Main system/board/application definitions
 //
-#include "core1_main.h"
 #include "be.h"
 #include "mkboard.h"
 #include "morse.h"
+#include "ui.h"
 
 #define DOT_MS 60 // Dot at 20 WPM
 #define UP_MS  DOT_MS
@@ -46,22 +46,23 @@ int main()
     // Board/base level initialization
     board_init();
 
-    // Indicate that we are alive
+    // Indicate that we are awake
     if (option_value(OPTION_DEBUG)) {
         buzzer_beep(250);
     }
     led_on_off(say_hi);
 
-    // Set up the Backend
-    be_init();
+    // Set up the Backend (needs to be done before starting the UI)
+    be_module_init();
 
-    // Launch Core 1 - The UI
-    start_core1();
+    // Launch the UI (core-1 Message Dispatching Loop)
+    start_ui();
 
-    // Enter into the (endless) Backend Message Dispatching Loop
-    message_loop(&be_msg_loop_cntx);
+    // Launch the Backend (core-0 (endless) Message Dispatching Loop - never returns)
+    start_be();
 
     // How did we get here?!
-    error_printf("MuKOB - Somehow we are out of our endless message loop in `main()`!!!");
+    error_printf(true, "MuKOB - Somehow we are out of our endless message loop in `main()`!!!");
+    // ZZZ Reboot!!!
     return 0;
 }

@@ -66,7 +66,7 @@ int board_init() {
     sleep_ms(50);
 
     // Initialize the terminal library
-    term_init();
+    term_module_init();
 
     // Initialize the board RTC. It will be set correctly later when we
     // have WiFi and can make a NTP call.
@@ -88,7 +88,7 @@ int board_init() {
 
     retval = cyw43_arch_init();
     if (retval) {
-        error_printf("WiFi init failed");
+        error_printf(true, "WiFi init failed");
         return retval;
     }
     cyw43_arch_enable_sta_mode();
@@ -177,7 +177,7 @@ int board_init() {
     options_read();
 
     // Get the configuration
-    config_init();
+    config_module_init();
     const config_sys_t* system_cfg = config_sys();
 
     if (system_cfg->is_set) {
@@ -196,11 +196,11 @@ int board_init() {
     // Initialize the display
     display_reset_on(false);
     sleep_ms(100);
-    disp_init();
+    disp_module_init();
     display_backlight_on(true);
 
     // Initialize the multicore subsystem
-    multicore_init();
+    multicore_module_init();
 
     puts("\033[32mMuKOB says hello!\033[0m");
 
@@ -383,9 +383,12 @@ void debug_printf(const char* format, ...) {
     }
 }
 
-void error_printf(const char* format, ...) {
+void error_printf(bool inc_dts, const char* format, ...) {
     char buf[512];
-    int index = _format_printf_datetime(buf, sizeof(buf));
+    int index = 0;
+    if (inc_dts) {
+        index = _format_printf_datetime(buf, sizeof(buf));
+    }
     index += snprintf(&buf[index], sizeof(buf) - index, "\033[91m ERROR: ");
     va_list xArgs;
     va_start(xArgs, format);
@@ -405,9 +408,12 @@ void info_printf(const char* format, ...) {
     printf(buf);
 }
 
-void warn_printf(const char* format, ...) {
+void warn_printf(bool inc_dts, const char* format, ...) {
     char buf[512];
-    int index = _format_printf_datetime(buf, sizeof(buf));
+    int index = 0;
+    if (inc_dts) {
+        index = _format_printf_datetime(buf, sizeof(buf));
+    }
     index += snprintf(&buf[index], sizeof(buf) - index, " WARN: ");
     va_list xArgs;
     va_start(xArgs, format);

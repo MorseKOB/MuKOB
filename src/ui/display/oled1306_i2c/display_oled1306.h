@@ -60,7 +60,7 @@ void disp_font_test(void);
  * This must be called before using the display.
  *
  */
-void disp_init(void);
+void disp_module_init(void);
 
 /** @brief Paint the actual display screen
  *  \ingroup display

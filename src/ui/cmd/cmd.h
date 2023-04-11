@@ -55,17 +55,17 @@ extern const cmd_state_t cmd_get_state();
  * @brief Initialize the command processor.
  * @ingroup ui
  */
-extern void cmd_init(void);
+extern void cmd_module_init(void);
 
 /**
  * @brief Parse the line into arguments (like a 'C' `main` receives)
  *
  * @param line The line to parse. Note that the line will (possibly) be modified.
  * @param argv Pointers to the arguments (indexes into the line).
- * @param maxargs The maximum number of arguments that `argv` can hold.
+ * @param maxargs One more than the maximum number of arguments that `argv` can hold.
  * @return int The number of arguments (`argc`).
  */
-extern int parse_line(char* line, char** argv, int maxargs);
+extern int parse_line(char* line, char* argv[], int maxargs);
 
 #ifdef __cplusplus
     }

@@ -21,7 +21,7 @@ void core1_main() {
     info_printf("CORE-%d - *** Started ***\n", get_core_num());
 
     // Set up the UI
-    ui_init();
+    ui_module_init();
 
     // Enter into the (endless) UI Message Dispatching Loop
     message_loop(&ui_msg_loop_cntx);

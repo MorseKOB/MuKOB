@@ -71,13 +71,17 @@ static const cmd_handler_entry_t _cmd_wire_entry = {
  * @brief List of Command Handlers
  */
 static const cmd_handler_entry_t* _command_entries[] = {
-    &cmd_cfg_entry,
-    &cmd_configure_entry,
-    &_cmd_connect_entry,
-    &_cmd_encode_entry,
-    &_cmd_help_entry,
-    &_cmd_speed_entry,
-    &_cmd_wire_entry,
+    & cmd_bootcfg_entry,
+    & cmd_cfg_entry,
+    & cmd_configure_entry,
+    & _cmd_connect_entry,
+    & _cmd_encode_entry,
+    & _cmd_help_entry,
+    & cmd_load_entry,
+    & cmd_save_entry,
+    & _cmd_speed_entry,
+    & cmd_station_entry,
+    & _cmd_wire_entry,
     ((cmd_handler_entry_t*)0), // Last entry must be a NULL
 };
 
@@ -247,9 +251,7 @@ static int _cmd_speed(int argc, char** argv, const char* unparsed) {
         // Value(s) changed - set them both.
         cfg->text_speed = new_text_sp;
         cfg->char_speed_min = new_char_sp;
-        cmt_msg_t msg;
-        msg.id = MSG_CONFIG_CHANGED;
-        postBothMsgBlocking(&msg);
+        config_indicate_changed();
     }
     return (0);
 }
@@ -270,10 +272,11 @@ static int _cmd_wire(int argc, char** argv, const char* unparsed) {
             ui_term_puts("Wire number must be 1 to 999.\n");
             return (-1);
         }
-        cmt_msg_t msg;
-        msg.id = MSG_WIRE_SET;
-        msg.data.wire = wire;
-        postBEMsgBlocking(&msg);
+        config_t* cfg = config_current_for_modification();
+        if (wire != cfg->wire) {
+            cfg->wire = wire;
+            config_indicate_changed();
+        }
     }
     else {
         ui_term_printf("%hd\n", mkwire_wire_get());
@@ -350,7 +353,7 @@ static void _process_line(char* line) {
 
     ui_term_puts("\n");
 
-    // Copy the ling into a buffer for parsing
+    // Copy the line into a buffer for parsing
     strcpy(_cmdline_parsed, line);
 
     int argc = parse_line(_cmdline_parsed, argv, CMD_LINE_MAX_ARGS);
@@ -482,7 +485,7 @@ void cmd_help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_for
     if (!alias) {
         ui_term_printf("%s %s\n", name_rest, cmd->usage);
         if (HELP_DISP_LONG == type || HELP_DISP_USAGE == type) {
-            ui_term_printf("     %s\n", cmd->description);
+            ui_term_printf("  %s\n", cmd->description);
         }
     }
     else {
@@ -511,7 +514,7 @@ void cmd_help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_for
     term_color_bg(tc.bg);
 }
 
-void cmd_init() {
+void cmd_module_init() {
     _cmd_state = CMD_SNOOZING;
     // Register the control character handlers.
     ui_term_register_control_char_handler(CMD_CONNECT_TOGGLE_CHAR, _handle_connect_toggle_char);
@@ -520,17 +523,19 @@ void cmd_init() {
     _hook_keypress();
 }
 
-int parse_line(char* line, char** argv, int maxargs) {
+int parse_line(char* line, char* argv[], int maxargs) {
     for (int i = 0; i < maxargs; i++) {
         argv[i] = line; // Store the argument
         int chars_skipped = _skip_to_ws_eol(line);
         // See if this would be the EOL
         if ('\000' == *(line + chars_skipped)) {
+            argv[i+1] = NULL;
             return (i + 1);
         }
         // Store a '\000' for the arg and move to the next
         *(line + chars_skipped) = '\000';
-        line = strskipws(line + chars_skipped + 1);
+        line = (char*)strskipws(line + chars_skipped + 1);
     }
+    argv[maxargs] = NULL;
     return (maxargs);
 }

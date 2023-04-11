@@ -40,9 +40,9 @@ typedef enum _STRDATETIME_CTRL_ {
  * @brief Return precisely 0 or 1 from a zero / non-zero value.
  *
  * @param b An int/bool value to be converted
- * @return uint8_t 0 for 0, 1 for non-zero.
+ * @return bool 0 (false) for 0, 1 (true) for non-zero.
  */
-extern uint8_t binary_from_bool(int b);
+extern bool binary_from_int(int b);
 
 /**
  * @brief Get a bool (true/false) value from a string.
@@ -152,7 +152,7 @@ extern char* strnltonull(char* str);
  *               be the terminating '\000' if the string was empty or all whitespace. The
  *               pointer returned is an index into the string that was passed in (not a copy).
  */
-extern char* strskipws(char* str);
+extern const char* strskipws(const char* str);
 
 /**
  * @brief Uppercase a string.

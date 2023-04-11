@@ -82,7 +82,7 @@ void oled_send_cmd(uint8_t cmd);
 
 void oled_send_buf(uint8_t buf[], int buflen);
 
-void oled_init();
+void oled_module_init();
 
 void oled_disp_render(uint8_t *buf, struct render_area *area);
 

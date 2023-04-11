@@ -211,7 +211,7 @@ wire_connected_state_t mkwire_connected_state() {
     return (_connected_state);
 }
 
-void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
+void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
     _stop_keep_alive();
     if (_mkserver_host) {
         free(_mkserver_host);
@@ -219,7 +219,7 @@ void mkwire_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_
     }
     _mkserver_host = malloc(strlen(mkobs_url) + 1);
     if (!_mkserver_host) {
-        error_printf("malloc failed in `mkwire_init`\n");
+        error_printf(false, "malloc failed in `mkwire_module_init`\n");
         return;
     }
     strcpy(_mkserver_host, mkobs_url);
@@ -243,7 +243,7 @@ void mkwire_set_office_id(char* office_id) {
     }
     _office_id = malloc(strlen(office_id) + 1);
     if (!_office_id) {
-        error_printf("malloc failed in mkwire_set_office_id\n");
+        error_printf(false, "malloc failed in mkwire_set_office_id\n");
     }
     strcpy(_office_id, office_id);
 }
@@ -426,7 +426,7 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
         pbuf_copy_partial(p, &cmd, sizeof(int16_t), 0);
         uint16_t total_len = p->tot_len;
         if (cmd > MAX_VALID_CMD) {
-            error_printf("MKOB Server sent invalid command: %hi Message len: %hu\n", cmd, total_len);
+            error_printf(false, "MKOB Server sent invalid command: %hi Message len: %hu\n", cmd, total_len);
         }
         else {
             const char* cmds = _mks_commands[cmd];
@@ -490,13 +490,13 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_a
                 }
             }
             else {
-                error_printf("MKWIRE - Unknown CMD: %hd\n", cmd);
+                error_printf(false, "MKWIRE - Unknown CMD: %hd\n", cmd);
             }
             pbuf_free(p);
         }
     }
     else {
-        error_printf("MKOB Wire receive called without a message. Host:Port %d:%d\n", ip_addr->addr, port);
+        error_printf(false, "MKOB Wire receive called without a message. Host:Port %d:%d\n", ip_addr->addr, port);
     }
 }
 
@@ -545,6 +545,6 @@ static void _wire_connect() {
     // as KOBServer tracks clients by IP:Port
     err_enum_t status = udp_socket_bind(_mkserver_host, _mkserver_port, _bind_handler);
     if (!(ERR_OK == status || ERR_INPROGRESS == status)) {
-        error_printf("MK Wire Connect failed: %d\n", status);
+        error_printf(false, "MK Wire Connect failed: %d\n", status);
     }
 }

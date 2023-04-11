@@ -11,9 +11,11 @@
 #include "ui.h"
 #include "cmd.h"
 #include "cmt.h"
+#include "core1_main.h"
 #include "display.h"
 #include "mkboard.h"
 #include "mkwire.h"
+#include "multicore.h"
 #include "util.h"
 #include "ui_disp.h"
 #include "ui_term.h"
@@ -292,14 +294,22 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
 
 static void _ui_init_terminal_shell() {
     ui_term_build();
-    cmd_init();
+    cmd_module_init();
 }
 
 // ============================================
 // Public functions
 // ============================================
 
-void ui_init() {
+void start_ui(void) {
+    static bool _started = false;
+    // Make sure we aren't already started and that we are being called from core-0.
+    assert(!_started && 0 == get_core_num());
+    _started = true;
+    start_core1(); // The Core-1 main starts the UI
+}
+
+void ui_module_init() {
     ui_disp_build();
     _ui_init_terminal_shell();
     // Let the Backend know that we are initialized
