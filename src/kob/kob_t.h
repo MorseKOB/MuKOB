@@ -17,33 +17,33 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-    /**
-     * @brief State of the read code from key processing.
-     */
-    enum _KEY_READ_PHASE_ {
-        KEY_READ_START,
-        KEY_READ_DEBOUNCE,
-        KEY_READ_CONTINUE,
-        KEY_READ_COMPLETE,
-    };
+/**
+ * @brief State of the read code from key processing.
+ */
+enum _KEY_READ_PHASE_ {
+    KEY_READ_START,
+    KEY_READ_DEBOUNCE,
+    KEY_READ_CONTINUE,
+    KEY_READ_COMPLETE,
+};
 
-    typedef struct _KEY_READ_STATE_ {
-        enum _KEY_READ_PHASE_ phase;
-        uint32_t delta_time;
-    } key_read_state_t;
+typedef struct _KEY_READ_STATE_ {
+    enum _KEY_READ_PHASE_ phase;
+    uint32_t delta_time;
+} key_read_state_t;
 
-    /**
-     * @brief Status of the KOB and loop.
-     * @ingroup kob
-     *
-     * Status values pertaining to the Key, Sounder, and Loop, reported to
-     * other modules.
-     */
-    typedef struct _KOB_STATUS_ {
-        bool circuit_closed;
-        bool key_closed;
-        bool sounder_energized;
-    } kob_status_t;
+/**
+ * @brief Status of the KOB and loop.
+ * @ingroup kob
+ *
+ * Status values pertaining to the Key, Sounder, and Loop, reported to
+ * other modules.
+ */
+typedef struct _KOB_STATUS_ {
+    bool circuit_closed;
+    bool key_closed;
+    bool sounder_energized;
+} kob_status_t;
 
 #ifdef __cplusplus
 }

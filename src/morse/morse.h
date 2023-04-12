@@ -72,6 +72,15 @@ typedef struct _MCODE_SEQ {
 extern mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* codeseq, int len);
 
 /**
+ * @brief Allocate a mcode_seq_t structure and copy an existing mcode_seq_t instance into it.
+ * @ingroup morse
+ *
+ * @param mcode_seq The mcode structure to copy.
+ * @return mcode_seq_t* The copy.
+ */
+extern mcode_seq_t* mcode_seq_copy(mcode_seq_t* mcode_seq);
+
+/**
  * @brief Free an allocated mcode_seq_t.
  * @ingroup morse
  *
@@ -79,7 +88,7 @@ extern mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* codeseq,
  *
  * @param mcode Pointer to the mcode_seq_t to free.
  */
-extern void mcode_seq_free(mcode_seq_t* mcode);
+extern void mcode_seq_free(mcode_seq_t* mcode_seq);
 
 /**
  * @brief Decode a Morse Code sequence to text.

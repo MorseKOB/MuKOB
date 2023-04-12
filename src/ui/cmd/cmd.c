@@ -89,8 +89,6 @@ static const cmd_handler_entry_t* _command_entries[] = {
 // Internal (non-command) declarations
 
 static void _hook_keypress();
-static int _skip_to_ws_eol(const char* line);
-
 
 // Class data
 
@@ -394,19 +392,6 @@ static void _process_line(char* line) {
     }
 }
 
-static int _skip_to_ws_eol(const char* line) {
-    int chars_skipped = 0;
-    do {
-        char c = *(line + chars_skipped);
-        if ('\000' == c || '\040' == c || '\n' == c || '\r' == c || '\t' == c) {
-            return (chars_skipped);
-        }
-        chars_skipped++;
-    } while (1);
-    // shouldn't get here
-    return (strlen(line));
-}
-
 
 // Public functions
 
@@ -521,21 +506,4 @@ void cmd_module_init() {
     ui_term_register_control_char_handler(CMD_REINIT_TERM_CHAR, _handle_reinit_terminal_char);
     // Hook keypress looking for a ':' to wake us up.
     _hook_keypress();
-}
-
-int parse_line(char* line, char* argv[], int maxargs) {
-    for (int i = 0; i < maxargs; i++) {
-        argv[i] = line; // Store the argument
-        int chars_skipped = _skip_to_ws_eol(line);
-        // See if this would be the EOL
-        if ('\000' == *(line + chars_skipped)) {
-            argv[i+1] = NULL;
-            return (i + 1);
-        }
-        // Store a '\000' for the arg and move to the next
-        *(line + chars_skipped) = '\000';
-        line = (char*)strskipws(line + chars_skipped + 1);
-    }
-    argv[maxargs] = NULL;
-    return (maxargs);
 }
