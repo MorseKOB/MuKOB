@@ -183,7 +183,6 @@ static int32_t _seqno_send = 0;
 static int32_t _seqno_recv = -1;
 static struct udp_pcb* _udp_pcb = NULL;
 static wire_connected_state_t _connected_state = WIRE_NOT_CONNECTED;
-static scheduled_msg_id_t _keep_alive_id;
 static void (*_next_fn)(void) = NULL;
 
 void mkwire_connect(unsigned short wire_no) {
@@ -554,21 +553,15 @@ static void _send_id() {
         pbuf_free(p);
         _next_fn = _send_id_2;
         // Schedule to send again later
-        scheduled_msg_id_t id = scheduled_message_get(&_msg_mks_keep_alive_send);
+        scheduled_msg_id_t id = scheduled_message_get_by_id(_msg_mks_keep_alive_send.id);
         if (SCHED_MSG_ID_INVALID == id) {
-            _keep_alive_id = schedule_msg_in_ms(MKS_KEEP_ALIVE_TIME, &_msg_mks_keep_alive_send);
-        }
-        else {
-            _keep_alive_id = id;
+            schedule_msg_in_ms(MKS_KEEP_ALIVE_TIME, &_msg_mks_keep_alive_send);
         }
     }
 }
 
 static void _stop_keep_alive() {
-    if (SCHED_MSG_ID_INVALID != _keep_alive_id) {
-        scheduled_msg_cancel(_keep_alive_id);
-    }
-    _keep_alive_id = SCHED_MSG_ID_INVALID;
+    scheduled_msg_cancel(scheduled_message_get_by_id(_msg_mks_keep_alive_send.id));
 }
 
 static void _wire_connect() {

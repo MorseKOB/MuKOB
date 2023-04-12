@@ -21,20 +21,22 @@
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
 
+const static cmt_msg_t _msg_cmt_sm_tick = { MSG_CMT_SM_TICK };
+
 typedef struct _scheduled_msg_data_ {
     bool in_use;
     struct _scheduled_msg_data_* next;
-    uint32_t remaining;
+    int32_t remaining;
     uint8_t corenum;
     const cmt_msg_t* client_msg;
     scheduled_msg_id_t sched_msg_id;
-    uint32_t ms_requested;
+    int32_t ms_requested;
     uint32_t created_ms;
 } _scheduled_msg_data_t;
 
 static void _scheduled_msg_free(_scheduled_msg_data_t* smd);
 
-auto_init_recursive_mutex(sm_mutex);
+auto_init_mutex(sm_mutex);
 static _scheduled_msg_data_t _scheduled_message_datas[_SCHEDULED_MESSAGES_MAX]; // Objects to use (no malloc/free)
 static volatile int _scheduled_msg_count = 0;
 static _scheduled_msg_data_t* _scheduled_msg_head = NULL;
@@ -48,39 +50,12 @@ static repeating_timer_t _schd_msg_timer_data;
  *
  * @see repeating_timer_callback_t
  *
- * \param rt repeating time structure containing information about the repeating time. user_data is of primary important to the user
+ * \param rt repeating time structure containing information about the repeating time. (not used)
  * \return true to continue repeating, false to stop.
  */
 bool _schd_msg_timer_callback(repeating_timer_t* rt) {
-    recursive_mutex_enter_blocking(&sm_mutex);
-    // Get the head smd
-    if (_scheduled_msg_head) {
-        _scheduled_msg_head->remaining--; // Subtract a second
-        while (_scheduled_msg_head->remaining <= 0) { // Test for less-than or equal just in case
-            // This one is done. Free it, post its message and move on to the next.
-            _scheduled_msg_data_t* smd = _scheduled_msg_head;
-            const cmt_msg_t* client_msg = smd->client_msg;
-            uint8_t corenum = smd->corenum;
-            _scheduled_msg_head = smd->next;
-            _scheduled_msg_free(smd);
-            if (client_msg) {
-                if (corenum == 0) {
-                    post_to_core0_blocking(client_msg);
-                }
-                else if (corenum == 1) {
-                    post_to_core1_blocking(client_msg);
-                }
-                else {
-                    error_printf(false, "CMT - Scheduled Message alarm handler got unknown core number: %d Message: %d", (int)corenum, (int)client_msg->id);
-                }
-            }
-        }
-        if (0 == _scheduled_msg_count) {
-            _scheduled_msg_head = NULL; // Safeguard
-        }
-    }
-    recursive_mutex_exit(&sm_mutex);
-    return (true); // Repeat forever...
+    postBEMsgBlocking(&_msg_cmt_sm_tick);
+    return (true); // Repeat forever
 }
 
 static inline int _id_from_user(int uid) {
@@ -121,11 +96,42 @@ static void _scheduled_msg_init() {
     }
 }
 
+void cmt_handle_sm_tick(cmt_msg_t* msg) {
+    mutex_enter_blocking(&sm_mutex);
+    // Get the head smd
+    if (_scheduled_msg_head) {
+        _scheduled_msg_head->remaining--; // Subtract a second
+        while (_scheduled_msg_head->remaining <= 0) { // Multiple could time out together
+            // This one is done. Free it, post its message and move on to the next.
+            _scheduled_msg_data_t* smd = _scheduled_msg_head;
+            const cmt_msg_t* client_msg = smd->client_msg;
+            uint8_t corenum = smd->corenum;
+            _scheduled_msg_head = smd->next;
+            _scheduled_msg_free(smd);
+            if (client_msg) {
+                if (corenum == 0) {
+                    post_to_core0_blocking(client_msg);
+                }
+                else if (corenum == 1) {
+                    post_to_core1_blocking(client_msg);
+                }
+                else {
+                    error_printf(false, "CMT - Scheduled Message alarm handler got unknown core number: %d Message: %d", (int)corenum, (int)client_msg->id);
+                }
+            }
+        }
+        if (0 == _scheduled_msg_count) {
+            _scheduled_msg_head = NULL; // Safeguard
+        }
+    }
+    mutex_exit(&sm_mutex);
+}
+
 void scheduled_msg_cancel(scheduled_msg_id_t id) {
     id = _id_from_user(id);
     if (SCHED_MSG_ID_INVALID != id && id >= 0 && id < _SCHEDULED_MESSAGES_MAX) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[id];
-        recursive_mutex_enter_blocking(&sm_mutex);
+        mutex_enter_blocking(&sm_mutex);
         if (smd->in_use) {
             // See if it happens to be the head smd
             if (_scheduled_msg_head == smd) {
@@ -154,11 +160,11 @@ void scheduled_msg_cancel(scheduled_msg_id_t id) {
             }
             _scheduled_msg_free(smd);
         }
-        recursive_mutex_exit(&sm_mutex);
+        mutex_exit(&sm_mutex);
     }
 }
 
-scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
+scheduled_msg_id_t schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg) {
     uint8_t core_num = (uint8_t)get_core_num();
     _scheduled_msg_data_t* smd = NULL;
 
@@ -166,10 +172,10 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
     uint64_t req_us = ms * 1000;
     uint64_t overhead_us = req_us / _OVERHEAD_US_PER_MS;
     uint32_t overhead_ms = overhead_us / 1000;
-    ms -= overhead_ms;
+    int32_t ms_adj = ms - overhead_ms;
 
-    if (ms > 0) {
-        recursive_mutex_enter_blocking(&sm_mutex);
+    if (ms_adj > 0) {
+        mutex_enter_blocking(&sm_mutex);
         // Get a free smd
         smd = _scheduled_msg_free_list;
 
@@ -183,7 +189,7 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
             smd->in_use = true;
             smd->corenum = core_num;
             smd->client_msg = msg;
-            smd->remaining = ms;
+            smd->remaining = ms_adj;
             smd->ms_requested = ms;
             smd->created_ms = now_ms();
 
@@ -196,7 +202,7 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
                 _scheduled_msg_data_t* prev = _scheduled_msg_head;
                 _scheduled_msg_data_t** p_pnext = &_scheduled_msg_head;
                 while (prev) {
-                    if (smd->remaining < prev->remaining) {
+                    if (smd->remaining <= prev->remaining) {
                         // This is where it should be inserted
                         break;
                     }
@@ -207,16 +213,17 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
                 // `prev` is the spot to insert the new smd before, unless it is null.
                 if (prev) {
                     smd->next = prev;
-                    prev->remaining -= smd->remaining;
+                    smd->next->remaining -= smd->remaining;
                 }
                 *p_pnext = smd; // Store smd as the previous pointer's 'next'
             }
         }
-        recursive_mutex_exit(&sm_mutex);
+        mutex_exit(&sm_mutex);
     }
     if (!smd) {
-        char* reason = (ms <= 0 ? "Requested delay <= 0" : "No scheduled message slots available");
-        error_printf(false, "CMT - `schedule_msg_in_secs` did not schedule: %s. Posting message immediately.\n", reason);
+        if (ms > 0) {
+            error_printf(false, "CMT - Did not schedule for %dms. No slots available. Posting message immediately.\n", ms);
+        }
         // handle immediately so they get their message
         if (core_num == 0) {
             post_to_core0_blocking(msg);
@@ -230,7 +237,7 @@ scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg) {
 }
 
 extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg) {
-    recursive_mutex_enter_blocking(&sm_mutex);
+    mutex_enter_blocking(&sm_mutex);
     scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
     _scheduled_msg_data_t* smd = _scheduled_msg_head;
     while (smd) {
@@ -240,22 +247,22 @@ extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg) {
         }
         smd = smd->next;
     }
-    recursive_mutex_exit(&sm_mutex);
+    mutex_exit(&sm_mutex);
     return (_id_to_user(id));
 }
 
-scheduled_msg_id_t scheduled_message_get_by_id(msg_id_t msg) {
-    recursive_mutex_enter_blocking(&sm_mutex);
+scheduled_msg_id_t scheduled_message_get_by_id(msg_id_t msg_id) {
+    mutex_enter_blocking(&sm_mutex);
     scheduled_msg_id_t id = SCHED_MSG_ID_INVALID;
     _scheduled_msg_data_t* smd = _scheduled_msg_head;
     while (smd) {
-        if (smd->in_use && msg == smd->client_msg->id) {
+        if (smd->in_use && msg_id == smd->client_msg->id) {
             id = smd->sched_msg_id;
             break;
         }
         smd = smd->next;
     }
-    recursive_mutex_exit(&sm_mutex);
+    mutex_exit(&sm_mutex);
     return (_id_to_user(id));
 }
 
@@ -292,7 +299,7 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
 }
 
 void cmt_module_init() {
-    recursive_mutex_enter_blocking(&sm_mutex);
+    mutex_enter_blocking(&sm_mutex);
     _scheduled_msg_init();
-    recursive_mutex_exit(&sm_mutex);
+    mutex_exit(&sm_mutex);
 }

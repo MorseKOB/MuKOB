@@ -33,6 +33,7 @@ typedef struct _BE_IDLE_FN_DATA_ {
 // Message handler functions...
 static void _handle_be_noop(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
+static void _handle_cmt_sm_tick(cmt_msg_t* msg);
 static void _handle_kob_key_read(cmt_msg_t* msg);
 static void _handle_kob_sound_code_cont(cmt_msg_t* msg);
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg);
@@ -50,6 +51,7 @@ static void _handle_wire_set(cmt_msg_t* msg);
 static void _be_idle_function_1();
 static void _be_idle_function_2();
 static void _be_idle_function_3();
+static void _be_idle_function_4();
 
 static cmt_msg_t _msg_be_send_status;
 static cmt_msg_t _msg_be_initialized;
@@ -64,6 +66,7 @@ static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
 static const msg_handler_entry_t _be_noop_handler_entry = { MSG_BACKEND_NOOP, _handle_be_noop };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
+static const msg_handler_entry_t _cmt_sm_tick_handler_entry = { MSG_CMT_SM_TICK, _handle_cmt_sm_tick };
 static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KOB_KEY_READ, _handle_kob_key_read };
 static const msg_handler_entry_t _kob_sound_code_cont_handler_entry = { MSG_KOB_SOUND_CODE_CONT, _handle_kob_sound_code_cont };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
@@ -79,6 +82,7 @@ static const msg_handler_entry_t _wire_set_handler_entry = { MSG_WIRE_SET, _hand
 
 // For performance - put these in order that we expect to receive more often
 static const msg_handler_entry_t* _be_handler_entries[] = {
+    & _cmt_sm_tick_handler_entry,
     & _mks_packet_received_handler_entry,
     & _morse_to_decode_handler_entry,
     & _morse_decode_flush_handler_entry,
@@ -101,6 +105,7 @@ static const idle_fn _be_idle_functions[] = {
     (idle_fn)_be_idle_function_1,
     (idle_fn)_be_idle_function_2,
     (idle_fn)_be_idle_function_3,
+    (idle_fn)_be_idle_function_4,
     (idle_fn)0, // Last entry must be a NULL
 };
 
@@ -147,11 +152,21 @@ static void _be_idle_function_3() {
 static void _be_idle_function_4() {
     // For troubleshooting - if we are connected, make sure there is a
     // 'keep-alive' message waiting.
+    static bool msg_has_been_scheduled = false;
+
     if (mkwire_is_connected()) {
         scheduled_msg_id_t id = scheduled_message_get_by_id(MSG_MKS_KEEP_ALIVE_SEND);
         if (SCHED_MSG_ID_INVALID == id) {
-            error_printf(true, "\nConnected, but no keep-alive scheduled.\n");
+            if (msg_has_been_scheduled) {
+                error_printf(true, "\nConnected, but no keep-alive scheduled.\n");
+            }
         }
+        else {
+            msg_has_been_scheduled = true;
+        }
+    }
+    else {
+        msg_has_been_scheduled = false;
     }
     LEAVE_IDLE_FUNCTION();
 }
@@ -182,6 +197,11 @@ static void _handle_be_noop(cmt_msg_t* msg) {
     // schedule_msg_in_ms(60000, &msg_time);
 
     // times++;
+}
+
+static void _handle_cmt_sm_tick(cmt_msg_t* msg) {
+    cmt_handle_sm_tick(msg);
+    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_config_changed(cmt_msg_t* msg) {
