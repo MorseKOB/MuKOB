@@ -112,6 +112,24 @@ extern bool is_leap_year(int16_t year);
 extern const char* num_ordinal(int num);
 
 /**
+ * @brief Parse a character line into arguments (like a 'C' `main` receives)
+ *
+ * @param line The line to parse. Note that the line will (possibly) be modified.
+ * @param argv Storage for pointers to the arguments (indexes into the line).
+ * @param maxargs One more than the maximum number of arguments that `argv` can hold.
+ * @return int The number of arguments (`argc`). As 'C' standard, argv[argc] will be set to NULL.
+ */
+extern int parse_line(char* line, char* argv[], int maxargs);
+
+/**
+ * @brief Find the number of characters to skip to get to the next whitespace or the end of line.
+ *
+ * @param line The character string to scan.
+ * @return int The number of characters to skip.
+ */
+extern int skip_to_ws_eol(const char* line);
+
+/**
  * @brief Allocate memory for a string value and copy the string value into it.
  * @ingroup util
  *

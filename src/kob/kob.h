@@ -18,17 +18,6 @@ extern "C" {
 #include "cmt.h"
 
 /**
- * @brief Initialize the KOB functionality.
- * @ingroup kob
- *
- * Sets the configuration and starts the loop to read code from the key.
- *
- * @param invert_key_input True if the key input should be inverted (used for modem input)
- * @param key_has_closer True if the key has a circuit closer that should be followed
- */
-extern void kob_module_init(bool invert_key_input, bool key_has_closer);
-
-/**
  * @brief Read the key and return `true` if it is closed.
  * @ingroup kob
  *
@@ -47,6 +36,19 @@ extern bool kob_key_is_closed(void);
 extern void kob_read_code_from_key(cmt_msg_t* msg);
 
 /**
+ * @brief Sound the code sequence on the sounder and/or speaker.
+ *
+ * @param mcode_seq The mcode_seq_t morse code sequence to sound.
+ */
+extern void kob_sound_code(mcode_seq_t* mcode_seq);
+
+/**
+ * @brief Continuation of the `kob_sound_code` method - called in response to
+ *        MSG_KOB_SOUND_CODE_CONT message.
+ */
+extern void kob_sound_code_continue();
+
+/**
  * @brief Energize/deenergize the sounder
  * @ingroup kob
  *
@@ -55,6 +57,17 @@ extern void kob_read_code_from_key(cmt_msg_t* msg);
  * @param energize True to energize, False to deenergize.
  */
 extern void kob_sounder_energize(bool energize);
+
+/**
+ * @brief Initialize the KOB functionality.
+ * @ingroup kob
+ *
+ * Sets the configuration and starts the loop to read code from the key.
+ *
+ * @param invert_key_input True if the key input should be inverted (used for modem input)
+ * @param key_has_closer True if the key has a circuit closer that should be followed
+ */
+extern void kob_module_init(bool invert_key_input, bool key_has_closer);
 
 #ifdef __cplusplus
     }

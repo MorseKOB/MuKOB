@@ -212,7 +212,7 @@ static void _d_update_detected_wpm(mcode_seq_t* mcode_seq) {
 }
 
 /**
- * @brief Fill an Morse-String buffer with Nulls.
+ * @brief Fill a Morse-String buffer with Nulls.
  * @ingroup morse
  *
  * @param mstr_buf A character buffer that is `_MSTRING_ALLOC_SIZE` long.
@@ -244,8 +244,15 @@ static void _mstr_append(char* mstr_buf, char c) {
 mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* code_seq, int len) {
     mcode_seq_t* mcode_seq = (mcode_seq_t*)malloc(sizeof(mcode_seq_t));
     mcode_seq->len = len;
+    mcode_seq->source = source;
     mcode_seq->code_seq = (int32_t*)malloc(len * sizeof(int32_t));
     memcpy(mcode_seq->code_seq, code_seq, len * sizeof(int32_t));
+
+    return (mcode_seq);
+}
+
+mcode_seq_t* mcode_seq_copy(mcode_seq_t* mcode_seq_src) {
+    mcode_seq_t* mcode_seq = mcode_seq_alloc(mcode_seq_src->source, mcode_seq_src->code_seq, mcode_seq_src->len);
 
     return (mcode_seq);
 }
@@ -261,13 +268,13 @@ void mcode_seq_free(mcode_seq_t* mcode_seq){
     The Morse decoding algorithm has to wait until two characters have been received (or some
     time has passed) before decoding either of them. This is because what appears to be two
     characters may be two halves of a single spaced character. The two characters are kept in
-    a buffer which (clumsily) is represented as three lists: code_buf, space_buf, and mark_buf
-    (see details in the `init` function).
+    a buffer of three values: code_buf, space_buf, and mark_buf.
 */
 void morse_decode(mcode_seq_t* mcode_seq) {
     if (debugging_flags & DEBUGGING_MORSE_DECODE_SKIP) {
         return;
     }
+
     // Code received, so cancel a pending flush timer
     scheduled_msg_cancel(_d_flusher_id);
     _d_flusher_id = SCHED_MSG_ID_INVALID;

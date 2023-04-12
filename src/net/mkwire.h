@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#include "cmt.h"
+
 #include <stdbool.h>
 #include "pico/types.h"
 
@@ -75,9 +77,16 @@ bool mkwire_is_connected();
 /**
  * @brief Send the station ID to the MorseKOB Server if currently connected.
  * @ingroup wire
- * 
+ *
  */
 void mkwire_keep_alive_send();
+
+/**
+ * @brief Handle a message containing a pbuf packet received from a Morse KOB Server.
+ *
+ * @param msg Message containing a pbuf received from a Morse KOB Server.
+ */
+void mkwire_handle_packet_received(cmt_msg_t* msg);
 
 /*!
  * @brief Set the local Station/Office ID.

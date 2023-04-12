@@ -27,16 +27,18 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
-    MSG_KEY_READ,
+    MSG_KOB_KEY_READ,
+    MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
+    MSG_MKS_PACKET_RECEIVED,
     MSG_MORSE_DECODE_FLUSH,
     MSG_MORSE_CODE_SEQUENCE,
+    MSG_SEND_BE_STATUS,
     MSG_UI_INITIALIZED,
     MSG_WIRE_CONNECT,
     MSG_WIRE_CONNECT_TOGGLE,
     MSG_WIRE_DISCONNECT,
     MSG_WIRE_SET,
-    MSG_SEND_BE_STATUS,
     //
     // Front-End/UI messages
     MSG_UI_NOOP = 0x8000,
@@ -67,6 +69,7 @@ typedef union _MSG_DATA_VALUE {
     key_read_state_t key_read_state;
     kob_status_t kob_status;
     mcode_seq_t* mcode_seq;
+    struct pbuf* pb;
     char* station_id;
     char* str;
     int32_t status;

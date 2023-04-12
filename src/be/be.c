@@ -33,8 +33,10 @@ typedef struct _BE_IDLE_FN_DATA_ {
 // Message handler functions...
 static void _handle_be_noop(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
-static void _handle_key_read(cmt_msg_t* msg);
+static void _handle_kob_key_read(cmt_msg_t* msg);
+static void _handle_kob_sound_code_cont(cmt_msg_t* msg);
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg);
+static void _handle_mks_packet_received(cmt_msg_t* msg);
 static void _handle_morse_decode_flush(cmt_msg_t* msg);
 static void _handle_morse_to_decode(cmt_msg_t* msg);
 static void _handle_send_be_status(cmt_msg_t* msg);
@@ -62,8 +64,10 @@ static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
 static const msg_handler_entry_t _be_noop_handler_entry = { MSG_BACKEND_NOOP, _handle_be_noop };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
-static const msg_handler_entry_t _key_read_handler_entry = { MSG_KEY_READ, _handle_key_read };
+static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KOB_KEY_READ, _handle_kob_key_read };
+static const msg_handler_entry_t _kob_sound_code_cont_handler_entry = { MSG_KOB_SOUND_CODE_CONT, _handle_kob_sound_code_cont };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
+static const msg_handler_entry_t _mks_packet_received_handler_entry = { MSG_MKS_PACKET_RECEIVED, _handle_mks_packet_received };
 static const msg_handler_entry_t _morse_decode_flush_handler_entry = { MSG_MORSE_DECODE_FLUSH, _handle_morse_decode_flush };
 static const msg_handler_entry_t _morse_to_decode_handler_entry = { MSG_MORSE_CODE_SEQUENCE, _handle_morse_to_decode };
 static const msg_handler_entry_t _send_be_status_handler_entry = { MSG_SEND_BE_STATUS, _handle_send_be_status };
@@ -75,18 +79,20 @@ static const msg_handler_entry_t _wire_set_handler_entry = { MSG_WIRE_SET, _hand
 
 // For performance - put these in order that we expect to receive more often
 static const msg_handler_entry_t* _be_handler_entries[] = {
-    &_morse_to_decode_handler_entry,
-    &_morse_decode_flush_handler_entry,
-    &_key_read_handler_entry,
-    &_send_be_status_handler_entry,
-    &_mks_keep_alive_send_handler_entry,
-    &_wire_connect_handler_entry,
-    &_wire_connect_toggle_handler_entry,
-    &_wire_disconnect_handler_entry,
-    &_wire_set_handler_entry,
-    &_config_changed_handler_entry,
-    &_ui_initialized_handler_entry,
-    &_be_noop_handler_entry,
+    & _mks_packet_received_handler_entry,
+    & _morse_to_decode_handler_entry,
+    & _morse_decode_flush_handler_entry,
+    & _kob_key_read_handler_entry,
+    & _kob_sound_code_cont_handler_entry,
+    & _send_be_status_handler_entry,
+    & _mks_keep_alive_send_handler_entry,
+    & _wire_connect_handler_entry,
+    & _wire_connect_toggle_handler_entry,
+    & _wire_disconnect_handler_entry,
+    & _wire_set_handler_entry,
+    & _config_changed_handler_entry,
+    & _ui_initialized_handler_entry,
+    & _be_noop_handler_entry,
     ((msg_handler_entry_t*)0), // Last entry must be a NULL
 };
 
@@ -196,12 +202,23 @@ static void _handle_config_changed(cmt_msg_t* msg) {
     LEAVE_MSG_HANDLER();
 }
 
-static void _handle_key_read(cmt_msg_t* msg) {
+static void _handle_kob_key_read(cmt_msg_t* msg) {
     kob_read_code_from_key(msg);
+    LEAVE_MSG_HANDLER();
+}
+
+static void _handle_kob_sound_code_cont(cmt_msg_t* msg) {
+    kob_sound_code_continue();
+    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg) {
     mkwire_keep_alive_send();
+    LEAVE_MSG_HANDLER();
+}
+
+static void _handle_mks_packet_received(cmt_msg_t* msg) {
+    mkwire_handle_packet_received(msg);
     LEAVE_MSG_HANDLER();
 }
 
@@ -219,6 +236,7 @@ static void _handle_morse_decode_flush(cmt_msg_t* msg) {
  */
 static void _handle_morse_to_decode(cmt_msg_t* msg) {
     mcode_seq_t* mcode_seq = msg->data.mcode_seq; // Contained code_seq and mcode_seq need to be freed when done.
+    kob_sound_code(mcode_seq);
     morse_decode(mcode_seq);
     mcode_seq_free(mcode_seq);
     LEAVE_MSG_HANDLER();
@@ -237,7 +255,7 @@ static void _handle_ui_initialized(cmt_msg_t* msg) {
     // Start things running.
 
     // Kick off our key code reading
-    msg->id = MSG_KEY_READ;
+    msg->id = MSG_KOB_KEY_READ;
     msg->data.key_read_state.phase = KEY_READ_START;
     kob_read_code_from_key(msg);
 
