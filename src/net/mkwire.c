@@ -58,15 +58,14 @@
 #define MKS_OP_TIMEOUT (15 * 1000)     // 15 second request/response timeout
 #define MKS_KEEP_ALIVE_TIME (18 * 1000) // Time period to send ID to keep us connected
 
-// *** Local function declarations...
-void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
-static struct pbuf* _connect_req_builder();
-static struct pbuf* _disconnect_req_builder();
-static struct pbuf* _send_id_req_builder();
-static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
-static void _send_id();
-static void _stop_keep_alive();
-static void _wire_connect();
+typedef struct _station_id_ {
+    char id[MKS_PKT_MAX_STRING_LEN + 1];
+    uint32_t ts;
+} mk_station_id_t;
+static mk_station_id_t _current_sender;
+#define MK_MAX_ACTIVE_STATIONS 32
+/** Static storage for active stations - to avoid malloc during message receipt. */
+static mk_station_id_t _stations_heap[MK_MAX_ACTIVE_STATIONS];
 
 static const char* _mks_commands[6] = {
     "*UNDEFINED*",
@@ -158,7 +157,23 @@ typedef struct mkspkt_code {
 #define MKSPKT_CODE_OFFSET_PAD3 488
 #define MKSPKT_CODE_LEN 496
 
+
+// *** Local function declarations...
+
+void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
+static struct pbuf* _connect_req_builder();
+static struct pbuf* _disconnect_req_builder();
+static struct pbuf* _send_id_req_builder();
+static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
+static void _send_id();
+static void _stop_keep_alive();
+static void _unpack_code_packet(mkspkt_code_t* code_pkt, const struct pbuf* p);
+static void _unpack_id_packet(mkspkt_id_t* id_pkt, const struct pbuf* p);
+static void _wire_connect();
+
+
 static const cmt_msg_t _msg_mks_keep_alive_send = { MSG_MKS_KEEP_ALIVE_SEND };
+static cmt_msg_t _msg_mks_packet_received = { MSG_MKS_PACKET_RECEIVED };
 
 static char *_office_id = NULL;
 static char* _mkserver_host = NULL;
@@ -170,25 +185,6 @@ static struct udp_pcb* _udp_pcb = NULL;
 static wire_connected_state_t _connected_state = WIRE_NOT_CONNECTED;
 static scheduled_msg_id_t _keep_alive_id;
 static void (*_next_fn)(void) = NULL;
-
-void mkwire_disconnect() {
-    _stop_keep_alive();
-    if (_udp_pcb) {
-        // Send a disconnect message and free up the UDP connection.
-        struct pbuf* p = _disconnect_req_builder();
-        err_enum_t status = udp_send(_udp_pcb, p);
-        debug_printf("MKS disconnect response status: %d\n", status);
-        pbuf_free(p);
-        udp_remove(_udp_pcb);
-        _udp_pcb = NULL;
-        _connected_state = WIRE_NOT_CONNECTED;
-    }
-    // Post a message to the UI letting it know we are disconnected
-    cmt_msg_t msg;
-    msg.id = MSG_WIRE_CONNECTED_STATE;
-    msg.data.status = _connected_state;
-    postUIMsgBlocking(&msg);
-}
 
 void mkwire_connect(unsigned short wire_no) {
     if (mkwire_is_connected()) {
@@ -211,21 +207,99 @@ wire_connected_state_t mkwire_connected_state() {
     return (_connected_state);
 }
 
-void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
+void mkwire_disconnect() {
     _stop_keep_alive();
-    if (_mkserver_host) {
-        free(_mkserver_host);
-        _mkserver_host = NULL;
+    if (_udp_pcb) {
+        // Send a disconnect message and free up the UDP connection.
+        struct pbuf* p = _disconnect_req_builder();
+        err_enum_t status = udp_send(_udp_pcb, p);
+        debug_printf("MKS disconnect response status: %d\n", status);
+        pbuf_free(p);
+        udp_remove(_udp_pcb);
+        _udp_pcb = NULL;
+        _connected_state = WIRE_NOT_CONNECTED;
     }
-    _mkserver_host = malloc(strlen(mkobs_url) + 1);
-    if (!_mkserver_host) {
-        error_printf(false, "malloc failed in `mkwire_module_init`\n");
-        return;
+    // Post a message to the UI letting it know we are disconnected
+    cmt_msg_t msg;
+    msg.id = MSG_WIRE_CONNECTED_STATE;
+    msg.data.status = _connected_state;
+    postUIMsgBlocking(&msg);
+}
+
+void mkwire_handle_packet_received(cmt_msg_t* msg) {
+    struct pbuf* p = msg->data.pb;
+
+    int16_t cmd;
+    pbuf_copy_partial(p, &cmd, sizeof(int16_t), 0);
+    uint16_t total_len = p->tot_len;
+    if (cmd > MAX_VALID_CMD) {
+        error_printf(false, "MKOB Server sent invalid command: %hi Message len: %hu\n", cmd, total_len);
     }
-    strcpy(_mkserver_host, mkobs_url);
-    _mkserver_port = port;
-    mkwire_set_office_id(office_id);
-    mkwire_wire_set(wire_no);
+    else {
+        const char* cmds = _mks_commands[cmd];
+        debug_printf("MKOB Server response received. CMD: %hi (%s) Message len: %hu\n", cmd, cmds, total_len);
+        if (MKS_CMD_ACK == cmd) {
+            // ACK received, see if there is a followup function to call (send_id -> send_id2)...
+            if (_next_fn != NULL) {
+                // Call our next function...
+                void (*fn)(void) = _next_fn;
+                _next_fn = NULL;
+                (*fn)();
+            }
+        }
+        else if (MKS_CMD_DATA == cmd) {
+            // Data or ID
+            // Unpack as Data first, if 'n' is zero, then it is an ID
+            cmt_msg_t msg;
+            mkspkt_code_t code_pkt;
+            // Treat it as a code packet first.
+            _unpack_code_packet(&code_pkt, p);
+            if (code_pkt.n == 0) {
+                // ID packet, let the UI know the Station ID
+                mkspkt_id_t id_pkt;
+                _unpack_id_packet(&id_pkt, p);
+                if (code_pkt.seqno == (_seqno_recv + 2)) {
+                    _seqno_recv = code_pkt.seqno; // Update sequence number from sender, ignore others.
+                }
+                msg.id = MSG_WIRE_STATION_ID_RCVD;
+                msg.data.station_id = str_value_create(code_pkt.id);
+                postUIMsgBlocking(&msg);
+            }
+            else if (code_pkt.n > 0 && code_pkt.seqno != _seqno_recv) {
+                int code_len = (code_pkt.n <= MKS_PKT_MAX_CODE_LEN ? code_pkt.n : MKS_PKT_MAX_CODE_LEN);
+                // It is a Code packet.
+                // Let the UI know who the sender is.
+                strncpy(_current_sender.id, code_pkt.id, MKOBSERVER_STATION_ID_MAX_LEN);
+                msg.id = MSG_WIRE_CURRENT_SENDER;
+                msg.data.station_id = str_value_create(_current_sender.id);
+                postUIMsgBlocking(&msg);
+                // Process the code...
+                mcode_seq_t* mcode_seq = malloc(sizeof(mcode_seq_t));
+                if (code_pkt.seqno != (_seqno_recv + 1)) {
+                    // Sequence break (lost packet?)
+                    // Prepend negative 0x7FFF as a long break
+                    mcode_seq->code_seq = malloc((code_len + 1) * sizeof(int32_t));
+                    *mcode_seq->code_seq = (-0x7FFF);
+                    memcpy((mcode_seq->code_seq + 1), code_pkt.code_list, code_len * sizeof(int32_t));
+                    code_len++;
+                }
+                else {
+                    mcode_seq->code_seq = malloc(code_len * sizeof(int32_t));
+                    memcpy((mcode_seq->code_seq), code_pkt.code_list, code_len * sizeof(int32_t));
+                }
+                mcode_seq->len = code_len;
+                // Post it to the backend to decode
+                msg.id = MSG_MORSE_CODE_SEQUENCE;
+                msg.data.mcode_seq = mcode_seq;
+                postBEMsgBlocking(&msg);
+                _seqno_recv = code_pkt.seqno;
+            }
+        }
+        else {
+            error_printf(false, "MKWIRE - Unknown CMD: %hd\n", cmd);
+        }
+    }
+    pbuf_free(p);
 }
 
 bool mkwire_is_connected() {
@@ -267,6 +341,23 @@ void mkwire_wire_set(uint16_t wire_no) {
         msg.data.wire = wire_no;
         postUIMsgBlocking(&msg);
     }
+}
+
+void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
+    _stop_keep_alive();
+    if (_mkserver_host) {
+        free(_mkserver_host);
+        _mkserver_host = NULL;
+    }
+    _mkserver_host = malloc(strlen(mkobs_url) + 1);
+    if (!_mkserver_host) {
+        error_printf(false, "malloc failed in `mkwire_module_init`\n");
+        return;
+    }
+    strcpy(_mkserver_host, mkobs_url);
+    _mkserver_port = port;
+    mkwire_set_office_id(office_id);
+    mkwire_wire_set(wire_no);
 }
 
 // *** Local functions ***
@@ -420,80 +511,23 @@ static struct pbuf* _send_id_req_builder() {
     return (p);
 }
 
+/**
+ * @brief Handle a UDP packet received from the Morse KOB Server.
+ * @ingroup mkwire
+ *
+ * Note: This is called from an interrupt handler, and therefore care must be taken
+ * to avoid operations that could cause a block.
+ *
+ * @param arg
+ * @param pcb
+ * @param p
+ * @param ip_addr
+ * @param port
+ */
 static void _mks_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* ip_addr, u16_t port) {
     if (p != NULL) {
-        int16_t cmd;
-        pbuf_copy_partial(p, &cmd, sizeof(int16_t), 0);
-        uint16_t total_len = p->tot_len;
-        if (cmd > MAX_VALID_CMD) {
-            error_printf(false, "MKOB Server sent invalid command: %hi Message len: %hu\n", cmd, total_len);
-        }
-        else {
-            const char* cmds = _mks_commands[cmd];
-            debug_printf("MKOB Server response received. CMD: %hi (%s) Message len: %hu\n", cmd, cmds, total_len);
-            if (MKS_CMD_ACK == cmd) {
-                // ACK received, see if there is a followup function to call (send_id -> send_id2)...
-                if (_next_fn != NULL) {
-                    // Call our next function...
-                    void (*fn)(void) = _next_fn;
-                    _next_fn = NULL;
-                    (*fn)();
-                }
-            }
-            else if (MKS_CMD_DATA == cmd) {
-                // Data or ID
-                // Unpack as Data first, if 'n' is zero, then it is an ID
-                cmt_msg_t msg;
-                mkspkt_code_t code_pkt;
-                // Treat it as a code packet first.
-                _unpack_code_packet(&code_pkt, p);
-                char* station_id = code_pkt.id;
-                if (code_pkt.n == 0) {
-                    // ID packet, let the UI know the Station ID
-                    mkspkt_id_t id_pkt;
-                    _unpack_id_packet(&id_pkt, p);
-                    if (code_pkt.seqno == (_seqno_recv + 2)) {
-                        _seqno_recv = code_pkt.seqno; // Update sequence number from sender, ignore others.
-                    }
-                    station_id = id_pkt.id;
-                    msg.id = MSG_WIRE_STATION_ID_RCVD;
-                    msg.data.station_id = str_value_create(station_id);
-                    postUIMsgBlocking(&msg);
-                }
-                else if (code_pkt.n > 0 && code_pkt.seqno != _seqno_recv) {
-                    int code_len = (code_pkt.n <= MKS_PKT_MAX_CODE_LEN ? code_pkt.n : MKS_PKT_MAX_CODE_LEN);
-                    // It is a Code packet.
-                    // Let the UI know who the sender is.
-                    msg.id = MSG_WIRE_CURRENT_SENDER;
-                    msg.data.station_id = str_value_create(station_id);
-                    postUIMsgBlocking(&msg);
-                    // Process the code...
-                    mcode_seq_t* mcode_seq = malloc(sizeof(mcode_seq_t));
-                    if (code_pkt.seqno != (_seqno_recv + 1)) {
-                        // Sequence break (lost packet?)
-                        // Prepend negative 0x7FFF as a long break
-                        mcode_seq->code_seq = malloc((code_len + 1) * sizeof(int32_t));
-                        *mcode_seq->code_seq = (-0x7FFF);
-                        memcpy((mcode_seq->code_seq + 1), code_pkt.code_list, code_len * sizeof(int32_t));
-                        code_len++;
-                    }
-                    else {
-                        mcode_seq->code_seq = malloc(code_len * sizeof(int32_t));
-                        memcpy((mcode_seq->code_seq), code_pkt.code_list, code_len * sizeof(int32_t));
-                    }
-                    mcode_seq->len = code_len;
-                    // Post it to the backend to decode
-                    msg.id = MSG_MORSE_CODE_SEQUENCE;
-                    msg.data.mcode_seq = mcode_seq;
-                    postBEMsgBlocking(&msg);
-                    _seqno_recv = code_pkt.seqno;
-                }
-            }
-            else {
-                error_printf(false, "MKWIRE - Unknown CMD: %hd\n", cmd);
-            }
-            pbuf_free(p);
-        }
+        _msg_mks_packet_received.data.pb = p;
+        postBEMsgBlocking(&_msg_mks_packet_received);
     }
     else {
         error_printf(false, "MKOB Wire receive called without a message. Host:Port %d:%d\n", ip_addr->addr, port);

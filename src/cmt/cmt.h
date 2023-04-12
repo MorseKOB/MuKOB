@@ -30,6 +30,7 @@ typedef enum _MSG_ID_ {
     MSG_KOB_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
+    MSG_MKS_PACKET_RECEIVED,
     MSG_MORSE_DECODE_FLUSH,
     MSG_MORSE_CODE_SEQUENCE,
     MSG_SEND_BE_STATUS,
@@ -68,6 +69,7 @@ typedef union _MSG_DATA_VALUE {
     key_read_state_t key_read_state;
     kob_status_t kob_status;
     mcode_seq_t* mcode_seq;
+    struct pbuf* pb;
     char* station_id;
     char* str;
     int32_t status;

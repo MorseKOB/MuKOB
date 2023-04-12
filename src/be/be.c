@@ -36,6 +36,7 @@ static void _handle_config_changed(cmt_msg_t* msg);
 static void _handle_kob_key_read(cmt_msg_t* msg);
 static void _handle_kob_sound_code_cont(cmt_msg_t* msg);
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg);
+static void _handle_mks_packet_received(cmt_msg_t* msg);
 static void _handle_morse_decode_flush(cmt_msg_t* msg);
 static void _handle_morse_to_decode(cmt_msg_t* msg);
 static void _handle_send_be_status(cmt_msg_t* msg);
@@ -66,6 +67,7 @@ static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CH
 static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KOB_KEY_READ, _handle_kob_key_read };
 static const msg_handler_entry_t _kob_sound_code_cont_handler_entry = { MSG_KOB_SOUND_CODE_CONT, _handle_kob_sound_code_cont };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
+static const msg_handler_entry_t _mks_packet_received_handler_entry = { MSG_MKS_PACKET_RECEIVED, _handle_mks_packet_received };
 static const msg_handler_entry_t _morse_decode_flush_handler_entry = { MSG_MORSE_DECODE_FLUSH, _handle_morse_decode_flush };
 static const msg_handler_entry_t _morse_to_decode_handler_entry = { MSG_MORSE_CODE_SEQUENCE, _handle_morse_to_decode };
 static const msg_handler_entry_t _send_be_status_handler_entry = { MSG_SEND_BE_STATUS, _handle_send_be_status };
@@ -77,6 +79,7 @@ static const msg_handler_entry_t _wire_set_handler_entry = { MSG_WIRE_SET, _hand
 
 // For performance - put these in order that we expect to receive more often
 static const msg_handler_entry_t* _be_handler_entries[] = {
+    & _mks_packet_received_handler_entry,
     & _morse_to_decode_handler_entry,
     & _morse_decode_flush_handler_entry,
     & _kob_key_read_handler_entry,
@@ -211,6 +214,11 @@ static void _handle_kob_sound_code_cont(cmt_msg_t* msg) {
 
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg) {
     mkwire_keep_alive_send();
+    LEAVE_MSG_HANDLER();
+}
+
+static void _handle_mks_packet_received(cmt_msg_t* msg) {
+    mkwire_handle_packet_received(msg);
     LEAVE_MSG_HANDLER();
 }
 
