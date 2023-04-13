@@ -267,12 +267,15 @@ int term_getc(void) {
     return (c);
 }
 
+/**
+ * @note This must be called while `sleep` is allowed.
+ */
 void term_module_init() {
     // Input handler...
     stdio_set_chars_available_callback(_stdio_chars_available, NULL);   // We can pass a parameter if we want
     // Terminal type and screen size...
     term_reset();
-    sleep_ms(100); // Allow the terminal to reset
+    sleep_ms(100); // Allow the terminal to reset.
     // Ask for the terminal ID and see what we got
     if (term_get_type_info(_term_info, _TERM_INFO_MAX_) < 2) {
         error_printf(false, "Term - Terminal did not respond with info.\n");
@@ -342,6 +345,9 @@ void term_set_origin_mode(term_om_t mode) {
     printf("%s?6%c", CSI, om);
 }
 
+/**
+ * @note This must be called while `sleep` is allowed.
+ */
 void term_set_size(uint16_t lines, uint16_t columns) {
     // The Dec manual says :
     // Note 1. The page size can be 24, 25, 36, 42, 48, 52, and 72 lines with 80 or 132 columns.

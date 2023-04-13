@@ -120,7 +120,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
     // Post a message to ourself. Allows other messages to be processed if queued.
     _msg_key_read_code.data.key_read_state.phase = KEY_READ_CONTINUE;
     _msg_key_read_code.data.key_read_state.delta_time = delta_t;
-    postBEMsgBlocking(&_msg_key_read_code);
+    schedule_msg_in_ms(1, &_msg_key_read_code);
     return;
 }
 
@@ -210,10 +210,14 @@ void kob_sound_code_continue() {
 void kob_sound_code(mcode_seq_t* mcode_seq) {
     scheduled_msg_cancel(scheduled_message_get_by_id(MSG_KOB_SOUND_CODE_CONT));
     mcode_seq_free(_snd_mcode_seq);
-    _snd_mcode_seq = mcode_seq_copy(mcode_seq);
-    _snd_code_index = 0;
-    _snd_phase1 = true;
-    kob_sound_code_continue();
+    // See if we are suppose to sound this and have an output device enabled
+    const config_t* cfg = config_current();
+    if (cfg->sound || cfg->sounder) {
+        _snd_mcode_seq = mcode_seq_copy(mcode_seq);
+        _snd_code_index = 0;
+        _snd_phase1 = true;
+        kob_sound_code_continue();
+    }
 }
 
 void kob_sounder_energize(bool energize) {

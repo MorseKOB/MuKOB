@@ -63,7 +63,7 @@ int board_init() {
 
     stdio_init_all();
 
-    sleep_ms(50);
+    sleep_ms(50); // Ok to `sleep` as msg system not started
 
     // Initialize the terminal library
     term_module_init();
@@ -185,7 +185,8 @@ int board_init() {
         // This also initializes the network subsystem
         wifi_set_creds(system_cfg->wifi_ssid, system_cfg->wifi_password);
         network_update_rtc(system_cfg->tz_offset);
-        sleep_ms(1000);  // Give it time to make a NTP call
+        // Give it time to make a NTP call
+        sleep_ms(1000); // Ok to `sleep` as msg system not started
     }
     // Now read the RTC and print it
     char datetime_buf[256];
@@ -195,7 +196,7 @@ int board_init() {
 
     // Initialize the display
     display_reset_on(false);
-    sleep_ms(100);
+    sleep_ms(100); // Ok to `sleep` as msg system not started
     disp_module_init();
     display_backlight_on(true);
 
@@ -209,7 +210,7 @@ int board_init() {
 
 void buzzer_beep(int ms) {
     buzzer_on(true);
-    sleep_ms(ms);
+//    sleep_ms(ms); ZZZ - can't sleep
     buzzer_on(false);
 }
 
@@ -224,7 +225,7 @@ void buzzer_on_off(const int pattern[]) {
         if (off_time == 0) {
             return;
         }
-        sleep_ms(off_time);
+//        sleep_ms(off_time); ZZZ - can't sleep
     }
 }
 
@@ -248,7 +249,7 @@ void display_reset_on(bool on) {
 
 void led_flash(int ms) {
     led_on(true);
-    sleep_ms(ms);
+//    sleep_ms(ms); ZZZ - no sleeping
     led_on(false);
 }
 
@@ -272,7 +273,7 @@ void led_on_off(const int32_t pattern[]) {
         if (off_time == 0) {
             return;
         }
-        sleep_ms(off_time);
+//        sleep_ms(off_time); // ZZZ - no sleeping
     }
 }
 

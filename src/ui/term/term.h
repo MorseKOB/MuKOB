@@ -370,15 +370,6 @@ extern int term_get_type_info(char* buf, int maxlen);
 extern int term_getc(void);
 
 /**
- * @brief Initialize the Term library and send initial configuration to the terminal.
- * @ingroup term
- *
- * This initializes the terminal type and screen size and sets up an input handler
- * from the standard input device.
- */
-extern void term_module_init(void);
-
-/**
  * @brief Return status of available input.
  * @ingroup term
  *
@@ -406,6 +397,17 @@ extern void term_input_buf_clear(void);
  * @return false No input has been lost since the last time this was called.
  */
 extern bool term_input_overflow(void);
+
+/**
+ * @brief Initialize the Term library and send initial configuration to the terminal.
+ * @ingroup term
+ *
+ * This initializes the terminal type and screen size and sets up an input handler
+ * from the standard input device.
+ *
+ * @note This must be called while `sleep` is allowed.
+ */
+extern void term_module_init(void);
 
 /**
  * @brief Terminal ID returned upon power-up.
@@ -472,6 +474,8 @@ extern void term_set_origin_mode(term_om_t mode);
  * The Dec manual says:
  * Note 1. The page size can be 24, 25, 36, 42, 48, 52, and 72 lines with 80 or 132 columns.
  * (PuTTY accepts any value)
+ *
+ * @note This must be called while `sleep` is allowed.
  *
  * @param lines The number of lines
  * @param columns The number of columns

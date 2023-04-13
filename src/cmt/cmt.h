@@ -23,10 +23,10 @@ typedef enum _MSG_ID_ {
     // Common messages (used by both BE and UI)
     MSG_COMMON_NOOP = 0x0000,
     MSG_CONFIG_CHANGED,
-    MSG_DELAY_COMPLETE,
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_CMT_SM_TICK,
     MSG_KOB_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
@@ -134,6 +134,13 @@ typedef int scheduled_msg_id_t;
 #define SCHED_MSG_ID_INVALID -1
 
 /**
+ * @brief Handle a Scheduled Message timer Tick.
+ *
+ * @param msg (not used)
+ */
+void cmt_handle_sm_tick(cmt_msg_t* msg);
+
+/**
  * @brief Cancel a scheduled message that was set using `alarm_set_ms`.
  * @ingroup cmt
  *
@@ -152,7 +159,7 @@ extern void scheduled_msg_cancel(scheduled_msg_id_t sched_msg_id);
  *
  * @return ID that can be used to cancel a scheduled message.
  */
-extern scheduled_msg_id_t schedule_msg_in_ms(uint32_t ms, const cmt_msg_t* msg);
+extern scheduled_msg_id_t schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
 
 /**
  * @brief Get the ID of a scheduled message if one exists.
