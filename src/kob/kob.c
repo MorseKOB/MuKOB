@@ -6,14 +6,15 @@
  *
 */
 #include "kob.h"
+
 #include "config.h"
 #include "mkboard.h"
+#include "mks.h"
 #include "morse.h"
 #include "system_defs.h"
 
 #include <stdlib.h>
 
-#define _KOB_CODESEQ_MAX_LEN 50 // Code sequences can have a maximum of 50 elements
 
 #define _KEY_READ_DEBOUNCE 15    // time to ignore transitions due to contact bounce(ms)
 #define _KOB_CODE_SENDER_CHG_BREAK -3000 // Long pause, Sender change, break in sequence
@@ -33,7 +34,7 @@ static cmt_msg_t _msg_kob_status;
 static cmt_msg_t _msg_key_mcode;
 static cmt_msg_t _msg_key_read_code;
 static int _kr_codeseq_index = 0;
-static int32_t _kr_codeseq[_KOB_CODESEQ_MAX_LEN + 4];
+static int32_t _kr_codeseq[MKS_CODESEQ_MAX_LEN + 4];
 static bool _key_closer_is_open = false;
 static bool _key_was_last_closed = false; // 'false' means open
 static uint32_t _key_last_read_time;
@@ -111,7 +112,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
         postBEMsgBlocking(&_msg_key_read_code);
         return;
     }
-    if (_kr_codeseq_index >= _KOB_CODESEQ_MAX_LEN) {
+    if (_kr_codeseq_index >= MKS_CODESEQ_MAX_LEN) {
         // Max length reached, so done assempling this code sequence
         _msg_key_read_code.data.key_read_state.phase = KEY_READ_COMPLETE;
         postBEMsgBlocking(&_msg_key_read_code);
@@ -135,7 +136,7 @@ extern bool kob_key_is_closed(void) {
  */
 void kob_read_code_from_key(cmt_msg_t* msg) {
     // If our message is also in the scheduled messages, cancel it.
-    scheduled_msg_cancel(scheduled_message_get(&_msg_key_read_code));
+    scheduled_msg_cancel(MSG_KOB_KEY_READ);
     if (KEY_READ_COMPLETE == msg->data.key_read_state.phase) {
         // Check the assembled code
         if (_kr_codeseq_index > 0) {
@@ -208,7 +209,7 @@ void kob_sound_code_continue() {
 }
 
 void kob_sound_code(mcode_seq_t* mcode_seq) {
-    scheduled_msg_cancel(scheduled_message_get_by_id(MSG_KOB_SOUND_CODE_CONT));
+    scheduled_msg_cancel(MSG_KOB_SOUND_CODE_CONT);
     mcode_seq_free(_snd_mcode_seq);
     // See if we are suppose to sound this and have an output device enabled
     const config_t* cfg = config_current();

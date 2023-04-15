@@ -7,6 +7,8 @@
  */
 #include "net.h"
 #include "mkboard.h"
+#include "util.h"
+
 #include "hardware/rtc.h"
 #include "pico/time.h"
 
@@ -18,11 +20,11 @@ static char _wifi_password[NET_PASSWORD_MAX_LEN];
 static bool _wifi_connected = false;
 
 // Forward definitions...
-static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handler_data);
+static void _ntp_response_handler(err_enum_t status, pbuf_t* p, void* handler_data);
 static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg);
 static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state);
 static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg);
-static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port);
+static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t* addr, u16_t port);
 static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state);
 
 typedef struct _udp_op_context {
@@ -32,7 +34,7 @@ typedef struct _udp_op_context {
     struct udp_pcb* udp_pcb;
     uint32_t timeout_ms;
     alarm_id_t timeout_alarm_id;
-    struct pbuf* p;
+    pbuf_t* p;
     udp_sop_result_handler_fn op_result_handler;
     void* result_handler_data;
     udp_bind_handler_fn bind_handler;
@@ -74,10 +76,10 @@ int host_from_hostport(char* buf, uint32_t maxlen, const char* host_and_port) {
         len_of_host = strlen(host_and_port);
     }
     if (maxlen > len_of_host) {
-        strncpy(buf, host_and_port, len_of_host);
+        strcpynt(buf, host_and_port, len_of_host);
     }
     else {
-        strncpy(buf, host_and_port, maxlen);
+        strcpynt(buf, host_and_port, maxlen);
     }
 
     return (len_of_host);
@@ -129,7 +131,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
     return (status);
 }
 
-err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf* p, uint32_t timeout_ms, udp_sop_result_handler_fn result_handler, void* handler_data) {
+err_enum_t udp_single_operation(const char* hostname, uint16_t port, pbuf_t* p, uint32_t timeout_ms, udp_sop_result_handler_fn result_handler, void* handler_data) {
     err_enum_t status = ERR_INPROGRESS;
 
     if (!wifi_connect()) {
@@ -182,13 +184,13 @@ bool wifi_connected() {
 }
 
 void wifi_set_creds(const char* ssid, const char* pw) {
-    strncpy(_wifi_ssid, ssid, NET_SSID_MAX_LEN);
-    strncpy(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
+    strcpynt(_wifi_ssid, ssid, NET_SSID_MAX_LEN);
+    strcpynt(_wifi_password, pw, NET_PASSWORD_MAX_LEN);
 }
 
 err_enum_t network_update_rtc(float tz_offset) {
     // Build the NTP request message...
-    struct pbuf* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_RAM);
+    pbuf_t* p = pbuf_alloc(PBUF_TRANSPORT, NTP_MSG_LEN, PBUF_POOL);
     uint8_t* req = (uint8_t*)p->payload;
     memset(req, 0, NTP_MSG_LEN);
     req[0] = 0x1b; // NTP Request: Version=3 Mode=3 (client)
@@ -233,7 +235,7 @@ static void _ntp_set_datetime(err_enum_t status, time_t* seconds_from_epoch, flo
 }
 
 // NTP data received (udp_incoming_data_handler_fn)
-static void _ntp_response_handler(err_enum_t status, struct pbuf* p, void* handler_data) {
+static void _ntp_response_handler(err_enum_t status, pbuf_t* p, void* handler_data) {
     if (p) {
         uint8_t mode = pbuf_get_at(p, 0) & 0x7;
         uint8_t stratum = pbuf_get_at(p, 1);
@@ -330,7 +332,7 @@ static int64_t _udp_bind_dns_timeout_handler(alarm_id_t id, void* request_state)
 static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, void* arg) {
     udp_op_context_t* op_context = (udp_op_context_t*)arg;
 
-    struct pbuf* p = op_context->p;
+    pbuf_t* p = op_context->p;
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
     void* handler_data = op_context->result_handler_data;
 
@@ -379,7 +381,7 @@ static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, vo
 }
 
 // UDP operation data received for a single operation (udp_recv_fn)
-static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, struct pbuf* p, const ip_addr_t* addr, u16_t port) {
+static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t* addr, u16_t port) {
     udp_op_context_t* op_context = (udp_op_context_t*)arg;
 
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
@@ -415,7 +417,7 @@ static int64_t _udp_sop_timeout_handler(alarm_id_t id, void* request_state) {
     cancel_alarm(id);
     error_printf(false, "UDP - Single operation, timeout waiting for response (id:%d timeout_id:%d)\n", id, op_context->timeout_alarm_id);
 
-    struct pbuf* p = op_context->p;
+    pbuf_t* p = op_context->p;
     udp_sop_result_handler_fn op_result_handler = op_context->op_result_handler;
 
     void* handler_data = op_context->result_handler_data;

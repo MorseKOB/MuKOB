@@ -112,7 +112,7 @@ msg_loop_cntx_t ui_msg_loop_cntx = {
     _ui_idle_functions,
 };
 
-static char* _sender_id = NULL;
+static const char* _sender_id = NULL;
 
 // ============================================
 // Idle functions
@@ -263,16 +263,13 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
  * Handle both messages from the wire that involve a Station ID.
  */
 static void _handle_wire_station_msgs(cmt_msg_t* msg) {
-    char* msg_station_id = msg->data.station_id;
+    const char* msg_station_id = msg->data.station_id;
 
     if (MSG_WIRE_CURRENT_SENDER == msg->id) {
         if (_sender_id) {
             if (strcmp(_sender_id, msg_station_id) == 0) {
-                // Same station, just free the message station id
-                free(msg_station_id);
                 return;
             }
-            free(_sender_id);
         }
         // Different station, store it and update the UI.
         _sender_id = msg->data.station_id;
@@ -280,9 +277,7 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
         ui_term_update_sender(_sender_id);
     }
     else if (MSG_WIRE_STATION_ID_RCVD == msg->id) {
-        // Update the station list
-        // ZZZ for now, just free up the string.
-        free(msg->data.station_id);
+        // ZZZ Update the station list
     }
     LEAVE_MSG_HANDLER();
 }

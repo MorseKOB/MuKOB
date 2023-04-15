@@ -29,7 +29,7 @@ typedef enum _WIRE_CONNECTED_STATE_ {
  * @brief Disconnect from the currently connected MorseKOB Wire.
  * @ingroup wire
  */
-void mkwire_disconnect();
+extern void mkwire_disconnect();
 
 /*!
  * @brief Connect to a MorseKOB Wire.
@@ -37,7 +37,7 @@ void mkwire_disconnect();
  *
  * @param wire_no The wire number to connect to (1-999)
  */
-void mkwire_connect(unsigned short wire_no);
+extern void mkwire_connect(unsigned short wire_no);
 
 /*!
  * @brief Toggle connection (Connect or Disconnect) to a MorseKOB Wire.
@@ -46,7 +46,7 @@ void mkwire_connect(unsigned short wire_no);
  * Toggle connection is a common operation. This requires that a wire
  * has been set.
  */
-void mkwire_connect_toggle();
+extern void mkwire_connect_toggle();
 
 /**
  * @brief The wire connected state.
@@ -54,7 +54,15 @@ void mkwire_connect_toggle();
  *
  * @return wire_connected_state_t The current state
  */
-wire_connected_state_t mkwire_connected_state();
+extern wire_connected_state_t mkwire_connected_state();
+
+/**
+ * @brief The current sender or NULL.
+ * @ingroup wire
+ *
+ * @return const char*
+ */
+extern const char* mkwire_current_sender();
 
 /*!
  * @brief Initialize the MorseKOB Wire subsystem.
@@ -64,7 +72,7 @@ wire_connected_state_t mkwire_connected_state();
  * @param office_id The local Station/Office ID.
  * @param wire_no The wire number to use for connect.
  */
-void mkwire_module_init(char *mkobs_url, uint16_t port, char *office_id, uint16_t wire_no);
+extern void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no);
 
 /*!
  * @brief Connected to KOB Server status.
@@ -72,21 +80,21 @@ void mkwire_module_init(char *mkobs_url, uint16_t port, char *office_id, uint16_
  *
  * @returns True if currently connected to a KOB Server wire.
  */
-bool mkwire_is_connected();
+extern bool mkwire_is_connected();
 
 /**
  * @brief Send the station ID to the MorseKOB Server if currently connected.
  * @ingroup wire
  *
  */
-void mkwire_keep_alive_send();
+extern void mkwire_keep_alive_send();
 
 /**
  * @brief Handle a message containing a pbuf packet received from a Morse KOB Server.
  *
  * @param msg Message containing a pbuf received from a Morse KOB Server.
  */
-void mkwire_handle_packet_received(cmt_msg_t* msg);
+extern void mkwire_handle_packet_received(cmt_msg_t* msg);
 
 /*!
  * @brief Set the local Station/Office ID.
@@ -94,7 +102,7 @@ void mkwire_handle_packet_received(cmt_msg_t* msg);
  *
  * @param office_id The local Station/Office ID.
  */
-void mkwire_set_office_id(char *office_id);
+extern void mkwire_set_office_id(char* office_id);
 
 /**
  * @brief Get the current wire number.
@@ -102,7 +110,7 @@ void mkwire_set_office_id(char *office_id);
  *
  * @return int16_t The wire number.
  */
-uint16_t mkwire_wire_get();
+extern uint16_t mkwire_wire_get();
 
 /**
  * @brief Set the wire number (without connecting).
@@ -113,7 +121,7 @@ uint16_t mkwire_wire_get();
  *
  * @param wire_no Wire number 1-999 are used/allowed by MorseKOB Server.
  */
-void mkwire_wire_set(uint16_t wire_no);
+extern void mkwire_wire_set(uint16_t wire_no);
 
 #ifdef __cplusplus
 }

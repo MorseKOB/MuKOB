@@ -26,6 +26,8 @@
 #define NET_PASSWORD_MAX_LEN 128
 #define NET_URL_MAX_LEN 2048
 
+typedef struct pbuf pbuf_t;
+
 /**
  * @brief Function prototype for UDP Bind response handler.
  * @ingroup wire
@@ -42,7 +44,7 @@ typedef void (*udp_bind_handler_fn)(err_enum_t status, struct udp_pcb* udp_pcb);
  * @param status The status from the operation.
  * @param p The PBUF from the UDP operation. It is the handler's responsibility to free the pbuf.
  */
-typedef void (*udp_sop_result_handler_fn)(err_enum_t status, struct pbuf* p, void* handler_data);
+typedef void (*udp_sop_result_handler_fn)(err_enum_t status, pbuf_t* p, void* handler_data);
 
 /**
  * @brief Get the 'host' portion of a 'host:port' identifier.
@@ -98,7 +100,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
  *
  * @returns Error number (from err.h). ERR_OK or ERR_INPROGRESS is returned on success.
  */
-err_enum_t udp_single_operation(const char* hostname, uint16_t port, struct pbuf* p, uint32_t timeout, udp_sop_result_handler_fn result_handler, void* handler_data);
+err_enum_t udp_single_operation(const char* hostname, uint16_t port, pbuf_t* p, uint32_t timeout, udp_sop_result_handler_fn result_handler, void* handler_data);
 
 /**
  * @brief Connect to WiFi (if needed).

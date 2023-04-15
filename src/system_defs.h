@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#define MuKOB_VERSION_INFO "MuKOB v0.1"  // ZZZ get from a central name/version string
+
 #undef putc     // Undefine so the standard macros will not be used
 #undef putchar  // Undefine so the standard macros will not be used
 

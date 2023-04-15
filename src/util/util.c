@@ -192,6 +192,22 @@ char* str_value_create(const char* value) {
     return (malloced_value);
 }
 
+int strcpynt(char* dest, const char* src, size_t maxchars) {
+    int n = 0;
+    char c;
+
+    for (; n < maxchars; n++) {
+        c = *(src + n);
+        *(dest + n) = c;
+        if (c == '\000') {
+            break;
+        }
+    }
+    *(dest + n) = '\000';
+
+    return (n);
+}
+
 void strdatetime(char* buf, uint bufsize, datetime_t* dt, strdatetime_ctrl_t ctrl) {
     char time_str[12];
     int time_len = 0;
