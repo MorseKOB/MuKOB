@@ -178,8 +178,10 @@ void ui_term_build(void) {
     _status_fill_fixed();
     ui_term_display_speed();
     ui_term_display_wire();
-    ui_term_update_sender(NULL); // Build a blank sender line
+    ui_term_update_sender(mkwire_current_sender()); // Build a blank sender line
     ui_term_update_status();
+    ui_term_update_connected_state(mkwire_connected_state());
+    ui_term_update_kob_status(kob_status());
 }
 
 term_color_pair_t ui_term_color_get() {
@@ -362,17 +364,17 @@ void ui_term_update_key_closed(bool closed) {
     // TODO
 }
 
-void ui_term_update_kob_status(kob_status_t kob_status) {
-    if (kob_status.circuit_closed != _kob_status.circuit_closed) {
-        _kob_status.circuit_closed = kob_status.circuit_closed;
-        ui_term_update_circuit_closed(kob_status.circuit_closed);
+void ui_term_update_kob_status(const kob_status_t* kob_status) {
+    if (kob_status->circuit_closed != _kob_status.circuit_closed) {
+        _kob_status.circuit_closed = kob_status->circuit_closed;
+        ui_term_update_circuit_closed(kob_status->circuit_closed);
     }
-    if (kob_status.key_closed != _kob_status.key_closed) {
-        _kob_status.key_closed = kob_status.key_closed;
-        ui_term_update_key_closed(kob_status.key_closed);
+    if (kob_status->key_closed != _kob_status.key_closed) {
+        _kob_status.key_closed = kob_status->key_closed;
+        ui_term_update_key_closed(kob_status->key_closed);
     }
-    if (kob_status.sounder_energized != _kob_status.sounder_energized) {
-        _kob_status.sounder_energized = kob_status.sounder_energized;
+    if (kob_status->sounder_energized != _kob_status.sounder_energized) {
+        _kob_status.sounder_energized = kob_status->sounder_energized;
         // ui_disp_update_sounder_energized(kob_status.sounder_energized);
     }
 }
@@ -432,6 +434,7 @@ void ui_term_update_status() {
 
     rtc_get_datetime(&now);
     strdatetime(buf, 9, &now, SDTC_TIME_2CHAR_HOUR | SDTC_TIME_AMPM);
+    term_color_pair_t tc = ui_term_color_get();
     term_cursor_save();
     term_color_fg(UI_TERM_STATUS_COLOR_FG);
     term_color_bg(UI_TERM_STATUS_COLOR_BG);
@@ -440,6 +443,7 @@ void ui_term_update_status() {
     printf("%s", buf);
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();
+    ui_term_color_set(tc.fg, tc.bg);
 }
 
 void ui_term_use_code_color() {

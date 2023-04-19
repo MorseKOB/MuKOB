@@ -149,17 +149,17 @@ void ui_disp_update_key_closed(bool closed) {
     disp_char_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_CLOSER_COL + 1, indicator_r, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint); // Closer Right
 }
 
-void ui_disp_update_kob_status(kob_status_t kob_status) {
-    if (kob_status.circuit_closed != _kob_status.circuit_closed) {
-        _kob_status.circuit_closed = kob_status.circuit_closed;
-        ui_disp_update_circuit_closed(kob_status.circuit_closed);
+void ui_disp_update_kob_status(const kob_status_t* kob_status) {
+    if (kob_status->circuit_closed != _kob_status.circuit_closed) {
+        _kob_status.circuit_closed = kob_status->circuit_closed;
+        ui_disp_update_circuit_closed(kob_status->circuit_closed);
     }
-    if (kob_status.key_closed != _kob_status.key_closed) {
-        _kob_status.key_closed = kob_status.key_closed;
-        ui_disp_update_key_closed(kob_status.key_closed);
+    if (kob_status->key_closed != _kob_status.key_closed) {
+        _kob_status.key_closed = kob_status->key_closed;
+        ui_disp_update_key_closed(kob_status->key_closed);
     }
-    if (kob_status.sounder_energized != _kob_status.sounder_energized) {
-        _kob_status.sounder_energized = kob_status.sounder_energized;
+    if (kob_status->sounder_energized != _kob_status.sounder_energized) {
+        _kob_status.sounder_energized = kob_status->sounder_energized;
         // ui_disp_update_sounder_energized(kob_status.sounder_energized);
     }
 }

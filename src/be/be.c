@@ -295,6 +295,9 @@ void be_module_init() {
     // Done with the Backend Initialization - Let the UI know.
     _msg_be_initialized.id = MSG_BE_INITIALIZED;
     postUIMsgBlocking(&_msg_be_initialized);
+    // Post a NOOP to ourself in case we have any tests set up.
+    cmt_msg_t msg = { MSG_BACKEND_NOOP };
+    postBEMsgNoWait(&msg);
 }
 
 void start_be() {

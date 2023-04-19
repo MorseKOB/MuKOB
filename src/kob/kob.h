@@ -59,6 +59,14 @@ extern void kob_sound_code_continue();
 extern void kob_sounder_energize(bool energize);
 
 /**
+ * @brief Get the current KOB status.
+ * @ingroup kob
+ *
+ * @return const kob_status_t Current status.
+ */
+extern const kob_status_t* kob_status();
+
+/**
  * @brief Initialize the KOB functionality.
  * @ingroup kob
  *

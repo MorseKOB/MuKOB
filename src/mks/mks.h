@@ -60,7 +60,7 @@ extern "C" {
 
 #define MKS_OP_NOTIMEOUT 0
 #define MKS_OP_TIMEOUT (3 * 1000)       // 3 second request/response timeout
-#define MKS_KEEP_ALIVE_TIME (18 * 1000) // Time period to send ID to keep us connected
+#define MKS_KEEP_ALIVE_TIME (5 * 1000) // Time period to send ID to keep us connected
 
 typedef enum _MCODE_SOURCE_ {
     MCODE_SRC_UNKNOWN,

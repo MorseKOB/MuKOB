@@ -53,7 +53,7 @@ mcode_seq_t* mcode_seq_alloc(mcode_source_t source, code_element_t* code_seq, in
         }
     }
     if (!mcode_seq) {
-        panic("MKS - No free mcode_seq.");
+        panic("MKS - No mcode_seq available for use.");
     }
     else {
         mcode_seq->len = (len <= MKS_CODESEQ_MAX_LEN ? len : MKS_CODESEQ_MAX_LEN);

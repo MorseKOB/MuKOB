@@ -158,10 +158,8 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
  *
  * @param ms The time in milliseconds from now.
  * @param msg The cmt_msg_t message to post when the time period elapses.
- *
- * @return True if it could be scheduled.
  */
-extern bool schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
+extern void schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
 
 /**
  * @brief Cancel scheduled message(s) for a message ID.
