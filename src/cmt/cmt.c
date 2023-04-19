@@ -17,6 +17,7 @@
 #include <string.h>
 
 #define _SCHEDULED_MESSAGES_MAX 16
+#define _SMD_FREE_INDICATOR (-1)
 #define _OVERHEAD_US_PER_MS 25 // From testing
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
@@ -49,13 +50,13 @@ bool _schd_msg_timer_callback(repeating_timer_t* rt) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
         if (smd->remaining > 0) {
             if (0 == --smd->remaining) {
-                smd->remaining = -1;
                 if (0 == smd->corenum) {
                     post_to_core0_blocking(smd->client_msg);
                 }
                 else {
                     post_to_core1_blocking(smd->client_msg);
                 }
+                smd->remaining = _SMD_FREE_INDICATOR;
             }
         }
     }
@@ -67,7 +68,7 @@ static void _scheduled_msg_init() {
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         // Initialize these as 'free' and chain them together
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
-        smd->remaining = -1;
+        smd->remaining = _SMD_FREE_INDICATOR;
     }
 
     bool success = add_repeating_timer_us(1000, _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
@@ -84,98 +85,100 @@ void cmt_handle_sleep(cmt_msg_t* msg) {
 }
 
 void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn) {
+    bool scheduled = false;
+
     // Calculate our overhead and adjust if possible
     uint64_t req_us = ms * 1000;
-    uint64_t overhead_us = req_us / _OVERHEAD_US_PER_MS;
-    uint32_t overhead_ms = overhead_us / 1000;
-    int32_t ms_adj = ms - overhead_ms;
-    ms_adj = (ms_adj > 0 ? ms_adj : 1);
+    uint64_t overhead_us = ms * _OVERHEAD_US_PER_MS;
+    int32_t adj_ms = (req_us - overhead_us) / 1000;
+    adj_ms = (adj_ms > 0 ? adj_ms : 1);
 
     uint8_t core_num = (uint8_t)get_core_num();
+    register uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     // Get a free smd
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
-        if (smd->remaining < 0) {
+        if (_SMD_FREE_INDICATOR == smd->remaining) {
             // This is free;
             smd->sleep_msg.id = MSG_CMT_SLEEP;
             smd->sleep_msg.data.sleep_fn = sleep_fn;
             smd->client_msg = &smd->sleep_msg;
             smd->ms_requested = ms;
             smd->corenum = core_num;
-            smd->remaining = ms_adj;
+            smd->remaining = adj_ms;
+            scheduled = true;
             break;
         }
     }
     mutex_exit(&sm_mutex);
+    restore_interrupts(flags);
+    if (!scheduled) {
+        panic("CMT - No SMD available for use.");
+    }
 }
 
-bool schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg) {
-    bool retval = false;
+void schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg) {
+    bool scheduled = false;
 
     // Calculate our overhead and adjust if possible
     uint64_t req_us = ms * 1000;
-    uint64_t overhead_us = req_us / _OVERHEAD_US_PER_MS;
-    uint32_t overhead_ms = overhead_us / 1000;
-    int32_t ms_adj = ms - overhead_ms;
+    uint64_t overhead_us = ms * _OVERHEAD_US_PER_MS;
+    int32_t adj_ms = (req_us - overhead_us) / 1000;
+    adj_ms = (adj_ms > 0 ? adj_ms : 1);
 
     uint8_t core_num = (uint8_t)get_core_num();
-    if (ms_adj > 0) {
-        mutex_enter_blocking(&sm_mutex);
-        // Get a free smd
-        for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
-            _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
-            if (smd->remaining < 0) {
-                // This is free;
-                smd->client_msg = msg;
-                smd->ms_requested = ms;
-                smd->corenum = core_num;
-                smd->remaining = ms_adj;
-                retval = true;
-                break;
-            }
-        }
-        mutex_exit(&sm_mutex);
-    }
-    else {
-        // Post the message now
-        if (core_num == 0) {
-            post_to_core0_blocking(msg);
-        }
-        else {
-            post_to_core1_blocking(msg);
+    register uint32_t flags = save_and_disable_interrupts();
+    mutex_enter_blocking(&sm_mutex);
+    // Get a free smd
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
+        if (_SMD_FREE_INDICATOR == smd->remaining) {
+            // This is free;
+            smd->client_msg = msg;
+            smd->ms_requested = ms;
+            smd->corenum = core_num;
+            smd->remaining = adj_ms;
+            scheduled = true;
+            break;
         }
     }
-
-    return (retval);
+    mutex_exit(&sm_mutex);
+    restore_interrupts(flags);
+    if (!scheduled) {
+        panic("CMT - No SMD available for use.");
+    }
 }
 
 
 void scheduled_msg_cancel(msg_id_t sched_msg_id) {
+    register uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
         if (smd->client_msg && smd->client_msg->id == sched_msg_id) {
             // This matches, so set the remaining to -1;
-            smd->remaining = -1;
+            smd->remaining = _SMD_FREE_INDICATOR;
         }
     }
     mutex_exit(&sm_mutex);
+    restore_interrupts(flags);
 }
 
 extern bool scheduled_message_exists(msg_id_t sched_msg_id) {
     bool exists = false;
+    register uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
         if (smd->client_msg && smd->client_msg->id == sched_msg_id) {
-            // This matches, so set the remaining to -1;
+            // This matches
             exists = true;
             break;
         }
     }
     mutex_exit(&sm_mutex);
-
+    restore_interrupts(flags);
     return (exists);
 }
 

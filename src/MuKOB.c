@@ -58,10 +58,6 @@ int main()
     // Launch the UI (core-1 Message Dispatching Loop)
     start_ui();
 
-    // Test scheduled messages
-    cmt_msg_t msg = { MSG_BACKEND_NOOP };
-    postBEMsgNoWait(&msg);
-    
     // Launch the Backend (core-0 (endless) Message Dispatching Loop - never returns)
     start_be();
 

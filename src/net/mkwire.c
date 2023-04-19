@@ -260,11 +260,15 @@ void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_
  */
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
     if (status == ERR_OK) {
+        if (_udp_pcb) {
+            udp_remove(_udp_pcb);
+        }
         _udp_pcb = udp_pcb;
         _connected_state = WIRE_CONNECTED;
         // Set up to receive incoming messages from the MKServer.
-        udp_recv(udp_pcb, _mks_recv, NULL);  // Can pass user-data in 3rd arg if needed
-        _send_id();
+        udp_recv(_udp_pcb, _mks_recv, NULL);  // Can pass user-data in 3rd arg if needed
+        // Post message to send our ID
+        postBEMsgNoWait(&_msg_keep_alive_send);
         // Post a message to the UI letting it know we are connected
         _msg_connect_state.data.status = _connected_state;
         postUIMsgBlocking(&_msg_connect_state);
@@ -530,7 +534,10 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t
                     cmt_msg_t* msg_send = _get_a_msg();
                     msg_send->id = MSG_MORSE_CODE_SEQUENCE;
                     msg_send->data.mcode_seq = mcode_seq;
-                    postBEMsgBlocking(msg_send);
+                    // Don't wait. If the queue is full we just lose this one.
+                    if (!postBEMsgNoWait(msg_send)) {
+                        mcode_seq_free(mcode_seq); // Free the sequence if we couldn't post it.
+                    }
                     _seqno_recv = code_pkt.seqno;
                 }
             }
@@ -568,7 +575,7 @@ static void _send_id() {
 }
 
 static void _wire_connect() {
-    if (_udp_pcb != NULL) {
+    if (_udp_pcb) {
         mkwire_disconnect();
     }
     // Need to bind to a port to keep it constant across UDP operations,

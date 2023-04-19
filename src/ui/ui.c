@@ -145,7 +145,7 @@ static void _handle_be_initialized(cmt_msg_t* msg) {
     _msg_ui_update_wire.id = MSG_WIRE_CONNECTED_STATE;
     _msg_ui_update_wire.data.status = connected_state;
     postUIMsgBlocking(&_msg_ui_update_wire);
-    // If we aren't connected to a wire, enter into the command shell by posting a message.
+    // If we aren't connected to a wire, enter into the command shell.
     if (!mkwire_is_connected()) {
         // Do this by posting a message.
         _msg_ui_cmd_start.id = MSG_CMD_KEY_PRESSED;
@@ -213,8 +213,8 @@ static void _handle_init_terminal(cmt_msg_t* msg) {
 }
 
 static void _handle_kob_status(cmt_msg_t* msg) {
-    ui_disp_update_kob_status(msg->data.kob_status);
-    ui_term_update_kob_status(msg->data.kob_status);
+    ui_disp_update_kob_status(&(msg->data.kob_status));
+    ui_term_update_kob_status(&(msg->data.kob_status));
     LEAVE_MSG_HANDLER();
 }
 
