@@ -1,5 +1,6 @@
 {
   "cmake.configureOnOpen": true,
+  "cmake.generator": "Unix Makefiles",
   "cmake.statusbar.advanced": {
     "debug" : {
       "visibility": "hidden"
@@ -11,7 +12,7 @@
     },
     "buildTarget" : {
       "visibility": "hidden"
-    },
+    }
   },
   "files.associations": {
     "stdlib.h": "c",
@@ -47,6 +48,5 @@
   "cmake.buildBeforeRun": true,
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "cortex-debug.openocdPath": "${env:OPENOCD_PATH}",
-  "cortex-debug.variableUseNaturalFormat": true,
   "cmake.sourceDirectory": "${workspaceFolder}/src"
 }
