@@ -18,6 +18,7 @@ extern "C" {
 #include "float.h"
 
 #include "config.h"
+#include "mks.h"
 
 // Used for Encoding
 #define DOTS_PER_WORD 45        // Dot units per word, including all spaces (MORSE is 43, PARIS is 47)
@@ -39,56 +40,6 @@ extern "C" {
 #define MORSE_MAX_DDS_IN_CHAR 9 // Maximum number of dits, dahs (& intra-char-space) in a character
 
 #define MORSE_CODE_ELEMENT_VALUE_MAX (FLT_MAX)
-
-typedef enum _MCODE_SEQ_SOURCE_ {
-    MCODE_SRC_UI,
-    MCODE_SRC_KEY,
-    MCODE_SRC_WIRE,
-} mcode_seq_source_t;
-
-/**
- * @brief Structure to contain a sequence of code elements and the length of the sequence.
- * @ingroup morse
- *
- * Code elements are millisecond time values for key down (positive) / key up (negative).
- * (This doesn't exist in morse.py, as Python can give you the length of an array of integers.)
- */
-typedef struct _MCODE_SEQ {
-    mcode_seq_source_t source;
-    int len;
-    int32_t* code_seq;
-} mcode_seq_t;
-
-/**
- * @brief Allocate a mcode_seq_t structure and the code sequence in it. Copy the code sequence into it and set the len.
- * @ingroup morse
- *
- * @see `mcode_seq_free`
- *
- * @param codeseq The code sequence (int32_t*) to allocate for and copy.
- * @param len  The length of the code sequence.
- * @return mcode_seq_t* Pointer to an allocated and initialized mcode_seq_t.
- */
-extern mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* codeseq, int len);
-
-/**
- * @brief Allocate a mcode_seq_t structure and copy an existing mcode_seq_t instance into it.
- * @ingroup morse
- *
- * @param mcode_seq The mcode structure to copy.
- * @return mcode_seq_t* The copy.
- */
-extern mcode_seq_t* mcode_seq_copy(mcode_seq_t* mcode_seq);
-
-/**
- * @brief Free an allocated mcode_seq_t.
- * @ingroup morse
- *
- * This frees the code sequence and then frees the mcode_seq_t itself.
- *
- * @param mcode Pointer to the mcode_seq_t to free.
- */
-extern void mcode_seq_free(mcode_seq_t* mcode_seq);
 
 /**
  * @brief Decode a Morse Code sequence to text.

@@ -139,6 +139,23 @@ extern int skip_to_ws_eol(const char* line);
 extern char* str_value_create(const char* value);
 
 /**
+ * @brief Copy the first 'n' characters of 'src' string to the 'dest' with a terminating null.
+ * @ingroup util
+ *
+ * This is nearly the same as `strncpy`, but it (correctly) terminates the copy in the case
+ * that the source string is longer than the maximum number of characters requested. This
+ * does mean that the destination buffer needs to be (at least) one character longer than
+ * the 'maxchars' requested. This also differs from `strncpy` in that it returns the number
+ * of characters copied (which seems more useful).
+ *
+ * @param dest String buffer that is at least one character larger than `maxchars`.
+ * @param src Source string to copy.
+ * @param maxchars The maximum number of characters to be copied.
+ * @return int The number of characters copied.
+ */
+extern int strcpynt(char* dest, const char* src, size_t maxchars);
+
+/**
  * @brief Format a date-time into a string.
  * @ingroup util
  *

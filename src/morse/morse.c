@@ -10,6 +10,7 @@
 */
 #include "morse.h"
 #include "morse_tables.h" // Morse data that is in text files in PyKOB
+
 #include "cmt.h"
 #include "debugging.h"
 #include "util.h"
@@ -63,7 +64,6 @@ static float _d_tru_dot; // actual length of typical dot(ms)
 static uint8_t _d_wpm; // configured code speed (max of text and char speeds)
 // Scheduled message to cause character to be 'flushed' if time elapses before two have been received.
 static cmt_msg_t _decode_flusher_msg;
-static scheduled_msg_id_t _d_flusher_id;
 // Detected code speed values. Start with the configured speed and calculated values
 static float _d_detected_dot_len; // = _d_dot_len
 static float _d_detected_tru_dot; // = _d_truDot
@@ -88,7 +88,6 @@ static int32_t _e_word_space; // Time between words (ms)
 static void _d_decode_char(float next_space) {
     float sp1 = _d_process[ _D_CHAR_ONE ].space_before; // space before 1st character
     float sp2 = _d_process[ _D_CHAR_TWO ].space_before; // space before 2nd character
-    float sp3 = next_space; // space before next character
     char* code = _d_mstr_3; // use one of our Morse-String buffers
     char* cs = _d_mstr_4; // use another Morse-String buffers
     _mstr_clear(code);
@@ -96,7 +95,7 @@ static void _d_decode_char(float next_space) {
 
     _d_complete_chars += 1; // number of complete characters in buffer (1 or 2)
     if (_d_complete_chars == _D_BOTH_CHARS && sp2 < (MD_MAX_MORSE_SPACE * _d_dot_len)
-        && (MD_MORSE_RATIO * sp1) > sp2 && sp2 < (MD_MORSE_RATIO * sp3)) {
+        && (MD_MORSE_RATIO * sp1) > sp2 && sp2 < (MD_MORSE_RATIO * next_space)) {
         // could be two halves of a spaced character
         // try combining the two halves
         strcat(code, _d_process[ _D_CHAR_ONE ].morse_elements); strcat(code, " "); strcat(code, _d_process[ _D_CHAR_TWO ].morse_elements);
@@ -241,29 +240,6 @@ static void _mstr_append(char* mstr_buf, char c) {
     }
 }
 
-mcode_seq_t* mcode_seq_alloc(mcode_seq_source_t source, int32_t* code_seq, int len) {
-    mcode_seq_t* mcode_seq = (mcode_seq_t*)malloc(sizeof(mcode_seq_t));
-    mcode_seq->len = len;
-    mcode_seq->source = source;
-    mcode_seq->code_seq = (int32_t*)malloc(len * sizeof(int32_t));
-    memcpy(mcode_seq->code_seq, code_seq, len * sizeof(int32_t));
-
-    return (mcode_seq);
-}
-
-mcode_seq_t* mcode_seq_copy(mcode_seq_t* mcode_seq_src) {
-    mcode_seq_t* mcode_seq = mcode_seq_alloc(mcode_seq_src->source, mcode_seq_src->code_seq, mcode_seq_src->len);
-
-    return (mcode_seq);
-}
-
-void mcode_seq_free(mcode_seq_t* mcode_seq){
-    if (mcode_seq) {
-        free (mcode_seq->code_seq);
-        free (mcode_seq);
-    }
-}
-
 /*
     The Morse decoding algorithm has to wait until two characters have been received (or some
     time has passed) before decoding either of them. This is because what appears to be two
@@ -276,8 +252,7 @@ void morse_decode(mcode_seq_t* mcode_seq) {
     }
 
     // Code received, so cancel a pending flush timer
-    scheduled_msg_cancel(_d_flusher_id);
-    _d_flusher_id = SCHED_MSG_ID_INVALID;
+    scheduled_msg_cancel(MSG_MORSE_DECODE_FLUSH);
     // _d_update_detected_wpm(mcode_seq);
     // Run through the code list
     for (int i = 0; i < mcode_seq->len; i++) {
@@ -346,7 +321,7 @@ void morse_decode(mcode_seq_t* mcode_seq) {
     }
     // Set up a 'flusher' alarm (skip if debugging decode)
     if (!(debugging_flags & DEBUGGING_MORSE_DECODE)) {
-        _d_flusher_id = schedule_msg_in_ms((20 * _d_tru_dot), &_decode_flusher_msg);
+        schedule_msg_in_ms((20 * _d_tru_dot), &_decode_flusher_msg);
     }
 }
 
@@ -378,7 +353,7 @@ void morse_decode_flush() {
 }
 
 mcode_seq_t* morse_encode(char c) {
-    int32_t code_seq[(2 * MORSE_MAX_DDS_IN_CHAR) + 1]; // Enough for 2 ints per element - longest is 9 elements (',-)
+    code_element_t code_seq[(2 * MORSE_MAX_DDS_IN_CHAR) + 1]; // Enough for 2 ints per element - longest is 9 elements (',-)
     int cli = 0; // Code sequence index. Used while building.
     const char** code_table = (CODE_TYPE_AMERICAN == _code_type ? american_morse : international_morse);
 
@@ -447,7 +422,6 @@ void morse_module_init(uint8_t twpm, uint8_t cwpm_min, code_type_t code_type, co
     _d_wpm = (twpm > cwpm_min ? twpm : cwpm_min);
     _d_dot_len = (UNIT_DOT_TIME / _d_wpm);
     _d_tru_dot = _d_dot_len;
-    _d_flusher_id = SCHED_MSG_ID_INVALID;
     _d_complete_chars = 0;
     _d_circuit_latched_closed = false;
     _d_process[ _D_CHAR_ONE ].morse_elements = _d_mstr_1;

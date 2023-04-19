@@ -48,4 +48,4 @@ typedef struct _KOB_STATUS_ {
 #ifdef __cplusplus
 }
 #endif
-#endif // _KOB_H_
+#endif // _KOB_T_H_

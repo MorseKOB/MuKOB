@@ -26,7 +26,7 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
-    MSG_CMT_SM_TICK,
+    MSG_CMT_SLEEP,
     MSG_KOB_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
@@ -58,6 +58,12 @@ typedef enum _MSG_ID_ {
 } msg_id_t;
 
 /**
+ * @brief Function prototype for a sleep function.
+ * @ingroup cmt
+ */
+typedef void (*cmt_sleep_fn)(void);
+
+/**
  * @brief Message data.
  *
  * Union that can hold the data needed by the messages.
@@ -69,8 +75,8 @@ typedef union _MSG_DATA_VALUE {
     key_read_state_t key_read_state;
     kob_status_t kob_status;
     mcode_seq_t* mcode_seq;
-    struct pbuf* pb;
-    char* station_id;
+    cmt_sleep_fn* sleep_fn;
+    const char* station_id;
     char* str;
     int32_t status;
     unsigned short wire;
@@ -86,6 +92,7 @@ typedef struct _CMT_MSG {
     msg_id_t id;
     msg_data_value_t data;
 } cmt_msg_t;
+
 
 #include "multicore.h"
 
@@ -130,26 +137,21 @@ typedef struct _MSG_LOOP_CNTX {
     const idle_fn* idle_functions;                  // Null terminated list of idle functions
 } msg_loop_cntx_t;
 
-typedef int scheduled_msg_id_t;
-#define SCHED_MSG_ID_INVALID -1
-
 /**
  * @brief Handle a Scheduled Message timer Tick.
  *
  * @param msg (not used)
  */
-void cmt_handle_sm_tick(cmt_msg_t* msg);
+void cmt_handle_sleep(cmt_msg_t* msg);
 
 /**
- * @brief Cancel a scheduled message that was set using `alarm_set_ms`.
+ * @brief Sleep for milliseconds and call a function.
  * @ingroup cmt
  *
- * This will attempt to cancel the scheduled message. It is possible that the time might have already
- * past and the message was posted.
- *
- * @param alarm_id The ID returned from the `alarm_set_ms` function.
+ * @param ms The time in milliseconds from now.
+ * @param sleep_fn The function to call when the time expires.
  */
-extern void scheduled_msg_cancel(scheduled_msg_id_t sched_msg_id);
+void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
 
 /**
  * @brief Schedule a message to post in the future.
@@ -157,9 +159,20 @@ extern void scheduled_msg_cancel(scheduled_msg_id_t sched_msg_id);
  * @param ms The time in milliseconds from now.
  * @param msg The cmt_msg_t message to post when the time period elapses.
  *
- * @return ID that can be used to cancel a scheduled message.
+ * @return True if it could be scheduled.
  */
-extern scheduled_msg_id_t schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
+extern bool schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
+
+/**
+ * @brief Cancel scheduled message(s) for a message ID.
+ * @ingroup cmt
+ *
+ * This will attempt to cancel the scheduled message. It is possible that the time might have already
+ * past and the message was posted.
+ *
+ * @param sched_msg_id The ID of the message that was scheduled.
+ */
+extern void scheduled_msg_cancel(msg_id_t sched_msg_id);
 
 /**
  * @brief Get the ID of a scheduled message if one exists.
@@ -167,27 +180,10 @@ extern scheduled_msg_id_t schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
  *
  * Typically, this is used to keep from adding a scheduled message if one already exists.
  *
- * @param msg The message to check for.
- * @return scheduled_msg_id_t The ID or SCHED_MSG_ID_INVALID if a scheduled message wasn't found.
+ * @param sched_msg_id The ID of the message to check for.
+ * @return True if there is a scheduled message for the ID.
  */
-extern scheduled_msg_id_t scheduled_message_get(const cmt_msg_t* msg);
-
-/**
- * @brief Get the ID of a scheduled message by the message ID, if one exists.
- * @ingroup cmt
- *
- * Typically, this is used to keep from adding a scheduled message if one already exists.
- *
- * @param msg The message ID to check for.
- * @return scheduled_msg_id_t The ID or SCHED_MSG_ID_INVALID if a scheduled message wasn't found.
- */
-extern scheduled_msg_id_t scheduled_message_get_by_id(msg_id_t msg);
-
-/**
- * @brief Initialize the Cooperative Multi-Tasking system.
- * @ingroup cmt
- */
-void cmt_module_init();
+extern bool scheduled_message_exists(msg_id_t sched_msg_id);
 
 /**
  * @brief Enter into a message processing loop.
@@ -199,6 +195,12 @@ void cmt_module_init();
  * @param loop_context Loop context for processing.
  */
 extern void message_loop(const msg_loop_cntx_t* loop_context);
+
+/**
+ * @brief Initialize the Cooperative Multi-Tasking system.
+ * @ingroup cmt
+ */
+void cmt_module_init();
 
 #ifdef __cplusplus
     }
