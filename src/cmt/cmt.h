@@ -87,10 +87,12 @@ typedef union _MSG_DATA_VALUE {
  *
  * @param id The ID (number) of the message.
  * @param data The data for the message.
+ * @param t The millisecond time msg was posted (set by the posting system)
  */
 typedef struct _CMT_MSG {
     msg_id_t id;
     msg_data_value_t data;
+    uint32_t t;
 } cmt_msg_t;
 
 
@@ -159,7 +161,7 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
  * @param ms The time in milliseconds from now.
  * @param msg The cmt_msg_t message to post when the time period elapses.
  */
-extern void schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg);
+extern void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg);
 
 /**
  * @brief Cancel scheduled message(s) for a message ID.

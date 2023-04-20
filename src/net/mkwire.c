@@ -146,7 +146,7 @@ static void _wire_connect();
 
 static cmt_msg_t _msg_current_sender = { MSG_WIRE_CURRENT_SENDER };
 static cmt_msg_t _msg_connect_state = { MSG_WIRE_CONNECTED_STATE };
-static const cmt_msg_t _msg_keep_alive_send = { MSG_MKS_KEEP_ALIVE_SEND };
+static cmt_msg_t _msg_keep_alive_send = { MSG_MKS_KEEP_ALIVE_SEND };
 static cmt_msg_t _msg_wire_changed = { MSG_WIRE_CHANGED };
 
 static bool _initialized = false;
@@ -241,7 +241,7 @@ void mkwire_wire_set(uint16_t wire_no) {
 void mkwire_module_init(char* mkobs_url, uint16_t port, char* office_id, uint16_t wire_no) {
     assert(!_initialized);
     _initialized = true;
-    bool success = add_repeating_timer_us(MKS_KEEP_ALIVE_TIME, _keep_alive_timer_callback, NULL, &_keep_alive_timer);
+    bool success = add_repeating_timer_ms(MKS_KEEP_ALIVE_TIME, _keep_alive_timer_callback, NULL, &_keep_alive_timer);
     if (!success) {
         error_printf(false, "MKWire - Could not create repeating timer for keep alive.\n");
     }

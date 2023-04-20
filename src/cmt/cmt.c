@@ -26,7 +26,7 @@ typedef struct _scheduled_msg_data_ {
     int32_t remaining;
     uint8_t corenum;
     int32_t ms_requested;
-    const cmt_msg_t* client_msg;
+    cmt_msg_t* client_msg;
     cmt_msg_t sleep_msg;
 } _scheduled_msg_data_t;
 
@@ -66,7 +66,7 @@ bool _schd_msg_timer_callback(repeating_timer_t* rt) {
 
 static void _scheduled_msg_init() {
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
-        // Initialize these as 'free' and chain them together
+        // Initialize these as 'free'
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
         smd->remaining = _SMD_FREE_INDICATOR;
     }
@@ -118,7 +118,7 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn) {
     }
 }
 
-void schedule_msg_in_ms(int32_t ms, const cmt_msg_t* msg) {
+void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
     bool scheduled = false;
 
     // Calculate our overhead and adjust if possible
