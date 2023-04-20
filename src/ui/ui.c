@@ -112,7 +112,7 @@ msg_loop_cntx_t ui_msg_loop_cntx = {
     _ui_idle_functions,
 };
 
-static char* _sender_id = NULL;
+static const char* _sender_id = NULL;
 
 // ============================================
 // Idle functions
@@ -145,7 +145,7 @@ static void _handle_be_initialized(cmt_msg_t* msg) {
     _msg_ui_update_wire.id = MSG_WIRE_CONNECTED_STATE;
     _msg_ui_update_wire.data.status = connected_state;
     postUIMsgBlocking(&_msg_ui_update_wire);
-    // If we aren't connected to a wire, enter into the command shell by posting a message.
+    // If we aren't connected to a wire, enter into the command shell.
     if (!mkwire_is_connected()) {
         // Do this by posting a message.
         _msg_ui_cmd_start.id = MSG_CMD_KEY_PRESSED;
@@ -213,8 +213,8 @@ static void _handle_init_terminal(cmt_msg_t* msg) {
 }
 
 static void _handle_kob_status(cmt_msg_t* msg) {
-    ui_disp_update_kob_status(msg->data.kob_status);
-    ui_term_update_kob_status(msg->data.kob_status);
+    ui_disp_update_kob_status(&(msg->data.kob_status));
+    ui_term_update_kob_status(&(msg->data.kob_status));
     LEAVE_MSG_HANDLER();
 }
 
@@ -263,16 +263,13 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
  * Handle both messages from the wire that involve a Station ID.
  */
 static void _handle_wire_station_msgs(cmt_msg_t* msg) {
-    char* msg_station_id = msg->data.station_id;
+    const char* msg_station_id = msg->data.station_id;
 
     if (MSG_WIRE_CURRENT_SENDER == msg->id) {
         if (_sender_id) {
             if (strcmp(_sender_id, msg_station_id) == 0) {
-                // Same station, just free the message station id
-                free(msg_station_id);
                 return;
             }
-            free(_sender_id);
         }
         // Different station, store it and update the UI.
         _sender_id = msg->data.station_id;
@@ -280,9 +277,7 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
         ui_term_update_sender(_sender_id);
     }
     else if (MSG_WIRE_STATION_ID_RCVD == msg->id) {
-        // Update the station list
-        // ZZZ for now, just free up the string.
-        free(msg->data.station_id);
+        // ZZZ Update the station list
     }
     LEAVE_MSG_HANDLER();
 }

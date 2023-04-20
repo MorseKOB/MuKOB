@@ -91,7 +91,7 @@ extern void ui_disp_update_key_closed(bool closed);
  *
  * @param kob_status Current KOB status
  */
-extern void ui_disp_update_kob_status(kob_status_t kob_status);
+extern void ui_disp_update_kob_status(const kob_status_t* kob_status);
 
 /**
  * @brief Update the sender station ID in the top of the display.

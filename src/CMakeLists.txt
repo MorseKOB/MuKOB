@@ -37,6 +37,7 @@ add_subdirectory(config)
 add_subdirectory(cmt)
 add_subdirectory(data)
 add_subdirectory(kob)
+add_subdirectory(mks)
 add_subdirectory(morse)
 add_subdirectory(net)
 add_subdirectory(test)
@@ -76,6 +77,7 @@ include_directories(
   cmt
   data
   kob
+  mks
   morse
   net
   test
@@ -97,7 +99,6 @@ add_compile_definitions(
   PICO_USE_STACK_GUARDS
   PICO_STACK_SIZE=4096
   PICO_CORE1_STACK_SIZE=4096
-
   # PICO_DEBUG_MALLOC
 )
 
@@ -111,6 +112,7 @@ target_link_libraries(MuKOB
   display
   ili9341_spi
   kob
+  mks
   morse
   net
   mukob_test

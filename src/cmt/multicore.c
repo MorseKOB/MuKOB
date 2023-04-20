@@ -8,8 +8,12 @@
  *
 */
 #include "multicore.h"
+#include "system_defs.h"
 #include "cmt.h"
 #include "core1_main.h"
+#include "mkboard.h"
+
+#include <stdio.h>
 
 #define CORE0_QUEUE_ENTRIES_MAX 32
 #define CORE1_QUEUE_ENTRIES_MAX 32
@@ -43,28 +47,64 @@ void multicore_module_init() {
     cmt_module_init();
 }
 
-void post_to_core0_blocking(const cmt_msg_t *msg) {
+static void _check_q0_level(char c, int id) {
+    if (option_value(OPTION_DEBUG)) {
+        if (CORE0_QUEUE_ENTRIES_MAX - queue_get_level(&core0_queue) < 4) {
+            cmt_msg_t msg;
+            uint32_t now = now_ms();
+            for (int i = 0; queue_get_level(&core0_queue) > 0; i++) {
+                get_core0_msg_blocking(&msg);
+                printf("\n!!! Q0-%02d:%#04.4x TIQ:%d !!!", i, msg.id, now - msg.t);
+            }
+            panic("Q0 almost full. P%c:%#04.4x", c, id);
+        }
+    }
+}
+
+static void _check_q1_level(char c, int id) {
+    if (option_value(OPTION_DEBUG)) {
+        if (CORE1_QUEUE_ENTRIES_MAX - queue_get_level(&core1_queue) < 4) {
+            cmt_msg_t msg;
+            uint32_t now = now_ms();
+            for (int i = 0; queue_get_level(&core1_queue) > 0; i++) {
+                get_core1_msg_blocking(&msg);
+                printf("\n!!! Q1-%02d:%#04.4x !!!", i, msg.id, now - msg.t);
+            }
+            panic("Q1 almost full. P%c:%#04.4x TIQ:%d", c, id);
+        }
+    }
+}
+
+void post_to_core0_blocking(cmt_msg_t *msg) {
+    msg->t = now_ms();
+    _check_q0_level('B', msg->id);
     queue_add_blocking(&core0_queue, msg);
 }
 
-bool post_to_core0_nowait(const cmt_msg_t *msg) {
+bool post_to_core0_nowait(cmt_msg_t *msg) {
+    msg->t = now_ms();
+    _check_q0_level('N', msg->id);
     return (queue_try_add(&core0_queue, msg));
 }
 
-void post_to_core1_blocking(const cmt_msg_t* msg) {
+void post_to_core1_blocking(cmt_msg_t* msg) {
+    msg->t = now_ms();
+    _check_q1_level('B', msg->id);
     queue_add_blocking(&core1_queue, msg);
 }
 
-bool post_to_core1_nowait(const cmt_msg_t* msg) {
+bool post_to_core1_nowait(cmt_msg_t* msg) {
+    msg->t = now_ms();
+    _check_q1_level('N', msg->id);
     return (queue_try_add(&core1_queue, msg));
 }
 
-void post_to_cores_blocking(const cmt_msg_t* msg) {
-    queue_add_blocking(&core0_queue, msg);
-    queue_add_blocking(&core1_queue, msg);
+void post_to_cores_blocking(cmt_msg_t* msg) {
+    post_to_core0_blocking(msg);
+    post_to_core1_blocking(msg);
 }
 
-uint16_t post_to_cores_nowait(const cmt_msg_t* msg) {
+uint16_t post_to_cores_nowait(cmt_msg_t* msg) {
     uint16_t retval = 0;
     if (post_to_core0_nowait(msg)) {
         retval |= 0x01;

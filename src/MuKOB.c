@@ -48,7 +48,7 @@ int main()
 
     // Indicate that we are awake
     if (option_value(OPTION_DEBUG)) {
-        buzzer_beep(250);
+        buzzer_beep(150);
     }
     led_on_off(say_hi);
 

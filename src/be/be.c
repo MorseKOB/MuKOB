@@ -33,11 +33,10 @@ typedef struct _BE_IDLE_FN_DATA_ {
 // Message handler functions...
 static void _handle_be_noop(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
-static void _handle_cmt_sm_tick(cmt_msg_t* msg);
+static void _handle_cmt_sleep(cmt_msg_t* msg);
 static void _handle_kob_key_read(cmt_msg_t* msg);
 static void _handle_kob_sound_code_cont(cmt_msg_t* msg);
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg);
-static void _handle_mks_packet_received(cmt_msg_t* msg);
 static void _handle_morse_decode_flush(cmt_msg_t* msg);
 static void _handle_morse_to_decode(cmt_msg_t* msg);
 static void _handle_send_be_status(cmt_msg_t* msg);
@@ -51,7 +50,6 @@ static void _handle_wire_set(cmt_msg_t* msg);
 static void _be_idle_function_1();
 static void _be_idle_function_2();
 static void _be_idle_function_3();
-static void _be_idle_function_4();
 
 static cmt_msg_t _msg_be_send_status;
 static cmt_msg_t _msg_be_initialized;
@@ -66,11 +64,10 @@ static uint32_t _last_status_update_ts; // ms timestamp of last status update
 
 static const msg_handler_entry_t _be_noop_handler_entry = { MSG_BACKEND_NOOP, _handle_be_noop };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
-static const msg_handler_entry_t _cmt_sm_tick_handler_entry = { MSG_CMT_SM_TICK, _handle_cmt_sm_tick };
+static const msg_handler_entry_t _cmt_sm_tick_handler_entry = { MSG_CMT_SLEEP, _handle_cmt_sleep };
 static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KOB_KEY_READ, _handle_kob_key_read };
 static const msg_handler_entry_t _kob_sound_code_cont_handler_entry = { MSG_KOB_SOUND_CODE_CONT, _handle_kob_sound_code_cont };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
-static const msg_handler_entry_t _mks_packet_received_handler_entry = { MSG_MKS_PACKET_RECEIVED, _handle_mks_packet_received };
 static const msg_handler_entry_t _morse_decode_flush_handler_entry = { MSG_MORSE_DECODE_FLUSH, _handle_morse_decode_flush };
 static const msg_handler_entry_t _morse_to_decode_handler_entry = { MSG_MORSE_CODE_SEQUENCE, _handle_morse_to_decode };
 static const msg_handler_entry_t _send_be_status_handler_entry = { MSG_SEND_BE_STATUS, _handle_send_be_status };
@@ -83,7 +80,6 @@ static const msg_handler_entry_t _wire_set_handler_entry = { MSG_WIRE_SET, _hand
 // For performance - put these in order that we expect to receive more often
 static const msg_handler_entry_t* _be_handler_entries[] = {
     & _cmt_sm_tick_handler_entry,
-    & _mks_packet_received_handler_entry,
     & _morse_to_decode_handler_entry,
     & _morse_decode_flush_handler_entry,
     & _kob_key_read_handler_entry,
@@ -105,7 +101,6 @@ static const idle_fn _be_idle_functions[] = {
     (idle_fn)_be_idle_function_1,
     (idle_fn)_be_idle_function_2,
     (idle_fn)_be_idle_function_3,
-    (idle_fn)_be_idle_function_4,
     (idle_fn)0, // Last entry must be a NULL
 };
 
@@ -149,28 +144,6 @@ static void _be_idle_function_3() {
     LEAVE_IDLE_FUNCTION();
 }
 
-static void _be_idle_function_4() {
-    // For troubleshooting - if we are connected, make sure there is a
-    // 'keep-alive' message waiting.
-    static bool msg_has_been_scheduled = false;
-
-    if (mkwire_is_connected()) {
-        scheduled_msg_id_t id = scheduled_message_get_by_id(MSG_MKS_KEEP_ALIVE_SEND);
-        if (SCHED_MSG_ID_INVALID == id) {
-            if (msg_has_been_scheduled) {
-                error_printf(true, "\nConnected, but no keep-alive scheduled.\n");
-            }
-        }
-        else {
-            msg_has_been_scheduled = true;
-        }
-    }
-    else {
-        msg_has_been_scheduled = false;
-    }
-    LEAVE_IDLE_FUNCTION();
-}
-
 
 // ====================================================================
 // Message handler functions
@@ -182,25 +155,26 @@ static void _handle_be_noop(cmt_msg_t* msg) {
     // static int times = 0;
     // static cmt_msg_t msg_time;
     // static uint64_t first_t = 0;
+    // uint64_t period = 10;
 
     // uint64_t now = now_us();
     // if (first_t == 0) { first_t = now; }
 
     // uint64_t last_time = msg->data.status;
-    // int64_t overhead = ((now - last_time) - 60000000);
-    // int64_t total_delta = (now - (first_t + (times * 60000000)));
-    // int32_t delay_per_ms = (60000000 / overhead);
+    // int64_t overhead = ((now - last_time) - (period * 1000000));
+    // int64_t total_delta = (now - (first_t + (times * (period * 1000000))));
+    // int32_t delay_per_ms = ((period * 1000000) / overhead);
     // info_printf("%5d : %6lld (%ld) : %lld\n", times, overhead, delay_per_ms, total_delta);
 
     // msg_time.id = MSG_BACKEND_NOOP;
     // msg_time.data.ts_us = now_us(); // Get the 'next' -> 'last_time' fresh
-    // schedule_msg_in_ms(60000, &msg_time);
+    // schedule_msg_in_ms((period * 1000), &msg_time);
 
     // times++;
 }
 
-static void _handle_cmt_sm_tick(cmt_msg_t* msg) {
-    cmt_handle_sm_tick(msg);
+static void _handle_cmt_sleep(cmt_msg_t* msg) {
+    cmt_handle_sleep(msg);
     LEAVE_MSG_HANDLER();
 }
 
@@ -234,11 +208,6 @@ static void _handle_kob_sound_code_cont(cmt_msg_t* msg) {
 
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg) {
     mkwire_keep_alive_send();
-    LEAVE_MSG_HANDLER();
-}
-
-static void _handle_mks_packet_received(cmt_msg_t* msg) {
-    mkwire_handle_packet_received(msg);
     LEAVE_MSG_HANDLER();
 }
 
@@ -319,12 +288,16 @@ void be_module_init() {
     else {
         mkwire_module_init(hostname, port, cfg->station, cfg->wire);
     }
+    mks_module_init();
     morse_module_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
     kob_module_init(cfg->invert_key_input, cfg->key_has_closer);
 
     // Done with the Backend Initialization - Let the UI know.
     _msg_be_initialized.id = MSG_BE_INITIALIZED;
     postUIMsgBlocking(&_msg_be_initialized);
+    // Post a NOOP to ourself in case we have any tests set up.
+    cmt_msg_t msg = { MSG_BACKEND_NOOP };
+    postBEMsgNoWait(&msg);
 }
 
 void start_be() {
