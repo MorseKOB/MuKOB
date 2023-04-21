@@ -29,6 +29,7 @@
 #include "hardware/clocks.h"
 #include "hardware/rtc.h"
 #include "pico/cyw43_arch.h"
+#include "pico/bootrom.h"
 
 #include "system_defs.h"
 
@@ -206,6 +207,10 @@ int board_init() {
     puts("\033[32mMuKOB says hello!\033[0m");
 
     return(true);
+}
+
+void boot_to_bootsel() {
+    reset_usb_boot(0, 0);
 }
 
 void buzzer_beep(int ms) {
