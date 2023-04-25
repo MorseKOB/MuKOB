@@ -182,7 +182,7 @@ void oled_disp_scroll_horz(void) {
 // mostly useful for debugging images, patterns, etc
 
 void oled_disp_print_buf_page(uint8_t buf[], uint8_t page) {
-    // prints one page of a full length (128x4) buffer
+    // disp_prints one page of a full length (128x4) buffer
     for (int j = 0; j < OLED_PAGE_HEIGHT; j++) {
         for (int k = 0; k < OLED_WIDTH; k++) {
             printf("%u", (buf[page * OLED_WIDTH + k] >> j) & 0x01);
@@ -192,7 +192,7 @@ void oled_disp_print_buf_page(uint8_t buf[], uint8_t page) {
 }
 
 void oled_disp_print_buf_pages(uint8_t buf[]) {
-    // prints all pages of a full length buffer
+    // disp_prints all pages of a full length buffer
     for (int i = 0; i < OLED_NUM_PAGES; i++) {
         printf("--page %d--\n", i);
         oled_disp_print_buf_page(buf, i);

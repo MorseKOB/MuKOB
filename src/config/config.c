@@ -164,6 +164,11 @@ static int _scih_boot_cfg_number_writer(const sys_cfg_item_handler_class_t* self
 static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_boot_cfg_number =
 { "bcfg_number", "Config number to load at boot", _SYSCFG_BCN_ID, _scih_boot_cfg_number_reader, _scih_boot_cfg_number_writer };
 
+static int _scih_disp_wrap_back_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value);
+static int _scih_disp_wrap_back_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full);
+static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_disp_wrap_back =
+{ "disp_wrap_back", "Display text characters to scan back for EOL wrap", _SYSCFG_DWB_ID, _scih_disp_wrap_back_reader, _scih_disp_wrap_back_writer};
+
 static int _scih_wifi_password_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value);
 static int _scih_wifi_password_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full);
 static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_wifi_password =
@@ -180,6 +185,7 @@ static const sys_cfg_item_handler_class_t* _sys_cfg_handlers[] = {
     & _scihc_boot_cfg_number,
     & _scihc_wifi_password,
     & _scihc_ssid,
+    & _scihc_disp_wrap_back,
     ((const sys_cfg_item_handler_class_t*)0), // NULL last item to signify end
 };
 
@@ -651,6 +657,29 @@ static int _scih_boot_cfg_number_writer(const sys_cfg_item_handler_class_t* self
     }
     // format the value we are responsible for
     len += sprintf(buf + len, "%hu", sys_cfg->boot_cfg_number);
+
+    return (len);
+}
+
+static int _scih_disp_wrap_back_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value) {
+    int retval = -1;
+
+    int iv = atoi(value);
+    sys_cfg->disp_wrap_back = (uint16_t)iv;
+    retval = 1;
+
+    return (retval);
+}
+
+static int _scih_disp_wrap_back_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full) {
+    int len = 0;
+
+    // If full - print comment and key
+    if (full) {
+        len = sprintf(buf, "# Display characters to scan back from EOL for NL wrapping.\n%s=", self->key);
+    }
+    // format the value we are responsible for
+    len += sprintf(buf + len, "%hd", sys_cfg->disp_wrap_back);
 
     return (len);
 }
@@ -1156,6 +1185,7 @@ config_t* config_new(const config_t* init_values) {
             cfg->invert_key_input = init_values->invert_key_input;
             cfg->key_has_closer = init_values->key_has_closer;
             cfg->local = init_values->local;
+            cfg->name = str_value_create(init_values->name);
             cfg->remote = init_values->remote;
             cfg->sound = init_values->sound;
             cfg->sounder = init_values->sounder;

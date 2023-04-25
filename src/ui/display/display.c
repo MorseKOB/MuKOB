@@ -46,10 +46,10 @@ bool _push_scr_context(scr_context_t* sc) {
 }
 
 static void _printc_for_printf_disp(char c, void* arg) {
-    printc(c, No_Paint);
+    disp_printc(c, No_Paint);
 }
 
-int printf_disp(paint_control_t paint, const char* format, ...) {
+int disp_printf(paint_control_t paint, const char* format, ...) {
     int pl;
     va_list xArgs;
     va_start(xArgs, format);

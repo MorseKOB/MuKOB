@@ -295,6 +295,14 @@ extern void ui_term_update_kob_status(const kob_status_t* kob_status);
 extern void ui_term_update_sender(const char* id);
 
 /**
+ * @brief Update the active stations list area.
+ * @ingroup ui
+ *
+ * @param stations List of Station ID structure pointers.
+ */
+extern void ui_term_update_stations(const mk_station_id_t** stations);
+
+/**
  * @brief Update the speed value.
  * @ingroup ui
  *

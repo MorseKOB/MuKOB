@@ -249,7 +249,7 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
     else {
         // Make sure a command shell is available.
         if (CMD_SNOOZING == cmd_get_state()) {
-            // Do this by posting a message.
+            // Do this by posting a message as though the wakeup key was pressed.
             cmt_msg_t msg;
             msg.id = MSG_CMD_KEY_PRESSED;
             msg.data.c = CMD_WAKEUP_CHAR;
@@ -277,7 +277,10 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
         ui_term_update_sender(_sender_id);
     }
     else if (MSG_WIRE_STATION_ID_RCVD == msg->id) {
-        // ZZZ Update the station list
+        // TODO sort the active station list
+        const mk_station_id_t** stations = mkwire_active_stations();
+        ui_disp_update_stations(stations);
+        ui_term_update_stations(stations);
     }
     LEAVE_MSG_HANDLER();
 }

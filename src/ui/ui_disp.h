@@ -110,6 +110,14 @@ extern void ui_disp_update_sender(const char* id);
 extern void ui_disp_update_speed(uint16_t speed);
 
 /**
+ * @brief Update the active stations list area.
+ * @ingroup ui
+ *
+ * @param stations List of Station ID structure pointers.
+ */
+extern void ui_disp_update_stations(const mk_station_id_t** stations);
+
+/**
  * @brief Update the status bar.
  * @ingroup ui
  */

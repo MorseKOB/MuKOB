@@ -25,6 +25,32 @@ typedef enum _WIRE_CONNECTED_STATE_ {
     WIRE_CONNECTED,
 } wire_connected_state_t;
 
+/**
+ * @brief Structure for an active MorseKOB station.
+ * @ingroup wire
+ *
+ * @param id Name of the station
+ * @param ts_init millisecond timestamp when the station first connected
+ * @param ts_ping millisecond timestamp of the last ping from this station
+ * @param ts_recv millisecond timestamp of the last receipt from this station
+ */
+typedef struct _station_id_ {
+    char id[MKS_PKT_MAX_STRING_LEN + 1];
+    uint32_t ts_init;
+    uint32_t ts_ping;
+    uint32_t ts_recv;
+} mk_station_id_t;
+#define MK_MAX_ACTIVE_STATIONS 32
+
+
+/**
+ * @brief Get a list of the active stations.
+ * @ingroup wire
+ *
+ * @return const mk_station_id_t** List of pointers to station ID structures.
+ */
+extern const mk_station_id_t** mkwire_active_stations();
+
 /*!
  * @brief Disconnect from the currently connected MorseKOB Wire.
  * @ingroup wire

@@ -18,23 +18,13 @@
 #include "net.h"
 #include "util.h"
 
-#define _MKW_MSG_POOL_SIZE 16
-#define _MKW_MSG_POOL_NDX_MASK 0x000F
-static cmt_msg_t _msg_pool[_MKW_MSG_POOL_SIZE];
-static int _msg_pool_ndx = 0;
-
-typedef struct _station_id_ {
-    char id[MKS_PKT_MAX_STRING_LEN + 1];
-    uint32_t ts_init;
-    uint32_t ts_ping;
-    uint32_t ts_recv;
-} mk_station_id_t;
-#define MK_MAX_ACTIVE_STATIONS 32
-
+#define _MK_STATION_STALE_TIME (50 * 1000)
 /** Static storage for the current sender - to avoid malloc during message receipt. */
 static mk_station_id_t _current_sender;
 /** Static storage for active stations - to avoid malloc during message receipt. */
 static mk_station_id_t _stations_heap[MK_MAX_ACTIVE_STATIONS];
+/** Pointers to active stations with a terminating null entry */
+static mk_station_id_t* _stations_list[MK_MAX_ACTIVE_STATIONS + 1];
 
 static const char* _mks_commands[6] = {
     "*UNDEFINED*",
@@ -132,7 +122,6 @@ typedef struct mkspkt_code {
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
 static pbuf_t* _connect_req_builder();
 static pbuf_t* _disconnect_req_builder();
-static cmt_msg_t* _get_a_msg();
 static bool _keep_alive_timer_callback(repeating_timer_t* rt);
 static void _mks_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t* addr, u16_t port);
 static mk_station_id_t* _save_active_station(const char* station_id);
@@ -164,6 +153,10 @@ static struct udp_pcb* _udp_pcb = NULL;
 static wire_connected_state_t _connected_state = WIRE_NOT_CONNECTED;
 static void (*_next_fn)(void) = NULL;
 
+
+const mk_station_id_t** mkwire_active_stations() {
+    return _stations_list;
+}
 
 void mkwire_connect(unsigned short wire_no) {
     if (mkwire_is_connected()) {
@@ -276,21 +269,6 @@ void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
 }
 
 /**
- * @brief Get a message from the pool.
- *
- * This rotates through the message pool. It assumes that messages will have
- * been consumed by the time it gets back around to them.
- *
- * @return cmt_msg_t*
- */
-static cmt_msg_t* _get_a_msg() {
-    cmt_msg_t* msg = &_msg_pool[_msg_pool_ndx];
-    _msg_pool_ndx = ((_msg_pool_ndx + 1) & _MKW_MSG_POOL_NDX_MASK);
-
-    return (msg);
-}
-
-/**
  * @brief Repeating alarm callback handler.
  * Handles events from the repeating timer. If we are connected, post a message to send our ID.
  *
@@ -348,34 +326,52 @@ static void _pack_id_packet(mkspkt_id_t *id_pkt) {
 
 static mk_station_id_t* _save_active_station(const char* station_id) {
     mk_station_id_t* station = NULL;
-    mk_station_id_t oldest_station = _stations_heap[0];
+    mk_station_id_t* oldest_station = &_stations_heap[0];
     uint32_t now = now_ms();
     // Try to find an existing entry for it...
     for (int i = 0; i < MK_MAX_ACTIVE_STATIONS; i++) {
-        mk_station_id_t stn = _stations_heap[i];
+        mk_station_id_t* stn = &_stations_heap[i];
         // update oldest
-        if (stn.ts_ping < oldest_station.ts_ping) {
+        if (stn->ts_ping < oldest_station->ts_ping) {
             oldest_station = stn;
         }
-        if (strcmp(stn.id, station_id) == 0) {
+        if (strcmp(stn->id, station_id) == 0) {
             // Found it
-            station = &stn;
+            station = stn;
             break;
         }
     }
     if (!station) {
         // Didn't find it. Replace the oldest entry.
-        station = &oldest_station;
+        station = oldest_station;
         station->ts_init = now;
         strcpynt(station->id, station_id, MKOBSERVER_STATION_ID_MAX_LEN);
     }
     station->ts_ping = now;
+    // Prune old stations and update the list of active stations
+    int li = 0;
+    for (int i = 0; i < MK_MAX_ACTIVE_STATIONS; i++) {
+        mk_station_id_t* stn = &_stations_heap[i];
+        if (now - stn->ts_ping > _MK_STATION_STALE_TIME) {
+            stn->ts_init = 0;
+            stn->ts_ping = 0;
+            stn->ts_recv = 0;
+            *stn->id = '\000';
+        }
+        if (stn->ts_ping > 0) {
+            *(_stations_list + li) = stn;
+            li++;
+        }
+    }
+    *(_stations_list + li) = (mk_station_id_t*)0; // NULL to terminate list
 
     return (station);
 }
 
 static mk_station_id_t* _save_current_sender(const char* station_id) {
+    // First, save/update it as an active station.
     mk_station_id_t* station = _save_active_station(station_id);
+    // Now make it the current sender.
     strcpy(_current_sender.id, station->id);
     station->ts_recv = station->ts_ping; // Update the station's receive ts
     _current_sender.ts_init = station->ts_init;
@@ -508,10 +504,10 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t
                     if (strcmp(_current_sender.id, code_pkt.id) == 0) {
                         _seqno_recv = code_pkt.seqno;
                     }
-                    cmt_msg_t* msg_send = _get_a_msg();
-                    msg_send->id = MSG_WIRE_STATION_ID_RCVD;
-                    msg_send->data.station_id = _save_active_station(code_pkt.id)->id;
-                    postUIMsgNoWait(msg_send);
+                    cmt_msg_t msg_send;
+                    msg_send.id = MSG_WIRE_STATION_ID_RCVD;
+                    msg_send.data.station_id = _save_active_station(code_pkt.id)->id;
+                    postUIMsgNoWait(&msg_send);
                 }
                 else if (code_pkt.n > 0 && code_pkt.seqno != _seqno_recv) {
                     int code_len = (code_pkt.n <= MKS_PKT_MAX_CODE_LEN ? code_pkt.n : MKS_PKT_MAX_CODE_LEN);
@@ -531,11 +527,11 @@ static void _mks_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_addr_t
                         mcode_seq = mcode_seq_alloc(MCODE_SRC_WIRE, code_pkt.code_list, code_len);
                     }
                     // Post it to the backend to decode
-                    cmt_msg_t* msg_send = _get_a_msg();
-                    msg_send->id = MSG_MORSE_CODE_SEQUENCE;
-                    msg_send->data.mcode_seq = mcode_seq;
+                    cmt_msg_t msg_send;
+                    msg_send.id = MSG_MORSE_CODE_SEQUENCE;
+                    msg_send.data.mcode_seq = mcode_seq;
                     // Don't wait. If the queue is full we just lose this one.
-                    if (!postBEMsgNoWait(msg_send)) {
+                    if (!postBEMsgNoWait(&msg_send)) {
                         mcode_seq_free(mcode_seq); // Free the sequence if we couldn't post it.
                     }
                     _seqno_recv = code_pkt.seqno;
