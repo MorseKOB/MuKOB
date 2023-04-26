@@ -155,24 +155,31 @@ int board_init() {
     gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
 
     // GPIO Inputs
-    gpio_set_function(OPTIONS_1_IN,   GPIO_FUNC_SIO);
+    //    Options Switch
+    gpio_init(OPTIONS_1_IN);
     gpio_set_dir(OPTIONS_1_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_1_IN);
-    gpio_set_function(OPTIONS_2_IN,   GPIO_FUNC_SIO);
+    gpio_init(OPTIONS_2_IN);
     gpio_set_dir(OPTIONS_2_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_2_IN);
-    gpio_set_function(OPTIONS_3_IN,   GPIO_FUNC_SIO);
+    gpio_init(OPTIONS_3_IN);
     gpio_set_dir(OPTIONS_3_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_3_IN);
-    gpio_set_function(OPTIONS_4_IN,   GPIO_FUNC_SIO);
+    gpio_init(OPTIONS_4_IN);
     gpio_set_dir(OPTIONS_4_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_4_IN);
-    gpio_set_function(ROTORY_SW_IN, GPIO_FUNC_SIO);
-    gpio_set_dir(ROTORY_SW_IN, GPIO_IN);
-    gpio_set_function(ROTORY_A_IN, GPIO_FUNC_SIO);
+    //    Rotory Encoder A & B
+    gpio_init(ROTORY_A_IN);
     gpio_set_dir(ROTORY_A_IN, GPIO_IN);
-    gpio_set_function(ROTORY_B_IN, GPIO_FUNC_SIO);
+    gpio_pull_up(ROTORY_A_IN);
+    gpio_init(ROTORY_B_IN);
     gpio_set_dir(ROTORY_B_IN, GPIO_IN);
+    gpio_pull_up(ROTORY_B_IN);
+    //    Rotory Ecoder Push-button Switch
+    gpio_init(ROTORY_PB_SW_IN);
+    gpio_set_dir(ROTORY_PB_SW_IN, GPIO_IN);
+    gpio_pull_up(ROTORY_PB_SW_IN);
+
 
     // Read and cache the option switch value
     options_read();

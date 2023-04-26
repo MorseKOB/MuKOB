@@ -31,7 +31,9 @@
 // Use interrupts to know when the encoder has moved.
 // Add reading of the switch, also using the interrupt to know when it has changed.
 //
-#include <stdio.h>
+#include "system_defs.h"
+#include "rotory_encoder.h"
+
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "hardware/timer.h"
@@ -39,11 +41,11 @@
 
 #include "quadrature_encoder.pio.h"
 
-#define PIN_SW 13
-#define PIN_ROTORY_ENC_CLK 14
-#define PIN_ROTORY_ENC_DATA 15
-#define PIN_ROTORY_ENC_AB PIN_ROTORY_ENC_CLK    // Base pin to connect the A phase of the encoder.
-                                                // The B phase must be connected to the next pin
+#include <stdio.h>
+
+
+#define _PIN_ROTORY_ENC_AB ROTORY_A_IN   // Base pin to connect the A phase of the encoder.
+                                        // The B phase must be connected to the next pin
 
 #define SM 0
 
@@ -51,32 +53,18 @@ static char event_str[128];
 static int old_value = 0; 
 static PIO pio_rotory_encoder = pio0;
 
-void gpio_event_string(char *buf, uint32_t events);
+static void _gpio_event_string(char *buf, uint32_t events);
 
-void gpio_callback(uint gpio, uint32_t events) {
-    // Put the GPIO event(s) that just happened into event_str
-    // so we can print it
-    gpio_event_string(event_str, events);
-    //printf("GPIO %d %s\n", gpio, event_str);
-    if (gpio == PIN_SW) {
-        if (events & GPIO_IRQ_EDGE_FALL) {
-            printf("switch pressed\n");
-        }
-        if (events & GPIO_IRQ_EDGE_RISE) {
-            printf("switch released\n");
-        }
-    }
-    if (gpio == PIN_ROTORY_ENC_CLK) {
-        int new_value, delta = 0;
-        // note: thanks to two's complement arithmetic delta will always
-        // be correct even when new_value wraps around MAXINT / MININT
-        new_value = quadrature_encoder_get_count(pio_rotory_encoder, SM);
-        delta = new_value - old_value;
-        old_value = new_value;
+void re_turn_irq_handler(uint gpio, uint32_t events) {
+    int new_value, delta = 0;
+    // note: thanks to two's complement arithmetic delta will always
+    // be correct even when new_value wraps around MAXINT / MININT
+    new_value = quadrature_encoder_get_count(pio_rotory_encoder, SM);
+    delta = new_value - old_value;
+    old_value = new_value;
 
-        if (delta != 0) {
-            printf("position %8d, delta %6d\n", new_value, delta);
-        }
+    if (delta != 0) {
+        printf("position %8d, delta %6d\n", new_value, delta);
     }
 }
 
@@ -87,7 +75,7 @@ static const char *gpio_irq_str[] = {
         "EDGE_RISE"   // 0x8
 };
 
-void gpio_event_string(char *buf, uint32_t events) {
+static void _gpio_event_string(char *buf, uint32_t events) {
     for (uint i = 0; i < 4; i++) {
         uint mask = (1 << i);
         if (events & mask) {
@@ -109,23 +97,9 @@ void gpio_event_string(char *buf, uint32_t events) {
 }
 
 
-void rotory_encoder_init() {
-
-    stdio_init_all();
-    gpio_init(PIN_SW);
-    gpio_pull_up(PIN_SW);
-    gpio_set_dir(PIN_SW, GPIO_IN);
-    gpio_init(PIN_ROTORY_ENC_CLK);
-    gpio_pull_up(PIN_ROTORY_ENC_CLK);
-    gpio_set_dir(PIN_ROTORY_ENC_CLK, GPIO_IN);
-    gpio_init(PIN_ROTORY_ENC_DATA);
-    gpio_pull_up(PIN_ROTORY_ENC_DATA);
-    gpio_set_dir(PIN_ROTORY_ENC_DATA, GPIO_IN);
-
+void rotory_encoder_module_init() {
+    // GPIO is initialized in `mkboard.c` with the rest of the board.
     uint offset = pio_add_program(pio_rotory_encoder, &quadrature_encoder_program);
-    quadrature_encoder_program_init(pio_rotory_encoder, SM, offset, PIN_ROTORY_ENC_AB, 0);
-
-    gpio_set_irq_enabled_with_callback(PIN_SW, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
-    gpio_set_irq_enabled_with_callback(PIN_ROTORY_ENC_CLK, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+    quadrature_encoder_program_init(pio_rotory_encoder, SM, offset, _PIN_ROTORY_ENC_AB, 0);
 }
 

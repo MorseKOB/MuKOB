@@ -28,14 +28,14 @@ extern "C" {
 // Using SPI 0 for the Touch and SD
 #define SPI_TSD_DEVICE spi0     // Hardware SPI to use
 #define SPI_TSD_MOSI  3         // DP-5
-#define SPI_TSD_MISO 4         // DP-6
-#define SPI_TSD_SCK  2         // DP-4
+#define SPI_TSD_MISO 4          // DP-6
+#define SPI_TSD_SCK  2          // DP-4
 
 // Using SPI 1, and allocate it to the following GPIO pins
-#define SPI_DISPLAY_DEVICE spi1    // Hardware SPI to use
-#define SPI_DISPLAY_MOSI 11        // DP-15
-#define SPI_DISPLAY_MISO 12        // DP-16
-#define SPI_DISPLAY_SCK  10        // DP-14
+#define SPI_DISPLAY_DEVICE spi1 // Hardware SPI to use
+#define SPI_DISPLAY_MOSI 11     // DP-15
+#define SPI_DISPLAY_MISO 12     // DP-16
+#define SPI_DISPLAY_SCK  10     // DP-14
 
 // Chip select values/levels
 #define SPI_CS_ENABLE  0        // LOW
@@ -50,14 +50,13 @@ extern "C" {
 #define IRQ_KOB_KEY     17      // DP-22
 #define IRQ_ROTORY_TURN 14      // DP-19
 #define IRQ_ROTORY_SW   13      // DP-17
+#define IRQ_SPACEBAR_SW 28      // DP-34
 #define IRQ_TOUCH       7       // DP-10
 
 // PIO
 // MuKOB uses PIO for reading the rotory encoder. This narrows the pins that can be used.
 #define ROTORY_A_IN             14  // DP-19 - IRQ on same pin. 'B" must be the next GPIO (15)
 #define ROTORY_B_IN             15  // DP-20 - Must be 1 greater than 'A' in.
-#define ROTORY_SW_IN            13  // DP-17 - IRQ on same pin.
-#define SPKR_DRIVE              22  // DP-29 - Speaker drive
 
 // Other GPIO
 #define DISPLAY_RESET_OUT       26  // DP-31
@@ -68,8 +67,11 @@ extern "C" {
 #define OPTIONS_2_IN            19  // DP-25 - Dip switch for options is 1234 - 3 BAUD ON-OFF=19200 ON-ON=9600
 #define OPTIONS_3_IN            20  // DP-26 - Dip switch for options is 1234 - 2 ON = MKOB4 Interface (key-sounder interface)
 #define OPTIONS_4_IN            21  // DP-27 - Dip switch for options is 1234 - 1 ON = Debug logging
+#define ROTORY_PB_SW_IN         13  // DP-17 - IRQ on same pin.
+#define SPACEBAR_SW             28  // DP-34 - IRQ on same pin.
+#define SPKR_DRIVE              22  // DP-29 - Speaker drive
 
-// Buzzer support
+// Buzzer/Tone support
 #define SPEAKER_OFF 0
 #define SPEAKER_ON 1
 
