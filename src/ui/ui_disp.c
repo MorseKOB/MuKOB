@@ -206,21 +206,9 @@ void ui_disp_update_stations(const mk_station_id_t** stations) {
     }
     // How many lines to display
     int lines = (sc <= UI_DISP_STATIONS_LINES_MAX ? sc : UI_DISP_STATIONS_LINES_MAX);
-    // Set the scroll area if needed (it needs to be different from the current)
+    // Set the scroll area if needed (if it needs to be different from the current)
     if ((lines + UI_DISP_BOTTOM_FIXED_LINES) != disp_info_fixed_bottom_lines()) {
-        // Get the current cursor position, as changing scroll area puts the cursor home.
-        scr_position_t cur = disp_cursor_get();
-        int delta = disp_info_fixed_bottom_lines() - (lines + UI_DISP_BOTTOM_FIXED_LINES);
-        // If we are going to make the scroll area smaller, scroll the text up that number of lines.
-        if (delta < 0) {
-            disp_print_crlf(abs(delta) - 1, No_Paint);
-        }
         disp_scroll_area_define(UI_DISP_TOP_FIXED_LINES, (lines + UI_DISP_BOTTOM_FIXED_LINES));
-        uint16_t scrl = disp_info_scroll_lines();
-        if (cur.line >= scrl) {
-            cur.line = scrl - 1;
-        }
-        disp_cursor_set_sp(cur);
     }
     _active_stations_lines = lines;
     // Display the stations
