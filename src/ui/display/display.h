@@ -83,7 +83,7 @@ typedef struct _text_color_pair_ {
  * @param fg Forground color-16 number
  * @param gb Background color-16 number
  */
-colorbyte_t colorbyte(colorn16_t fg, colorn16_t bg);
+extern colorbyte_t colorbyte(colorn16_t fg, colorn16_t bg);
 
 /**
  * @brief Get forground color number from color-byte number.
@@ -91,7 +91,7 @@ colorbyte_t colorbyte(colorn16_t fg, colorn16_t bg);
  *
  * @param  cb Color-byte value
  */
-colorn16_t fg_from_cb(colorbyte_t cb);
+extern colorn16_t fg_from_cb(colorbyte_t cb);
 
 /**
  * @brief Get background color number from color-byte number
@@ -99,7 +99,7 @@ colorn16_t fg_from_cb(colorbyte_t cb);
  *
  * @param cb Color-byte value
  */
-colorn16_t bg_from_cb(colorbyte_t cb);
+extern colorn16_t bg_from_cb(colorbyte_t cb);
 
 /**
  * @brief Get a RGB-16 (R5G6B5) value from a Color-16 (0-15 Color number)
@@ -107,62 +107,70 @@ colorn16_t bg_from_cb(colorbyte_t cb);
  *
  * @param cn16 Color-16 number to get a RGB-16 (R5G6B5) value for
  */
-rgb16_t rgb16_from_color16(colorn16_t cn16);
+extern rgb16_t rgb16_from_color16(colorn16_t cn16);
 
 /**
  * @brief Get the current cursor position
  * @ingroup display
  *
+ * The cursor is used within the scroll area for `disp_print...` operations.
+ * It advances as characters are printed.
+ *
  * @returns Cursor screen position within the scroll area.
  */
-scr_position_t cursor_get(void);
+extern scr_position_t disp_cursor_get(void);
 
 /**
  * @brief Position the cursor in the top-left corner of the screen as defined by
  *  the scroll area.
  * @ingroup display
+ *
+ * The cursor is used within the scroll area for `disp_print...` operations.
+ * It advances as characters are printed.
+ *
  */
-void cursor_home(void);
+extern void disp_cursor_home(void);
 
 /**
  * @brief Show or hide the cursor.
  * @ingroup display
  *
- * The cursor is used for `print...` operations whether or not the cursor is
- * shown.
+ * The cursor is used within the scroll area for `disp_print...` operations.
+ * It advances as characters are printed.
+ *
  *
  * @param show True to show the cursor, false to hide it.
  */
-void cursor_show(bool show);
+extern void disp_cursor_show(bool show);
 
 /**
  * @brief Set the cursor location.
  * @ingroup display
  *
- * The cursor is used within the scroll area for `print` operations.
+ * The cursor is used within the scroll area for `disp_print...` operations.
  * It advances as characters are printed.
  *
  * @param line 0-based line to move the cursor to within the scroll area.
  * @param col 0-based column to move the cursor to within the scroll area.
  */
-void cursor_set(uint16_t line, uint16_t col);
+extern void disp_cursor_set(uint16_t line, uint16_t col);
 
 /**
  * @brief Set the cursor location.
  * @ingroup display
  *
- * The cursor is used within the scroll area for `print` operations.
+ * The cursor is used within the scroll area for `disp_print...` operations.
  * It advances as characters are printed.
  *
  * @param pos 0-based `scr_position_t` (line/column) to move the cursor to within the scroll area.
  */
-void cursor_set_sp(scr_position_t pos);
+extern void disp_cursor_set_sp(scr_position_t pos);
 
 /**
  * @brief Clear the screen and display the 16 VGA Colors.
  * @ingroup display
  */
-void disp_c16_color_chart();
+extern void disp_c16_color_chart();
 
 /**
  * @brief Clear the entire screen
@@ -170,7 +178,7 @@ void disp_c16_color_chart();
  *
  * @param paint Controls painting of the screen after the operation.
 */
-void disp_clear(paint_control_t paint);
+extern void disp_clear(paint_control_t paint);
 
 /**
  * @brief Display a character on the text screen
@@ -184,7 +192,7 @@ void disp_clear(paint_control_t paint);
  * @param c character to display
  * @param paint Controls painting of the screen after the operation.
  */
-void disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint);
+extern void disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint);
 
 /**
  * @brief Display a character on the text screen with a given forground and background color.
@@ -200,7 +208,7 @@ void disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint);
  * @param bg background color number (0-15)
  * @param paint Controls painting of the screen after the operation.
  */
-void disp_char_color(uint16_t line, uint16_t col, char c, colorn16_t fg, colorn16_t bg, paint_control_t paint);
+extern void disp_char_color(uint16_t line, uint16_t col, char c, colorn16_t fg, colorn16_t bg, paint_control_t paint);
 
 /**
  * @brief Display a character on the text screen with a given forground and background color.
@@ -215,7 +223,7 @@ void disp_char_color(uint16_t line, uint16_t col, char c, colorn16_t fg, colorn1
  * @param color forground and background color as a `colorbyte` (HN:0-15 background, LN:0-15 forground)
  * @param paint Controls painting of the screen after the operation.
  */
-void disp_char_colorbyte(uint16_t line, uint16_t col, char c, colorbyte_t color, paint_control_t paint);
+extern void disp_char_colorbyte(uint16_t line, uint16_t col, char c, colorbyte_t color, paint_control_t paint);
 
 /**
  * @brief Test the fonts by displaying all of the characters
@@ -225,14 +233,14 @@ void disp_char_colorbyte(uint16_t line, uint16_t col, char c, colorbyte_t color,
  * the range of characters some from page to page.
  *
  */
-void disp_font_test(void);
+extern void disp_font_test(void);
 
 /**
  * @brief Get the current text colors.
- * 
+ *
  * @return text_color_pair_t The current foreground and background colors.
  */
-void disp_get_text_colors(text_color_pair_t* cp);
+extern void disp_text_colors_get(text_color_pair_t* cp);
 
 /**
  * @brief Display info - number of text columns
@@ -241,7 +249,7 @@ void disp_get_text_colors(text_color_pair_t* cp);
  *
  * @return uint16_t The number of text columns
  */
-uint16_t disp_info_columns();
+extern uint16_t disp_info_columns();
 
 /**
  * @brief Display info - number of text lines
@@ -250,21 +258,21 @@ uint16_t disp_info_columns();
  *
  * @return uint16_t The number of text lines
  */
-uint16_t disp_info_lines();
+extern uint16_t disp_info_lines();
 
 /**
  * @brief Display info - number of fixed text lines at the top of the display
  *
  * @return uint16_t The number of fixed lines
  */
-uint16_t disp_info_fixed_top_lines();
+extern uint16_t disp_info_fixed_top_lines();
 
 /**
  * @brief Display info - number of fixed text lines a the bottom of the display
  *
  * @return uint16_t The number of fixed lines
  */
-uint16_t disp_info_fixed_bottom_lines();
+extern uint16_t disp_info_fixed_bottom_lines();
 
 /**
  * @brief Display info - number of lines that scroll
@@ -276,16 +284,7 @@ uint16_t disp_info_fixed_bottom_lines();
  *
  * @return uint16_t The number of text lines that scroll
  */
-uint16_t disp_info_scroll_lines();
-
-/**
- * @brief Initialize the display
- * @ingroup display
- *
- * This must be called before using the display.
- *
- */
-void disp_module_init(void);
+extern uint16_t disp_info_scroll_lines();
 
 /**
  * @brief Clear the character line.
@@ -294,7 +293,7 @@ void disp_module_init(void);
  * @param line The 0-based line to clear.
  * @param paint Controls painting of the screen after the operation.
 */
-void disp_line_clear(uint16_t line, paint_control_t paint);
+extern void disp_line_clear(uint16_t line, paint_control_t paint);
 
 /**
  * @brief Paint the portion of the screen containing the given character line.
@@ -305,7 +304,7 @@ void disp_line_clear(uint16_t line, paint_control_t paint);
  *
  * @param line The 0-based character line to paint.
 */
-void disp_line_paint(uint16_t line);
+extern void disp_line_paint(uint16_t line);
 
 /**
  * @brief Paint the actual display screen
@@ -315,30 +314,99 @@ void disp_line_paint(uint16_t line);
  * updating the physical display. Then, once a batch of changes have been made, this
  * is called to move the screen/image buffer onto the display.
  */
-void disp_paint(void);
+extern void disp_paint(void);
 
 /**
- * @brief Set the text forground and background colors to be used for placed text.
+ * @brief Move the cursor to the beginning of the next line. Scroll the display if needed.
  * @ingroup display
  *
- * Sets the colors to be used by default when placing text. The colors are from the
- * 16 color number (VGA) set.
+ * The `disp_print...` use the cursor for position, advancing the cursor as they print.
  *
- * @param fg Color number (0-15) for the forground
- * @param bg Color number (0-15) for the background
-*/
-void disp_set_text_colors(colorn16_t fg, colorn16_t bg);
-
-/**
- * @brief Set the text forground and background colors to be used for placed text.
- * @ingroup display
- *
- * Sets the colors to be used by default when placing text. The colors are from the
- * 16 color number (VGA) set.
- *
- * @param cp Pointer to a text color pair to use to set the colors.
+ * @param add_lines Additional lines to advance the cursor.
+ * @param paint Controls painting of the screen after the operation.
  */
-void disp_set_text_colors_cp(text_color_pair_t* cp);
+extern void disp_print_crlf(int16_t add_lines, paint_control_t paint);
+
+/**
+ * @brief Erase from the cursor position to the end of the print line.
+ * @ingroup display
+ *
+ * This erases the text and background and leave the cursor in the current position.
+ *
+ * @param paint Controls painting of the screen after the operation.
+ */
+extern void disp_print_erase_eol(paint_control_t paint);
+
+/**
+ * @brief Get the wrap back length.
+ * @ingroup display
+ *
+ * The 'wrap back length' is the number of characters that will be scanned for a break point (a space,
+ * tab, or '-') to place a new-line when the display needs to wrap a line.
+ *
+ * A 'wrap back length' of 0 disables the processing.
+ *
+ * @return uint16_t
+ */
+extern uint16_t disp_print_wrap_len_get();
+
+/**
+ * @brief Set the wrap back length.
+ * @ingroup display
+ *
+ * The 'wrap back length' is the number of characters that will be scanned for a break point (a space,
+ * tab, or '-') to place a new-line when the display needs to wrap a line.
+ *
+ * A 'wrap back length' of 0 disables the processing.
+ * The value is limited to one less than the screen width.
+ *
+ * @param len The wrap back length.
+ */
+extern void disp_print_wrap_len_set(uint16_t len);
+
+/**
+ * @brief Print a character at the current cursor location. Advance the cursor.
+ * @ingroup display
+ *
+ * The `disp_print...` use the cursor for position, advancing the cursor as they print.
+ *
+ * This will print a single character and advance the cursor. The newline character is not special,
+ * and the graphics character for '0x0A' will be printed. To get a new line, use `disp_print_crlf` or
+ * `disp_prints` with a single-character string containing a newline.
+ *
+ * @param c Character to print. If the top bit is set, the character will be inverted.
+ * @param paint Controls painting of the screen after the operation.
+ */
+extern void disp_printc(char c, paint_control_t paint);
+
+/**
+ * @brief `printf` that goes to the display using the current cursor position and advancing the cursor.
+ * @ingroup display
+ *
+ * The `disp_print...` use the cursor for position, advancing the cursor as they print.
+ *
+ * @param paint Controls painting of the screen after the operation.
+ * @param format Format string that follows the standard `printf` formatting.
+ * @param ... Variable arguments used to satisfy the format.
+ *
+ * @return The number of characters printed.
+ */
+int disp_printf(paint_control_t paint, const char* format, ...) __attribute__((format(_printf_, 2, 3)));
+
+/**
+ * @brief Print a string at the current cursor location. Advance the cursor and scroll if needed.
+ * @ingroup display
+ *
+ * The `disp_print...` functions use the cursor for position, advancing the cursor as they print.
+ *
+ * Print a string and advance the cursor. A newline within the string will move the cursor
+ * to the next line until it hits the bottom margin. When the bottom margin is hit, the lines will be
+ * scrolled up to make room for a blank line.
+ *
+ * @param s Null terminated string. If the top bit of a character is set, the character will be inverted.
+ * @param paint Controls painting of the screen after the operation.
+ */
+extern void disp_prints(char* s, paint_control_t paint);
 
 /**
  * @brief Display a string
@@ -352,7 +420,7 @@ void disp_set_text_colors_cp(text_color_pair_t* cp);
  * @param invert True to invert the characters
  * @param paint True to paint the screen after the operation
  */
-void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint);
+extern void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint);
 
 /**
  * @brief Display a string with a given forground and background color
@@ -367,7 +435,30 @@ void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, 
  * @param bg Background color number (0-15)
  * @param paint True to paint the screen after the operation
  */
-void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn16_t fg, colorn16_t bg, paint_control_t paint);
+extern void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn16_t fg, colorn16_t bg, paint_control_t paint);
+
+/**
+ * @brief Set the text forground and background colors to be used for placed text.
+ * @ingroup display
+ *
+ * Sets the colors to be used by default when placing text. The colors are from the
+ * 16 color number (VGA) set.
+ *
+ * @param fg Color number (0-15) for the forground
+ * @param bg Color number (0-15) for the background
+*/
+extern void disp_text_colors_set(colorn16_t fg, colorn16_t bg);
+
+/**
+ * @brief Set the text forground and background colors to be used for placed text.
+ * @ingroup display
+ *
+ * Sets the colors to be used by default when placing text. The colors are from the
+ * 16 color number (VGA) set.
+ *
+ * @param cp Pointer to a text color pair to use to set the colors.
+ */
+extern void disp_text_colors_cp_set(text_color_pair_t* cp);
 
 /**
  * @brief Update the display (graphics) buffer from the text line data. Optionally paint the screen
@@ -375,89 +466,32 @@ void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn1
  *
  * @param paint True to paint the screen after the operation.
 */
-void disp_update(paint_control_t paint);
-
-/**
- * @brief Set the margins for cursor based printing.
- * @ingroup display
- *
- * @param top 0-based line of the top margin (top side of text window).
- * @param left 0-based column of the left margin (left side of text window).
- * @param bottom 0-based line of the bottom margin (bottom of text window).
- * @param right 0-based column of the right margin (right side of text window).
- */
-//void margins_set(unsigned short top, unsigned short left, unsigned short bottom, unsigned short right);
-
-/**
- * @brief Print a character at the current cursor location. Advance the cursor.
- * @ingroup display
- *
- * This will print a single character and advance the cursor. The newline character is not special,
- * and the graphics character for '0x0A' will be printed. To get a new line, use `print_crlf` or
- * `prints` with a single-character string containing a newline.
- *
- * @param c Character to print. If the top bit is set, the character will be inverted.
- * @param paint Controls painting of the screen after the operation.
- */
-void printc(char c, paint_control_t paint);
-
-/**
- * @brief Move the cursor to the beginning of the next line. Scroll the display if needed.
- *
- * @param add_lines Additional lines to advance the cursor.
- * @param paint Controls painting of the screen after the operation.
- */
-void print_crlf(int16_t add_lines, paint_control_t paint);
-
-/**
- * @brief `printf` that goes to the display using the current cursor position and advancing the cursor.
- * @ingroup display
- *
- * @param paint Controls painting of the screen after the operation.
- * @param format Format string that follows the standard `printf` formatting.
- * @param ... Variable arguments used to satisfy the format.
- *
- * @return The number of characters printed.
- */
-int printf_disp(paint_control_t paint, const char* format, ...) __attribute__((format(_printf_, 2, 3)));
-
-/**
- * @brief Print a string at the current cursor location. Advance the cursor and scroll if needed.
- * @ingroup display
- *
- * Print a string and advance the cursor. A newline within the string will move the cursor
- * to the next line until it hits the bottom margin. When the bottom margin is hit, the lines will be
- * scrolled up to make room for a blank line.
- *
- * @param s Null terminated string. If the top bit of a character is set, the character will be inverted.
- * @param paint Controls painting of the screen after the operation.
- */
-void prints(char* s, paint_control_t paint);
+extern void disp_update(paint_control_t paint);
 
 /**
  * @brief Closes the active screen and restores the previous screen.
  *
- * New screens are created with `screen_new`. When done with a screen
+ * New screens are created with `disp_screen_new`. When done with a screen
  * (say for a dialog), this is called to close the screen and go back to
  * the prior screen.
  *
- * @see screen_new()
+ * @see disp_screen_new()
  */
-void screen_close();
+extern void disp_screen_close();
 
 /**
  * @brief Create a new (sub) screen to work with.
  *
  * This creates a new screen context and makes it the current context. The previous screen is saved
  * until this one is closed. The screens are kept on a stack. When done with the screen, use
- * `screen_close` to close it and return to the previous screen.
+ * `disp_screen_close` to close it and return to the previous screen.
  *
- * @see screen_close()
+ * @see disp_screen_close()
  *
  * @return true If the new screen was created and made current.
  * @return false If the new screen couldn't be created or made current.
  */
-bool screen_new();
+extern bool disp_screen_new();
 
 /**
  * @brief Clear the scroll area of the screen.
@@ -465,7 +499,7 @@ bool screen_new();
  *
  * @param paint Set true to paint the screen after the operation. Otherwise, only buffers will be cleared.
  */
-void scroll_area_clear(paint_control_t paint);
+extern void disp_scroll_area_clear(paint_control_t paint);
 
 /**
  * @brief Define the scroll area of the screen by defining the top and bottom fixed areas.
@@ -479,7 +513,16 @@ void scroll_area_clear(paint_control_t paint);
  * @param top_fixed_size
  * @param bottom_fixed_size
  */
-void scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size);
+extern void disp_scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size);
+
+/**
+ * @brief Initialize the display
+ * @ingroup display
+ *
+ * This must be called before using the display.
+ *
+ */
+extern void disp_module_init(void);
 
 #ifdef __cplusplus
 }

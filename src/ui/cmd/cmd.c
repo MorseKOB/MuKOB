@@ -277,7 +277,7 @@ static int _cmd_wire(int argc, char** argv, const char* unparsed) {
         }
     }
     else {
-        ui_term_printf("%hd\n", mkwire_wire_get());
+        ui_term_printf("Wire: %hd\n", mkwire_wire_get());
     }
     return (0);
 }
@@ -405,22 +405,9 @@ void cmd_attn_handler(cmt_msg_t* msg) {
         if (CMD_WAKEUP_CHAR == c) {
             // Wakeup received, change state to building line.
             _cmd_state = CMD_COLLECTING_LINE;
-            // Get the current cursor position, move it to the bottom, and show it.
-            // NOTE: Updating the Term UI status uses the terminals `save cursor`
-            //       capability, so we use the `get cursor position` functionality
-            //       and save it.
-            _scr_cursor_position_save = term_get_cursor_position();
-            _scr_color_save = ui_term_color_get();
             term_cursor_moveto(UI_TERM_CMDLINE, 1);
             ui_term_use_cmd_color();
-            if (_scr_cursor_position_save.line == UI_TERM_CMDLINE) {
-                // If we were already at the bottom, print a newline
-                putchar('\n');
-            }
-            else {
-                // Otherwise, erase this line in case there was something there
-                term_erase_line();
-            }
+            putchar('\n');
             putchar(CMD_PROMPT);
             term_cursor_on(true);
             // Get a command from the user...
@@ -436,13 +423,9 @@ extern void cmd_enter_idle_state() {
     if (CMD_SNOOZING != _cmd_state) {
         // Cancel any inprocess 'getline'
         ui_term_getline_cancel(_notified_of_keypress);
-        // Put the terminal state back
-        term_cursor_moveto(UI_TERM_CMDLINE, 1);
-        ui_term_color_set(_scr_color_save.fg, _scr_color_save.bg);
+        // Put the terminal back to 'code' state
         term_cursor_on(false);
-        term_erase_line();
-        term_cursor_moveto(_scr_cursor_position_save.line, _scr_cursor_position_save.column);
-
+        ui_term_use_code_color();
         // go back to Snoozing
         _cmd_state = CMD_SNOOZING;
     }

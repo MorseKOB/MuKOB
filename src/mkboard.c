@@ -199,6 +199,7 @@ int board_init() {
     display_reset_on(false);
     sleep_ms(100); // Ok to `sleep` as msg system not started
     disp_module_init();
+    disp_print_wrap_len_set(system_cfg->disp_wrap_back);
     display_backlight_on(true);
 
     // Initialize the multicore subsystem

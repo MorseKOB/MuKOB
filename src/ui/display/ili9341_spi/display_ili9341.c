@@ -43,6 +43,9 @@ static const rgb16_t _color16_map[] = {
 /** @brief The current/active screen context */
 static scr_context_t* _scr_ctx = NULL;
 
+/** @brief The number of characters to scan (back) looking for a wrap break-point character */
+static uint16_t _wrap_len;
+
 // ======================================================================================
 // Internal functions
 // ======================================================================================
@@ -53,6 +56,21 @@ static scr_context_t* _scr_ctx = NULL;
 static void _disp_char(uint16_t line, uint16_t col, char c, paint_control_t paint) {
     _disp_char_colorbyte(line, col, c, colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), paint);
 }
+
+/**
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static uint8_t _disp_char_color_get(uint16_t aline, uint16_t col) {
+    return (*(_scr_ctx->full_screen_color + (aline * _scr_ctx->cols) + col));
+}
+
+/**
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static char _disp_char_get(uint16_t aline, uint16_t col) {
+    return (*(_scr_ctx->full_screen_text + (aline * _scr_ctx->cols) + col));
+}
+
 
 /*
  * Display an ASCII character (plus some special characters)
@@ -117,6 +135,22 @@ static void _disp_char_colorbyte(uint16_t aline, uint16_t col, char c, uint8_t c
         uint16_t h = font_height;
         ili9341_window_set_area(x, y, w, h);
         ili9341_screen_paint(_scr_ctx->render_buf, (font_width * font_height));
+    }
+    else {
+        _scr_ctx->dirty_text_lines[aline] = true;
+    }
+}
+
+/*
+ * Clear from a column to the end of line of text.
+ *
+ * NOTE: This does not perform text line translation, nor bounds check.
+ */
+static void _disp_eol_clear(uint16_t aline, uint16_t col, paint_control_t paint) {
+    memset((_scr_ctx->full_screen_text + (aline * _scr_ctx->cols) + col), SPACE_CHR, (_scr_ctx->cols - col));
+    memset((_scr_ctx->full_screen_color + (aline * _scr_ctx->cols) + col), colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), (_scr_ctx->cols - col));
+    if (paint) {
+        _disp_line_paint(aline);
     }
     else {
         _scr_ctx->dirty_text_lines[aline] = true;
@@ -242,23 +276,23 @@ inline rgb16_t rgb16_from_color16(colorn16_t c16) {
     return (_color16_map[c16 & 0x0f]);
 }
 
-inline scr_position_t cursor_get(void) {
+inline scr_position_t disp_cursor_get(void) {
     return _scr_ctx->cursor_pos;
 }
 
-void cursor_home(void) {
-    cursor_set(0, 0);
+void disp_cursor_home(void) {
+    disp_cursor_set(0, 0);
 }
 
-void cursor_show(bool show) {
+void disp_cursor_show(bool show) {
     _scr_ctx->show_cursor = show;
 }
 
-void cursor_set(uint16_t line, uint16_t col) {
-    cursor_set_sp((scr_position_t){line, col});
+void disp_cursor_set(uint16_t line, uint16_t col) {
+    disp_cursor_set_sp((scr_position_t){line, col});
 }
 
-void cursor_set_sp(scr_position_t pos) {
+void disp_cursor_set_sp(scr_position_t pos) {
     if (pos.line >= _scr_ctx->scroll_size || pos.column >= _scr_ctx->cols) {
         return;
     }
@@ -280,6 +314,23 @@ inline colorn16_t bg_from_cb(colorbyte_t cb) {
     return ((cb & 0xf0) >> 4u);
 }
 
+void disp_c16_color_chart() {
+    disp_clear(true);
+    // VGA Color Test
+    disp_text_colors_set(C16_BR_WHITE, C16_BLACK);
+    for (uint8_t i = 0; i < 8; i++) {
+        char c = '0' + i;
+        disp_char(4, (2 * i) + 5, c, true);
+        disp_char_colorbyte(5, (2 * i) + 5, DISP_CHAR_INVERT_BIT | SPACE_CHR, i, true);
+    }
+    for (uint8_t i = 8; i < 16; i++) {
+        char c = '0' + i;
+        if (c > '9') c += 7;
+        disp_char(7, (2 * (i - 8)) + 5, c, true);
+        disp_char_colorbyte(8, (2 * (i - 8)) + 5, DISP_CHAR_INVERT_BIT | SPACE_CHR, i, true);
+    }
+}
+
 /*
  * Clear the current text content and the screen.
 */
@@ -288,7 +339,7 @@ void disp_clear(paint_control_t paint) {
     memset(_scr_ctx->full_screen_text, SPACE_CHR, chars);
     memset(_scr_ctx->full_screen_color, colorbyte(_scr_ctx->color_fg_default, _scr_ctx->color_bg_default), chars);
     memset(_scr_ctx->dirty_text_lines, false, _scr_ctx->lines);
-    cursor_home();
+    disp_cursor_home();
     if (paint) {
         display_backlight_on(false);    // Turning off the backlight helps this from being distracting
         ili9341_screen_clr(_scr_ctx->color_bg_default, false);
@@ -340,11 +391,6 @@ void disp_font_test(void) {
             c++;
         }
     }
-}
-
-void disp_get_text_colors(text_color_pair_t* cp) {
-    cp->fg = _scr_ctx->color_fg_default;
-    cp->bg = _scr_ctx->color_bg_default;
 }
 
 uint16_t disp_info_columns() {
@@ -400,28 +446,7 @@ void disp_module_init(void) {
         return;
     }
 
-    screen_new();
-}
-
-/*
- * Paint the physical screen from the text.
- */
-void disp_paint(void) {
-    int16_t lines = _scr_ctx->lines;
-    uint16_t aline;
-    bool some_lines_dirty = false;
-    for (uint16_t i = 0; i < lines && !some_lines_dirty; i++) {
-        some_lines_dirty |= _scr_ctx->dirty_text_lines[i];
-    }
-    if (some_lines_dirty) {
-        for (uint16_t line = 0; line < lines; line++) {
-            aline = _translate_line(line);
-            if (_scr_ctx->dirty_text_lines[aline]) {
-                _disp_line_paint(aline);
-                _scr_ctx->dirty_text_lines[aline] = false; // The text line has been painted, mark it 'not dirty'
-            }
-        }
-    }
+    disp_screen_new();
 }
 
 /*
@@ -450,16 +475,168 @@ void disp_line_paint(uint16_t line) {
     _disp_line_paint(line);
 }
 
-void disp_set_text_colors(colorn16_t fg, colorn16_t bg) {
-    // force them to 0-15
-    _scr_ctx->color_fg_default = fg & 0x0f;
-    _scr_ctx->color_bg_default = bg & 0x0f;
+/*
+ * Paint the physical screen from the text.
+ */
+void disp_paint(void) {
+    int16_t lines = _scr_ctx->lines;
+    uint16_t aline;
+    bool some_lines_dirty = false;
+    for (uint16_t i = 0; i < lines && !some_lines_dirty; i++) {
+        some_lines_dirty |= _scr_ctx->dirty_text_lines[i];
+    }
+    if (some_lines_dirty) {
+        for (uint16_t line = 0; line < lines; line++) {
+            aline = _translate_line(line);
+            if (_scr_ctx->dirty_text_lines[aline]) {
+                _disp_line_paint(aline);
+                _scr_ctx->dirty_text_lines[aline] = false; // The text line has been painted, mark it 'not dirty'
+            }
+        }
+    }
 }
 
-void disp_set_text_colors_cp(text_color_pair_t* cp) {
-    // force them to 0-15
-    _scr_ctx->color_fg_default = cp->fg & 0x0f;
-    _scr_ctx->color_bg_default = cp->bg & 0x0f;
+void disp_print_crlf(int16_t add_lines, paint_control_t paint) {
+    int16_t total_scroll_lines = add_lines;
+    uint16_t ss = _scr_ctx->scroll_start;  // Scroll start line
+    uint16_t scroll_lines = _scr_ctx->scroll_size;  // Screen scroll lines
+    uint16_t scroll_cap = _scr_ctx->lines - _scr_ctx->fixed_area_bottom_size - 1;
+    uint16_t cursor_cap = scroll_lines - 1;
+    scr_position_t new_cp = { _scr_ctx->cursor_pos.line + 1, 0 };
+    uint16_t aline;
+    if (new_cp.line > cursor_cap) {
+        total_scroll_lines += (new_cp.line - cursor_cap);
+        new_cp.line = cursor_cap;
+    }
+    if (total_scroll_lines > scroll_lines) {
+        total_scroll_lines = scroll_lines;
+    }
+    if (total_scroll_lines > 0) {
+        // Advance the Scroll-Start
+        ss++;
+        if (ss > scroll_cap) {
+            ss = _scr_ctx->fixed_area_top_size;
+        }
+        _scr_ctx->scroll_start = ss;
+        // blank out what will be the cursor line
+        aline = _translate_cursor_line(new_cp.line);
+        _disp_line_clear(aline, paint);
+        ili9341_scroll_set_start(ss * _scr_ctx->font_info->height);
+    }
+    else {
+        // blank out what will be the cursor line
+        aline = _translate_cursor_line(new_cp.line);
+        _disp_line_clear(aline, paint);
+    }
+    _scr_ctx->cursor_pos = new_cp;
+}
+
+void disp_print_erase_eol(paint_control_t paint) {
+    // blank out what will be the cursor line
+    uint16_t aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+    _disp_eol_clear(aline, _scr_ctx->cursor_pos.column, paint);
+}
+
+uint16_t disp_print_wrap_len_get() {
+    return _wrap_len;
+}
+
+void disp_print_wrap_len_set(uint16_t len) {
+    // Limit the value to the one less than the screen width.
+    _wrap_len = (len < _scr_ctx->cols ? len : (_scr_ctx->cols - 1));
+}
+
+void disp_printc(char c, paint_control_t paint) {
+    // Since the line doesn't wrap right when the last column is written to,
+    // we need to check the current cursor position against the current margins and
+    // wrap/scroll if needed before printing the character.
+    //
+    // Also, this allows printing a NL ('\n') character, so nothing special is
+    // done for it.
+    //
+    uint16_t aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+    if (_scr_ctx->cursor_pos.column >= _scr_ctx->cols) {
+        // Need to go to next line (CRLF)
+        // Check for re-wrapping existing text
+        bool nl_done = false;
+        if (SPACE_CHR != c && _wrap_len > 0) {
+            // Yes - see if we can find a space within `_wrap_len` characters back.
+            // Plan for finding one, therefore reprinting characters from it to eol...
+            char rc[_wrap_len];
+            uint8_t rclr[_wrap_len];
+            int break_flag = 0;
+            char sc;
+            int i = 0;
+            for (; i < _wrap_len; i++) {
+                sc = _disp_char_get(aline, (_scr_ctx->cursor_pos.column - (i+1)));
+                rc[i] = sc;
+                rclr[i] = _disp_char_color_get(aline, (_scr_ctx->cursor_pos.column - (i+1)));
+                if (SPACE_CHR == sc) {
+                    break; // break in place of
+                }
+                switch (sc) {
+                    case '$': case '(': case '*': case '+': case '-': case '<':
+                    case '=': case '>': case '@': case '[': case '{':
+                        break_flag = -1; // break before
+                        break;
+                }
+                if (break_flag == 0 && (sc < '0' || ':' == sc || ';' == sc || '?' == sc || ']' == sc || '}' == sc)) {
+                        break_flag = 1; //break after
+                }
+                if (break_flag != 0) {
+                    break;
+                }
+            }
+            if (i < _wrap_len) {
+                // Found a place that we can break;
+                disp_cursor_set(_scr_ctx->cursor_pos.line, _scr_ctx->cursor_pos.column - (i + 1));
+                _disp_eol_clear(aline, _scr_ctx->cursor_pos.column, No_Paint);
+                if (break_flag <= 0) {
+                    // Break before or in place of the character we found
+                    disp_print_crlf(0, No_Paint);
+                    aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+                }
+                if (SPACE_CHR != rc[i]) {
+                    // Print the character we found if it isn't a space
+                    _disp_char_colorbyte(aline, _scr_ctx->cursor_pos.column++, rc[i], rclr[i], No_Paint);
+                }
+                if (break_flag > 0) {
+                    // Break after the character we found
+                    disp_print_crlf(0, No_Paint);
+                    aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+                }
+                // print the characters we stored before finding the break point
+                for (int j = (i-1); j >= 0; j--) {
+                    _disp_char_colorbyte(aline, _scr_ctx->cursor_pos.column++, rc[j], rclr[j], No_Paint);
+                }
+                nl_done = true;
+            }
+        }
+        if (!nl_done) {
+            disp_print_crlf(0, paint);
+            if (SPACE_CHR == c) {
+                // If we needed to do a new line and this character is a space, don't print it.
+                return;
+            }
+            aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
+        }
+    }
+    _disp_char(aline, _scr_ctx->cursor_pos.column++, c, paint);
+}
+
+void disp_prints(char* str, paint_control_t paint) {
+    unsigned char c;
+    while ((c = *str++) != 0) {
+        if (c == '\n') {
+            disp_print_crlf(0, false);
+        }
+        else {
+            disp_printc(c, false);
+        }
+    }
+    if (paint) {
+        disp_paint();
+    }
 }
 
 void disp_string(uint16_t line, uint16_t col, const char *pString, bool invert, paint_control_t paint) {
@@ -506,6 +683,23 @@ void disp_string_color(uint16_t line, uint16_t col, const char* pString, colorn1
 
 }
 
+void disp_text_colors_cp_set(text_color_pair_t* cp) {
+    // force them to 0-15
+    _scr_ctx->color_fg_default = cp->fg & 0x0f;
+    _scr_ctx->color_bg_default = cp->bg & 0x0f;
+}
+
+void disp_text_colors_get(text_color_pair_t* cp) {
+    cp->fg = _scr_ctx->color_fg_default;
+    cp->bg = _scr_ctx->color_bg_default;
+}
+
+void disp_text_colors_set(colorn16_t fg, colorn16_t bg) {
+    // force them to 0-15
+    _scr_ctx->color_fg_default = fg & 0x0f;
+    _scr_ctx->color_bg_default = bg & 0x0f;
+}
+
 void disp_update(paint_control_t paint) {
     // Mark all lines as 'dirty' so they will be re-rendered during a `paint` operation.
     memset(_scr_ctx->dirty_text_lines, true, _scr_ctx->lines * sizeof(bool));
@@ -514,91 +708,9 @@ void disp_update(paint_control_t paint) {
     }
 }
 
-void disp_c16_color_chart() {
-    disp_clear(true);
-    // VGA Color Test
-    disp_set_text_colors(C16_BR_WHITE, C16_BLACK);
-    for (uint8_t i = 0; i < 8; i++) {
-        char c = '0'+i;
-        disp_char(4, (2 * i) + 5, c, true);
-        disp_char_colorbyte(5, (2 * i) + 5, DISP_CHAR_INVERT_BIT | SPACE_CHR, i, true);
-    }
-    for (uint8_t i = 8; i < 16; i++) {
-        char c = '0' + i;
-        if (c > '9') c += 7;
-        disp_char(7, (2 * (i - 8)) + 5, c, true);
-        disp_char_colorbyte(8, (2 * (i - 8)) + 5 , DISP_CHAR_INVERT_BIT | SPACE_CHR, i, true);
-    }
-}
-
-void print_crlf(int16_t add_lines, paint_control_t paint) {
-    int16_t total_scroll_lines = add_lines;
-    uint16_t ss = _scr_ctx->scroll_start;  // Scroll start line
-    uint16_t scroll_lines = _scr_ctx->scroll_size;  // Screen scroll lines
-    uint16_t scroll_cap = _scr_ctx->lines - _scr_ctx->fixed_area_bottom_size - 1;
-    uint16_t cursor_cap = scroll_lines - 1;
-    scr_position_t new_cp = { _scr_ctx->cursor_pos.line + 1, 0 };
-    uint16_t aline;
-    if (new_cp.line > cursor_cap) {
-        total_scroll_lines += (new_cp.line - cursor_cap);
-        new_cp.line = cursor_cap;
-    }
-    if (total_scroll_lines > scroll_lines) {
-        total_scroll_lines = scroll_lines;
-    }
-    if (total_scroll_lines > 0) {
-        // Advance the Scroll-Start
-        ss++;
-        if (ss > scroll_cap) {
-            ss = _scr_ctx->fixed_area_top_size;
-        }
-        _scr_ctx->scroll_start = ss;
-        // blank out what will be the cursor line
-        aline = _translate_cursor_line(new_cp.line);
-        _disp_line_clear(aline, paint);
-        ili9341_scroll_set_start(ss * _scr_ctx->font_info->height);
-    }
-    else {
-        // blank out what will be the cursor line
-        aline = _translate_cursor_line(new_cp.line);
-        _disp_line_clear(aline, paint);
-    }
-    _scr_ctx->cursor_pos = new_cp;
-}
-
-void printc(char c, paint_control_t paint) {
-    // Since the line doesn't wrap right when the last column is written to,
-    // we need to check the current cursor position against the current margins and
-    // wrap/scroll if needed before printing the character.
-    //
-    // Also, this allows printing a NL ('\n') character, so nothing special is
-    // done for it.
-    //
-    if (_scr_ctx->cursor_pos.column >= _scr_ctx->cols) {
-        print_crlf(0, paint);
-    }
-    uint16_t aline = _translate_cursor_line(_scr_ctx->cursor_pos.line);
-    _disp_char(aline, _scr_ctx->cursor_pos.column++, c, paint);
-}
-
-void prints(char* str, paint_control_t paint) {
-    unsigned char c;
-    while ((c = *str++) != 0) {
-        if (c == '\n') {
-            print_crlf(0, false);
-        }
-        else {
-            printc(c, false);
-        }
-    }
-    if (paint) {
-        disp_paint();
-    }
-}
-
-void screen_close() {
+void disp_screen_close() {
     if (!_has_scr_context()) {
-        warn_printf(false, "Display - Trying to close main screen context. Ignoring `screen_close()` call.");
+        warn_printf(false, "Display - Trying to close main screen context. Ignoring `disp_screen_close()` call.");
         return;
     }
     // Free the buffers from the current context...
@@ -612,11 +724,11 @@ void screen_close() {
     // Get the top context and make it current
     _scr_ctx = _pop_scr_context();
     // This will re-configure the ILI9341 for correct scrolling
-    scroll_area_define(_scr_ctx->fixed_area_top_size, _scr_ctx->fixed_area_bottom_size);
+    disp_scroll_area_define(_scr_ctx->fixed_area_top_size, _scr_ctx->fixed_area_bottom_size);
     disp_update(Paint);
 }
 
-bool screen_new() {
+bool disp_screen_new() {
     // First thing is to see if we can push the current screen context if there is one
     if (_scr_ctx) {
         if (!_push_scr_context(_scr_ctx)) {
@@ -657,13 +769,13 @@ bool screen_new() {
     scr_context->cursor_color = (rgb16_t)0x05A0;    // Custom Green so it doesn't match any of the 16 (0 45 0)
     // Set this as the current context before calling other 'screen' functions.
     _scr_ctx = scr_context;
-    scroll_area_define(0, 0);   // This will configure the ILI9341 for scrolling
+    disp_scroll_area_define(0, 0);   // This will configure the ILI9341 for scrolling
     disp_clear(Paint);
 
     return (true);
 }
 
-void scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size) {
+void disp_scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size) {
     uint16_t screen_lines = _scr_ctx->lines;
     uint16_t fixed_lines = top_fixed_size + bottom_fixed_size;
     int16_t scroll_lines = screen_lines - fixed_lines;
@@ -685,6 +797,6 @@ void scroll_area_define(uint16_t top_fixed_size, uint16_t bottom_fixed_size) {
     _scr_ctx->scroll_size = screen_lines - (top_fixed_size + bottom_fixed_size);
     ili9341_scroll_set_area(top_fixed_size * _scr_ctx->font_info->height, bottom_fixed_size * _scr_ctx->font_info->height);
     ili9341_scroll_set_start(_scr_ctx->scroll_start);
-    cursor_home();
+    disp_cursor_home();
 }
 

@@ -77,14 +77,14 @@ int test_config_new_free(){
 
 
 void test_disp_show_full_scroll_barberpoll() {
-    scroll_area_define(0, 0);
+    disp_scroll_area_define(0, 0);
     char ca = 0;
     for (int i = 0; i < 80; i++) {
         for (int col = 0; col < disp_info_columns(); col++) {
             char c = '@' + ca + col;
             c &= 0x1F;
             c |= 0x40;
-            printc(c, No_Paint);
+            disp_printc(c, No_Paint);
         }
         disp_paint();
         ca++;
@@ -98,9 +98,9 @@ void test_disp_show_half_width_scroll_barberpoll() {
             char c = '@' + ca + col;
             c &= 0x1F;
             c |= 0x40;
-            printc(c, Paint);
+            disp_printc(c, Paint);
         }
-        print_crlf(0, Paint);
+        disp_print_crlf(0, Paint);
         ca++;
     }
 }
@@ -110,7 +110,7 @@ void test_error_printf() {
 }
 
 void test_ili9341_show_scroll() {
-    cursor_home();
+    disp_cursor_home();
     // Test scroll with a window
     uint8_t ca = 0;
     for (int i = 0; i < 17; i++) {
@@ -138,14 +138,14 @@ void test_ili9341_show_scroll() {
 void test_disp_show_mukob_head_foot() {
     datetime_t t;
     rtc_get_datetime(&t);
-    scroll_area_define(2, 1);
-    disp_set_text_colors(C16_YELLOW, C16_BLUE);
+    disp_scroll_area_define(2, 1);
+    disp_text_colors_set(C16_YELLOW, C16_BLUE);
     char buf[25];
     sprintf(buf, " KOB      %2d:%2d        \177", t.hour, t.min);
     disp_string(disp_info_lines() - 1, 0, buf, false, true);
     disp_char(disp_info_lines() - 1, 0, '\000', true); // Put the 'mu' in front of the 'KOB'
     disp_string(0, 0, "\024\025W:108 S:25 \022\023 \016 \002 \012\013\014\015", false, true);
-    disp_set_text_colors(C16_BLUE, C16_YELLOW);
+    disp_text_colors_set(C16_BLUE, C16_YELLOW);
     disp_string(1, 0, "ES, Ed, WA 1234567890123", false, true);
 }
 

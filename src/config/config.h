@@ -57,6 +57,7 @@ typedef struct _config_ {
 #define _SYSCFG_TZ_ID  0x0004
 #define _SYSCFG_WP_ID  0x0008
 #define _SYSCFG_WS_ID  0x0010
+#define _SYSCFG_DWB_ID 0x0020
 #define _SYSCFG_NOT_LOADED 0x8000
 
 typedef struct _sys_config_ {
@@ -68,6 +69,8 @@ typedef struct _sys_config_ {
     float tz_offset;
     char* wifi_password;
     char* wifi_ssid;
+    //
+    uint16_t disp_wrap_back;
 } config_sys_t;
 
 extern const cmd_handler_entry_t cmd_bootcfg_entry;

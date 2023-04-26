@@ -28,6 +28,7 @@
 #define _UI_STATUS_PULSE_PERIOD 7001
 
 // Internal, non message handler, function declarations
+static void _sort_station_list(const mk_station_id_t *stations[], int len);
 static void _ui_init_terminal_shell();
 
 typedef struct _UI_IDLE_FN_DATA_ {
@@ -249,7 +250,7 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
     else {
         // Make sure a command shell is available.
         if (CMD_SNOOZING == cmd_get_state()) {
-            // Do this by posting a message.
+            // Do this by posting a message as though the wakeup key was pressed.
             cmt_msg_t msg;
             msg.id = MSG_CMD_KEY_PRESSED;
             msg.data.c = CMD_WAKEUP_CHAR;
@@ -262,7 +263,7 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
 /**
  * Handle both messages from the wire that involve a Station ID.
  */
-static void _handle_wire_station_msgs(cmt_msg_t* msg) {
+static void _handle_wire_station_msgs(cmt_msg_t *msg) {
     const char* msg_station_id = msg->data.station_id;
 
     if (MSG_WIRE_CURRENT_SENDER == msg->id) {
@@ -277,7 +278,26 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
         ui_term_update_sender(_sender_id);
     }
     else if (MSG_WIRE_STATION_ID_RCVD == msg->id) {
-        // ZZZ Update the station list
+        const mk_station_id_t **stations = mkwire_active_stations();
+        // Remove current sender and sort.
+        int count = 0;
+        while (*(stations + count)) {
+            count++;
+        }
+        const mk_station_id_t *ss[count];
+        const mk_station_id_t **ssp = ss;
+        int ssc = 0;
+        for (int i = 0; i < count; i++) {
+            const mk_station_id_t *station = *stations++;
+            if (strcmp(_sender_id, station->id) != 0) {
+                *ssp++ = station;
+                ssc++;
+            }
+        }
+        ss[ssc] = (mk_station_id_t*)0; // Mark end with NULL
+        _sort_station_list(ss, ssc);
+        ui_disp_update_stations(ss);
+        ui_term_update_stations(ss);
     }
     LEAVE_MSG_HANDLER();
 }
@@ -286,6 +306,65 @@ static void _handle_wire_station_msgs(cmt_msg_t* msg) {
 // ============================================
 // Internal functions
 // ============================================
+
+static void _qsort_swap(void *v[], int i, int j) {
+    void *temp;
+
+    temp = v[i];
+    v[i] = v[j];
+    v[j] = temp;
+}
+
+static int _qsort_sl_comp(const mk_station_id_t *s1, const mk_station_id_t *s2) {
+    // Sort by last received from (longest first).
+    // If we haven't received from the station, sort by time first seen.
+    if (s1->ts_recv != 0 || s2->ts_recv != 0) {
+        // We have received from one or the other or both of them.
+        if (s1->ts_recv != 0 && s2->ts_recv == 0) {
+            return -1;
+        }
+        else if (s1->ts_recv == 0 && s2->ts_recv != 0) {
+            return 1;
+        }
+        else if (s1->ts_recv < s2->ts_recv) {
+            return -1;
+        }
+        else if (s1->ts_recv > s2->ts_recv) {
+            return 1;
+        }
+    }
+    // We haven't received from either of them (or received from both at the same time?).
+    if (s1->ts_init < s2->ts_init) {
+        return -1;
+    }
+    else if (s1->ts_init > s2->ts_init) {
+        return 1;
+    }
+    return 0;
+}
+
+static void _qsort_sl(const mk_station_id_t *s[], int left, int right) {
+    int last;
+
+    // Do nothing if array contains fewer than two elements.
+    if (left >= right) {
+        return;
+    }
+    _qsort_swap((void **)s, left, (left + right) / 2);
+    last = left;
+    for (int i = left+1; i <= right; i++) {
+        if (_qsort_sl_comp(s[i], s[left]) < 0) {
+            _qsort_swap((void **)s, ++last, i);
+        }
+    }
+    _qsort_swap((void**)s, left, last);
+    _qsort_sl(s, left, last-1);
+    _qsort_sl(s, last+1, right);
+}
+
+static void _sort_station_list(const mk_station_id_t *stations[], int len) {
+    _qsort_sl(stations, 0, len - 1);
+}
 
 static void _ui_init_terminal_shell() {
     ui_term_build();

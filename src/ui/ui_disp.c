@@ -13,12 +13,13 @@
 #include "hardware/rtc.h"
 #include "pico/printf.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 // TODO - Have these adjust based on the screen and font sizes
 
 #define UI_DISP_TOP_FIXED_LINES 2
-#define UI_DISP_BOTTOM_FIXED_LINES_INIT 5
+#define UI_DISP_BOTTOM_FIXED_LINES 1
 
 // Top header and gap
 #define UI_DISP_HEADER_COLOR_FG C16_YELLOW
@@ -41,6 +42,11 @@
 #define UI_DISP_SENDER_COLOR_BG C16_YELLOW
 #define UI_DISP_SENDER_LINE 1
 
+// Active Stations lines (below the code area)
+#define UI_DISP_STATIONS_COLOR_FG C16_MAGENTA
+#define UI_DISP_STATIONS_COLOR_BG C16_BLACK
+#define UI_DISP_STATIONS_LINES_MAX 4
+
 // Bottom status
 #define UI_DISP_STATUS_COLOR_FG C16_YELLOW
 #define UI_DISP_STATUS_COLOR_BG C16_BLUE
@@ -48,14 +54,15 @@
 #define UI_DISP_STATUS_LOGO_COL 23
 #define UI_DISP_STATUS_TIME_COL 9
 
+static uint16_t _active_stations_lines;
 static bool _code_displaying;
 static kob_status_t _kob_status;
 
 static void _header_fill_fixed() {
     text_color_pair_t cp;
 
-    disp_get_text_colors(&cp);
-    disp_set_text_colors(UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG);
+    disp_text_colors_get(&cp);
+    disp_text_colors_set(UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG);
     disp_line_clear(UI_DISP_HEADER_INFO_LINE, No_Paint);
     // disp_line_clear(UI_DISP_HEADER_GAP_LINE, No_Paint);
     // Fixed text
@@ -66,28 +73,28 @@ static void _header_fill_fixed() {
     disp_string(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_MENU_COL, "\014\015", false, No_Paint);  // Lines LF/RT
     // Paint and put the colors back
     disp_paint();
-    disp_set_text_colors_cp(&cp);
+    disp_text_colors_cp_set(&cp);
 }
 
 static void _status_fill_fixed() {
     text_color_pair_t cp;
 
-    disp_get_text_colors(&cp);
-    disp_set_text_colors(UI_DISP_STATUS_COLOR_FG, UI_DISP_STATUS_COLOR_BG);
+    disp_text_colors_get(&cp);
+    disp_text_colors_set(UI_DISP_STATUS_COLOR_FG, UI_DISP_STATUS_COLOR_BG);
     disp_line_clear(UI_DISP_STATUS_LINE, No_Paint);
     disp_char(UI_DISP_STATUS_LINE, 0, '\000', No_Paint); // Mu
     disp_string(UI_DISP_STATUS_LINE, 1, "KOB", false, No_Paint);
     disp_char(UI_DISP_STATUS_LINE, UI_DISP_STATUS_LOGO_COL, '\177', No_Paint); // AES logo
     // Paint and put the colors back
     disp_paint();
-    disp_set_text_colors_cp(&cp);
+    disp_text_colors_cp_set(&cp);
 }
 
 void ui_disp_build(void) {
     _code_displaying = false;
-    disp_set_text_colors(C16_WHITE, C16_BLACK);
+    disp_text_colors_set(C16_LT_GREEN, C16_BLACK);
     disp_clear(Paint);
-    scroll_area_define(UI_DISP_TOP_FIXED_LINES, UI_DISP_BOTTOM_FIXED_LINES_INIT);
+    disp_scroll_area_define(UI_DISP_TOP_FIXED_LINES, (UI_DISP_BOTTOM_FIXED_LINES + _active_stations_lines));
     _header_fill_fixed();
     _status_fill_fixed();
     ui_disp_update_circuit_closed(_kob_status.circuit_closed);
@@ -110,25 +117,25 @@ void ui_disp_display_wire() {
 
 void ui_disp_put_codetext(char* str) {
     if (!_code_displaying) {
-        print_crlf(0, No_Paint);
+        disp_print_crlf(0, No_Paint);
         _code_displaying = true;
     }
     // If this is a '=' print a newline.
     if (strchr(str, '=')) {
-        prints(str, No_Paint);
-        print_crlf(0, Paint);
+        disp_prints(str, No_Paint);
+        disp_print_crlf(0, Paint);
     }
     else {
-        prints(str, Paint);
+        disp_prints(str, Paint);
     }
 }
 
 void ui_disp_puts(char* str) {
     if (_code_displaying) {
-        print_crlf(0, No_Paint);
+        disp_print_crlf(0, No_Paint);
         _code_displaying = false;
     }
-    prints(str, Paint);
+    disp_prints(str, Paint);
 }
 
 void ui_disp_update_circuit_closed(bool closed) {
@@ -169,15 +176,15 @@ void ui_disp_update_sender(const char* id) {
     char buf[disp_info_columns() + 1];
 
     // Put a newline in the code window
-    print_crlf(0, Paint);
-    disp_get_text_colors(&cp);
-    disp_set_text_colors(UI_DISP_SENDER_COLOR_FG, UI_DISP_SENDER_COLOR_BG);
+    disp_print_crlf(0, Paint);
+    disp_text_colors_get(&cp);
+    disp_text_colors_set(UI_DISP_SENDER_COLOR_FG, UI_DISP_SENDER_COLOR_BG);
     disp_line_clear(UI_DISP_SENDER_LINE, (id ? No_Paint : Paint));
     if (id) {
         snprintf(buf, sizeof(buf) - 1, ">%s", id);
         disp_string(UI_DISP_SENDER_LINE, 0, buf, false, Paint);
     }
-    disp_set_text_colors_cp(&cp);
+    disp_text_colors_cp_set(&cp);
 }
 
 void ui_disp_update_speed(uint16_t speed) {
@@ -185,6 +192,35 @@ void ui_disp_update_speed(uint16_t speed) {
 
     snprintf(buf, sizeof(buf) - 1, "%-2hd", speed);
     disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
+}
+
+void ui_disp_update_stations(const mk_station_id_t** stations) {
+    // See how many there are
+    int sc = 0;
+    while (*(stations + sc)) {
+        sc++;
+    }
+    // Erase the current stations area
+    for (int j = (UI_DISP_STATUS_LINE - 1); j > (UI_DISP_STATUS_LINE - (_active_stations_lines + 1)); j--) {
+        disp_line_clear(j, No_Paint);
+    }
+    // How many lines to display
+    int lines = (sc <= UI_DISP_STATIONS_LINES_MAX ? sc : UI_DISP_STATIONS_LINES_MAX);
+    // Set the scroll area if needed (if it needs to be different from the current)
+    if ((lines + UI_DISP_BOTTOM_FIXED_LINES) != disp_info_fixed_bottom_lines()) {
+        disp_scroll_area_define(UI_DISP_TOP_FIXED_LINES, (lines + UI_DISP_BOTTOM_FIXED_LINES));
+    }
+    _active_stations_lines = lines;
+    // Display the stations
+    uint16_t line = UI_DISP_STATUS_LINE - lines;
+    uint16_t cols = disp_info_columns();
+    char buf[cols];
+    for (int i = 0; i < lines; i++) {
+        const mk_station_id_t * station = *(stations + i);
+        snprintf(buf, cols, "%s", station->id);
+        disp_string_color(line++, 0, buf, UI_DISP_STATIONS_COLOR_FG, UI_DISP_STATIONS_COLOR_BG, No_Paint);
+    }
+    disp_paint();
 }
 
 void ui_disp_update_status() {

@@ -413,18 +413,8 @@ void ui_term_update_speed(uint16_t speed) {
     term_cursor_restore();
 }
 
-void ui_term_update_wire(uint16_t wire) {
-    char buf[UI_TERM_COLUMNS + 1];
-
-    term_cursor_save();
-    term_color_fg(UI_TERM_HEADER_COLOR_FG);
-    term_color_bg(UI_TERM_HEADER_COLOR_BG);
-    term_set_origin_mode(TERM_OM_UPPER_LEFT);
-    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_WIRE_VALUE_COL);
-    snprintf(buf, sizeof(buf) - 1, "%-3hd", wire);
-    printf("%s", buf);
-    term_set_origin_mode(TERM_OM_IN_MARGINS);
-    term_cursor_restore();
+void ui_term_update_stations(const mk_station_id_t** stations) {
+    // ZZZ TODO display active stations
 }
 
 void ui_term_update_status() {
@@ -444,6 +434,20 @@ void ui_term_update_status() {
     term_set_origin_mode(TERM_OM_IN_MARGINS);
     term_cursor_restore();
     ui_term_color_set(tc.fg, tc.bg);
+}
+
+void ui_term_update_wire(uint16_t wire) {
+    char buf[UI_TERM_COLUMNS + 1];
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_WIRE_VALUE_COL);
+    snprintf(buf, sizeof(buf) - 1, "%-3hd", wire);
+    printf("%s", buf);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
 }
 
 void ui_term_use_code_color() {
