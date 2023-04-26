@@ -114,8 +114,9 @@ target_link_libraries(MuKOB
   kob
   mks
   morse
-  net
   mukob_test
+  net
+  rotory_encoder
   term
   ui
   util

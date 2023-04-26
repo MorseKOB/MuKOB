@@ -155,7 +155,7 @@ static void (*_next_fn)(void) = NULL;
 
 
 const mk_station_id_t** mkwire_active_stations() {
-    return _stations_list;
+    return ((const mk_station_id_t **)_stations_list);
 }
 
 void mkwire_connect(unsigned short wire_no) {
