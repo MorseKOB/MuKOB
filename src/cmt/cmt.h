@@ -23,6 +23,7 @@ typedef enum _MSG_ID_ {
     // Common messages (used by both BE and UI)
     MSG_COMMON_NOOP = 0x0000,
     MSG_CONFIG_CHANGED,
+    MSG_DEBUG_CHANGED,
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
@@ -70,6 +71,7 @@ typedef void (*cmt_sleep_fn)(void);
  */
 typedef union _MSG_DATA_VALUE {
     char c;
+    bool debug;
     uint32_t ts_ms;
     uint64_t ts_us;
     key_read_state_t key_read_state;
@@ -140,11 +142,38 @@ typedef struct _MSG_LOOP_CNTX {
 } msg_loop_cntx_t;
 
 /**
+ * @brief Indicates if the Core-0 message loop has been started.
+ * @ingroup cmt
+ *
+ * @return true The Core-0 message loop has been started.
+ * @return false The Core-0 message loop has not been started yet.
+ */
+extern bool cmt_message_loop_0_running();
+
+/**
+ * @brief Indicates if the Core-1 message loop has been started.
+ * @ingroup cmt
+ *
+ * @return true The Core-1 message loop has been started.
+ * @return false The Core-1 message loop has not been started yet.
+ */
+extern bool cmt_message_loop_1_running();
+
+/**
+ * @brief Indicates if both the Core-0 and Core-1 message loops have been started.
+ * @ingroup cmt
+ *
+ * @return true The message loops have been started.
+ * @return false The message loops have not been started yet.
+ */
+extern bool cmt_message_loops_running();
+
+/**
  * @brief Handle a Scheduled Message timer Tick.
  *
  * @param msg (not used)
  */
-void cmt_handle_sleep(cmt_msg_t* msg);
+extern void cmt_handle_sleep(cmt_msg_t* msg);
 
 /**
  * @brief Sleep for milliseconds and call a function.
@@ -153,7 +182,7 @@ void cmt_handle_sleep(cmt_msg_t* msg);
  * @param ms The time in milliseconds from now.
  * @param sleep_fn The function to call when the time expires.
  */
-void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
+extern void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
 
 /**
  * @brief Schedule a message to post in the future.
@@ -200,7 +229,7 @@ extern void message_loop(const msg_loop_cntx_t* loop_context);
  * @brief Initialize the Cooperative Multi-Tasking system.
  * @ingroup cmt
  */
-void cmt_module_init();
+extern void cmt_module_init();
 
 #ifdef __cplusplus
     }

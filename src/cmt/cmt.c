@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define _SCHEDULED_MESSAGES_MAX 16
 #define _SMD_FREE_INDICATOR (-1)
 #define _OVERHEAD_US_PER_MS 25 // From testing
@@ -34,6 +35,10 @@ typedef struct _scheduled_msg_data_ {
 auto_init_mutex(sm_mutex);
 static _scheduled_msg_data_t _scheduled_message_datas[_SCHEDULED_MESSAGES_MAX]; // Objects to use (no malloc/free)
 static repeating_timer_t _schd_msg_timer_data;
+
+static bool _msg_loop_0_running = false;
+static bool _msg_loop_1_running = false;
+
 
 /**
  * @brief Repeating alarm callback handler.
@@ -75,6 +80,18 @@ static void _scheduled_msg_init() {
     if (!success) {
         error_printf(false, "CMT - Could not create repeating timer for scheduled messages.\n");
     }
+}
+
+bool cmt_message_loop_0_running() {
+    return (_msg_loop_0_running);
+}
+
+bool cmt_message_loop_1_running() {
+    return (_msg_loop_1_running);
+}
+
+bool cmt_message_loops_running() {
+    return (_msg_loop_0_running && _msg_loop_1_running);
 }
 
 void cmt_handle_sleep(cmt_msg_t* msg) {
@@ -186,6 +203,12 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
     get_msg_nowait_fn get_msg_function = (loop_context->corenum == 0 ? get_core0_msg_nowait : get_core1_msg_nowait);
     cmt_msg_t msg;
     const idle_fn* idle_functions = loop_context->idle_functions;
+    if (loop_context->corenum == 0) {
+        _msg_loop_0_running = true;
+    }
+    else {
+        _msg_loop_1_running = true;
+    }
     while (1) { // Endless loop reading and dispatching messages to the handlers...
         if (get_msg_function(&msg)) {
             // Find the handler

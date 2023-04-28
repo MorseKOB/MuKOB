@@ -25,6 +25,7 @@ extern "C" {
 
 /**
  * @brief Initialize the board
+ * @ingroup board
  *
  * This sets up the GPIO for the proper direction (IN/OUT), pull-ups, etc.
  * This calls the init for each of the devices/subsystems.
@@ -34,6 +35,7 @@ int board_init(void);
 
 /**
  * @brief Beep the Buzzer on/off
+ * @ingroup board
  *
  * @param ms Milliseconds to turn the buzzer on.
 */
@@ -41,6 +43,7 @@ void buzzer_beep(int ms);
 
 /**
  * @brief Turn the buzzer on/off
+ * @ingroup board
  *
  * @param on True to turn buzzer on, False to turn it off.
 */
@@ -48,6 +51,7 @@ void buzzer_on(bool on);
 
 /**
  * @brief Beep the buzzer on/off/on/off...
+ * @ingroup board
  *
  * This beeps the buzzer for times specified by the `pattern` in milliseconds.
  *
@@ -58,6 +62,7 @@ void buzzer_on_off(const int pattern[]);
 
 /**
  * @brief Turn the hardware backlight on or off.
+ * @ingroup board
  *
  * @param on True to turn on, false to turn off
  */
@@ -65,6 +70,7 @@ void display_backlight_on(bool on);
 
 /**
  * @brief Enable/disable the hardware reset on the display.
+ * @ingroup board
  *
  * @param on True to enable, false to disable
  */
@@ -72,6 +78,7 @@ void display_reset_on(bool on);
 
 /**
  * @brief Flash the LED on/off
+ * @ingroup board
  *
  * @param ms Milliseconds to turn the LED on.
 */
@@ -79,6 +86,7 @@ void led_flash(int ms);
 
 /**
  * @brief Turn the LED on/off
+ * @ingroup board
  *
  * @param on True to turn LED on, False to turn it off.
 */
@@ -86,6 +94,7 @@ void led_on(bool on);
 
 /**
  * @brief Turn the LED on off on off...
+ * @ingroup board
  *
  * This flashes the LED for times specified by the `pattern` in milliseconds.
  *
@@ -96,6 +105,7 @@ void led_on_off(const int32_t pattern[]);
 
 /**
  * @brief Turn the LED on/off based on MorseKOB code array...
+ * @ingroup board
  *
  * This flashes the LED for times specified by the `pattern` in milliseconds.
  *
@@ -105,7 +115,25 @@ void led_on_off(const int32_t pattern[]);
 void led_blink_mcode(const int32_t *code, uint32_t len);
 
 /**
+ * @brief The dynamic debug state of the system.
+ * @ingroup board
+ *
+ * @return true If debug is set
+ * @return false If not debug
+ */
+bool mk_debug();
+
+/**
+ * @brief Set the state of the dynamic debug state of the system.
+ * @ingroup board
+ *
+ * @param on Boolean state to set
+ */
+void mk_debug_set(bool on);
+
+/**
  * @brief Get a millisecond value of the time since the board was booted.
+ * @ingroup board
  *
  * @return uint32_t Time in milliseconds
  */
@@ -113,6 +141,7 @@ extern uint32_t now_ms();
 
 /**
  * @brief Get a microsecond value of the time since the board was booted.
+ * @ingroup board
  *
  * @return uint64_t Time in microseconds
  */
@@ -120,6 +149,7 @@ extern uint64_t now_us();
 
 /**
  * @brief Read the option switch
+ * @ingroup board
  *
  * Reads the 4-position option switch, caches and returns
  * the value in the low 4 bits.
@@ -136,6 +166,7 @@ uint8_t options_read(void);
 
 /**
  * @brief Get the cached value of an option
+ * @ingroup board
  *
  * Use options_read() to actually read the switch and
  * cache the value (requiring a GPIO read)

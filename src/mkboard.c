@@ -42,6 +42,7 @@
 #include "term.h"
 #include "util.h"
 
+static bool _mk_debug = false;
 static uint8_t _options_value = 0;
 
 // Internal function declarations
@@ -350,6 +351,20 @@ uint32_t now_ms() {
 
 uint64_t now_us() {
     return (time_us_64());
+}
+
+bool mk_debug() {
+    return _mk_debug;
+}
+
+void mk_debug_set(bool on) {
+    bool temp = _mk_debug;
+    _mk_debug = on;
+    if (on != temp && cmt_message_loops_running()) {
+        cmt_msg_t msg = { MSG_DEBUG_CHANGED };
+        msg.data.debug = _mk_debug;
+        postBothMsgNoWait(&msg);
+    }
 }
 
 uint8_t options_read(void) {
