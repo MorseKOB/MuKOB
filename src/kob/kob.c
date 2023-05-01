@@ -23,6 +23,9 @@
 
 static bool _invert_key_input = false;
 static bool _key_has_closer = false;
+static bool _sound_local = false;
+static bool _sounder_enabled = false;
+static bool _tone_enabled = false;
 
 static kob_status_t _kob_status;
 
@@ -179,7 +182,12 @@ void kob_sound_code_continue() {
                 c = -1; // Adjust to just de-energize sounder
             }
             if (MORSE_EXTENDED_MARK_START_INDICATOR == c || c > MORSE_EXTENDED_MARK_END_INDICATOR) {
-                kob_sounder_energize(true);
+                if (_sounder_enabled) {
+                    kob_sounder_energize(true);
+                }
+                if (_tone_enabled && (MORSE_EXTENDED_MARK_START_INDICATOR != c)) {
+                    kob_tone_energize(true);
+                }
             }
             t_next = _snd_t_last + abs(c);
             dt = t_next - t;
@@ -197,6 +205,7 @@ void kob_sound_code_continue() {
         }
         if (c > 1) { // End of non-latching mark
             kob_sounder_energize(false);
+            kob_tone_energize(false);
         }
         _snd_code_index++;
         _snd_phase1 = true;
@@ -212,10 +221,14 @@ void kob_sound_code(mcode_seq_t* mcode_seq) {
     // See if we are suppose to sound this and have an output device enabled
     const config_t* cfg = config_current();
     if (cfg->sound || cfg->sounder) {
-        _snd_mcode_seq = mcode_seq_copy(mcode_seq);
-        _snd_code_index = 0;
-        _snd_phase1 = true;
-        kob_sound_code_continue();
+        if (
+         ((mcode_seq->source == MCODE_SRC_KEY || mcode_seq->source == MCODE_SRC_UI) && _sound_local) 
+         || mcode_seq->source == MCODE_SRC_WIRE) {
+            _snd_mcode_seq = mcode_seq_copy(mcode_seq);
+            _snd_code_index = 0;
+            _snd_phase1 = true;
+            kob_sound_code_continue();
+        }
     }
 }
 
@@ -224,29 +237,44 @@ void kob_sounder_energize(bool energize) {
     _kob_status.sounder_energized = energize;
 }
 
+void kob_tone_energize(bool energize) {
+    tone_on(energize);
+    _kob_status.tone_energized = energize;
+}
+
 const kob_status_t* kob_status() {
     return (&_kob_status);
 }
 
-void kob_module_init(bool invert_key_input, bool key_has_closer) {
-    _invert_key_input = invert_key_input;
-    _key_has_closer = key_has_closer;
+void kob_module_init(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local) {
     _key_closer_is_open = false; // Assume the key closer is starting out closed
     _key_was_last_closed = false; // Set key open to start
     _key_last_read_time = 0;
     _kr_codeseq_index = 0;
     _snd_t_last = now_ms();
-    kob_sounder_energize(true);
     _kob_status.circuit_closed = kob_key_is_closed();
     _kob_status.key_closed = kob_key_is_closed();
     // Initialize our messages
     _msg_key_read_code.id = MSG_KOB_KEY_READ;
     _msg_key_read_code.data.key_read_state.phase = KEY_READ_START;
     _msg_sound_code.id = MSG_KOB_SOUND_CODE_CONT;
+    // Set the sounder and tone
+    kob_module_cfg_update(invert_key_input, key_has_closer, sounder_enabled, tone_enabled, sound_local);
     // Let the UI know the current status
     _msg_kob_status.id = MSG_KOB_STATUS;
     _msg_kob_status.data.kob_status.circuit_closed = _kob_status.circuit_closed;
     _msg_kob_status.data.kob_status.key_closed = _kob_status.circuit_closed;
     _msg_kob_status.data.kob_status.sounder_energized = _kob_status.sounder_energized;
     postUIMsgNoWait(&_msg_kob_status);
+}
+
+void kob_module_cfg_update(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local) {
+    _invert_key_input = invert_key_input;
+    _key_has_closer = key_has_closer;
+    _sound_local = sound_local;
+    _sounder_enabled = sounder_enabled;
+    _tone_enabled = tone_enabled;
+
+    kob_sounder_energize(sounder_enabled); // Normal state for sounder is closed/energized
+    kob_tone_energize(false);
 }

@@ -147,9 +147,9 @@ int board_init() {
     gpio_set_function(DISPLAY_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_BACKLIGHT_OUT, GPIO_OUT);
     gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);     // No backlight until the display is initialized
-    gpio_set_function(SPKR_DRIVE,   GPIO_FUNC_SIO);
-    gpio_set_dir(SPKR_DRIVE, GPIO_OUT);
-    gpio_put(SPKR_DRIVE, SPEAKER_OFF);
+    gpio_set_function(TONE_DRIVE,   GPIO_FUNC_SIO);
+    gpio_set_dir(TONE_DRIVE, GPIO_OUT);
+    gpio_put(TONE_DRIVE, TONE_OFF);
     gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
     gpio_set_drive_strength(KOB_SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
@@ -224,31 +224,31 @@ void boot_to_bootsel() {
     reset_usb_boot(0, 0);
 }
 
-static void _buzzer_beep_cont(void *user_data) {
-    buzzer_on(false);
+static void _tone_sound_pattern_cont(void *user_data) {
+    tone_on(false);
 }
-void buzzer_beep(int ms) {
-    buzzer_on(true);
+void tone_sound_pattern(int ms) {
+    tone_on(true);
     if (!cmt_message_loop_0_running()) {
         sleep_ms(ms);
-        _buzzer_beep_cont(NULL);
+        _tone_sound_pattern_cont(NULL);
     }
     else {
-        cmt_sleep_ms(ms, _buzzer_beep_cont, NULL);
+        cmt_sleep_ms(ms, _tone_sound_pattern_cont, NULL);
     }
 }
 
-void buzzer_on(bool on) {
-    gpio_put(SPKR_DRIVE, on);
+void tone_on(bool on) {
+    gpio_put(TONE_DRIVE, (on ? TONE_ON : TONE_OFF));
 }
 
-void _buzzer_on_off_cont(void* data) {
+void _tone_on_off_cont(void* data) {
     int32_t *pattern = (int32_t*)data;
-    buzzer_on_off(pattern);
+    tone_on_off(pattern);
 }
-void buzzer_on_off(const int32_t *pattern) {
+void tone_on_off(const int32_t *pattern) {
     while (*pattern) {
-        buzzer_beep(*pattern++);
+        tone_sound_pattern(*pattern++);
         int off_time = *pattern++;
         if (off_time == 0) {
             return;
@@ -257,7 +257,7 @@ void buzzer_on_off(const int32_t *pattern) {
             sleep_ms(off_time);
         }
         else {
-            cmt_sleep_ms(off_time, _buzzer_on_off_cont, (void*)pattern);
+            cmt_sleep_ms(off_time, _tone_on_off_cont, (void*)pattern);
         }
     }
 }

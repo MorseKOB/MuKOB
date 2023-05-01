@@ -68,6 +68,7 @@ const char* american_morse[] = {
     ".. ..",        // Y
     "... .",        // Z
 };
+int mta_len = (sizeof(american_morse) / sizeof(char*));
 
 const char* international_morse[] = {
     "    ",         // SP
@@ -130,3 +131,4 @@ const char* international_morse[] = {
     "-.--",         // Y
     "--..",         // Z
 };
+int mti_len = (sizeof(international_morse) / sizeof(char*));

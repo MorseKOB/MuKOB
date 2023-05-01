@@ -39,7 +39,7 @@ int board_init(void);
  *
  * @param ms Milliseconds to turn the buzzer on.
 */
-void buzzer_beep(int ms);
+void tone_sound_pattern(int ms);
 
 /**
  * @brief Turn the buzzer on/off
@@ -47,7 +47,7 @@ void buzzer_beep(int ms);
  *
  * @param on True to turn buzzer on, False to turn it off.
 */
-void buzzer_on(bool on);
+void tone_on(bool on);
 
 /**
  * @brief Beep the buzzer on/off/on/off...
@@ -58,7 +58,7 @@ void buzzer_on(bool on);
  * @param pattern Array of millisend values to beep the buzzer on, off, on, etc.
  *      The last element of the array must be 0.
 */
-void buzzer_on_off(const int32_t* pattern);
+void tone_on_off(const int32_t* pattern);
 
 /**
  * @brief Turn the hardware backlight on or off.

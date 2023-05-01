@@ -68,15 +68,15 @@ extern "C" {
 #define OPTIONS_1_IN            18  // DP-24 - Options DIP switch is 123 - 1 ON = MKOB4 Interface
 #define ROTARY_PB_SW_IN         13  // DP-17 - IRQ on same pin.
 #define SPACEBAR_SW             28  // DP-34 - IRQ on same pin.
-#define SPKR_DRIVE              22  // DP-29 - Speaker drive
+#define TONE_DRIVE              22  // DP-29 - Speaker drive
 
 // Rotary switch push button state
 #define ROTARY_PB_SW_PUSHED 0 // Switch is to GND
 #define ROTARY_PB_SW_UNPUSHED 1
 
 // Buzzer/Tone support
-#define SPEAKER_OFF 0
-#define SPEAKER_ON 1
+#define TONE_OFF 0
+#define TONE_ON 1
 
 // Display
 // Hardware driven values (writes to GPIO)

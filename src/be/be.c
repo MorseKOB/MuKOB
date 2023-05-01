@@ -192,6 +192,13 @@ static void _handle_config_changed(cmt_msg_t* msg) {
      || cfg->spacing != _last_cfg->spacing) {
         morse_module_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
     }
+    if (cfg->invert_key_input != _last_cfg->invert_key_input
+     || cfg->key_has_closer != _last_cfg->key_has_closer
+     || cfg->local != _last_cfg->local
+     || cfg->sound != _last_cfg->sound
+     || cfg->sounder != _last_cfg->sounder) {
+        kob_module_cfg_update(cfg->invert_key_input, cfg->key_has_closer, cfg->sounder, cfg->sound, cfg->local);
+     }
     _last_cfg = config_copy(_last_cfg, cfg);
     LEAVE_MSG_HANDLER();
 }
@@ -290,7 +297,7 @@ void be_module_init() {
     }
     mks_module_init();
     morse_module_init(cfg->text_speed, cfg->char_speed_min, cfg->code_type, cfg->spacing);
-    kob_module_init(cfg->invert_key_input, cfg->key_has_closer);
+    kob_module_init(cfg->invert_key_input, cfg->key_has_closer, cfg->sounder, cfg->sound, cfg->local);
 
     // Done with the Backend Initialization - Let the UI know.
     _msg_be_initialized.id = MSG_BE_INITIALIZED;

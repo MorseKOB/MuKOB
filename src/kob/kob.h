@@ -59,12 +59,32 @@ extern void kob_sound_code_continue();
 extern void kob_sounder_energize(bool energize);
 
 /**
+ * @brief Energize/deenergize the tone generator
+ * @ingroup kob
+ *
+ * Energizing the tone generator produces the tone. Deenergizing silences the tone.
+ *
+ * @param energize True to energize, False to deenergize.
+ */
+extern void kob_tone_energize(bool energize);
+
+/**
  * @brief Get the current KOB status.
  * @ingroup kob
  *
  * @return const kob_status_t Current status.
  */
 extern const kob_status_t* kob_status();
+
+/**
+ * @brief Update the state of the Config controlled aspects of the module.
+ *
+ * @param invert_key_input True if the key input should be inverted (used for modem input)
+ * @param key_has_closer True if the key has a circuit closer that should be followed
+ * @param sounder_enabled True to enable driving the sounder
+ * @param tone_enabled True to enable driving the tone output
+ */
+void kob_module_cfg_update(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local);
 
 /**
  * @brief Initialize the KOB functionality.
@@ -74,8 +94,10 @@ extern const kob_status_t* kob_status();
  *
  * @param invert_key_input True if the key input should be inverted (used for modem input)
  * @param key_has_closer True if the key has a circuit closer that should be followed
+ * @param sounder_enabled True to enable driving the sounder
+ * @param tone_enabled True to enable driving the tone output
  */
-extern void kob_module_init(bool invert_key_input, bool key_has_closer);
+extern void kob_module_init(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local);
 
 #ifdef __cplusplus
     }
