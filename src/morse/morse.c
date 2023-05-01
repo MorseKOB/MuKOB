@@ -12,7 +12,7 @@
 #include "morse_tables.h" // Morse data that is in text files in PyKOB
 
 #include "cmt.h"
-#include "debugging.h"
+#include "mkdebug.h"
 #include "util.h"
 
 #include <ctype.h>

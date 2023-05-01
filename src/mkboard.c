@@ -7,7 +7,7 @@
  * This sets up the Pico-W for use for MuKOB.
  * It:
  * 1. Configures the GPIO Pins for the proper IN/OUT, pull-ups, etc.
- * 2. Calls the init routines for Config, UI (Display, Touch, Rotory)
+ * 2. Calls the init routines for Config, UI (Display, Touch, rotary)
  *
  * It provides some utility methods to:
  * 1. Turn the On-Board LED ON/OFF
@@ -37,12 +37,12 @@
 #include "display.h"
 #include "kob.h"
 #include "mkboard.h"
+#include "mkdebug.h"
 #include "multicore.h"
 #include "net.h"
 #include "term.h"
 #include "util.h"
 
-static bool _mk_debug = false;
 static uint8_t _options_value = 0;
 
 // Internal function declarations
@@ -166,22 +166,24 @@ int board_init() {
     gpio_init(OPTIONS_3_IN);
     gpio_set_dir(OPTIONS_3_IN, GPIO_IN);
     gpio_pull_up(OPTIONS_3_IN);
-    gpio_init(OPTIONS_4_IN);
-    gpio_set_dir(OPTIONS_4_IN, GPIO_IN);
-    gpio_pull_up(OPTIONS_4_IN);
-    //    Rotory Encoder A & B
-    gpio_init(ROTORY_A_IN);
-    gpio_set_dir(ROTORY_A_IN, GPIO_IN);
-    gpio_pull_up(ROTORY_A_IN);
-    gpio_init(ROTORY_B_IN);
-    gpio_set_dir(ROTORY_B_IN, GPIO_IN);
-    gpio_pull_up(ROTORY_B_IN);
-    //    Rotory Ecoder Push-button Switch
-    gpio_init(ROTORY_PB_SW_IN);
-    gpio_set_dir(ROTORY_PB_SW_IN, GPIO_IN);
-    gpio_pull_up(ROTORY_PB_SW_IN);
+    //    rotary Encoder A & B
+    gpio_init(ROTARY_A_IN);
+    gpio_set_dir(ROTARY_A_IN, GPIO_IN);
+    gpio_pull_up(ROTARY_A_IN);
+    gpio_init(ROTARY_B_IN);
+    gpio_set_dir(ROTARY_B_IN, GPIO_IN);
+    gpio_pull_up(ROTARY_B_IN);
+    //    rotary Ecoder Push-button Switch
+    gpio_init(ROTARY_PB_SW_IN);
+    gpio_set_dir(ROTARY_PB_SW_IN, GPIO_IN);
+    gpio_pull_up(ROTARY_PB_SW_IN);
 
 
+    // Check the rotary switch to see if it's pressed.
+    //  If yes, set 'mk_debug'
+    if (gpio_get(ROTARY_PB_SW_IN) == ROTARY_PB_SW_PUSHED) {
+        mk_debug_set(true);
+    }
     // Read and cache the option switch value
     options_read();
 
@@ -222,24 +224,41 @@ void boot_to_bootsel() {
     reset_usb_boot(0, 0);
 }
 
+static void _buzzer_beep_cont(void *user_data) {
+    buzzer_on(false);
+}
 void buzzer_beep(int ms) {
     buzzer_on(true);
-//    sleep_ms(ms); ZZZ - can't sleep
-    buzzer_on(false);
+    if (!cmt_message_loop_0_running()) {
+        sleep_ms(ms);
+        _buzzer_beep_cont(NULL);
+    }
+    else {
+        cmt_sleep_ms(ms, _buzzer_beep_cont, NULL);
+    }
 }
 
 void buzzer_on(bool on) {
     gpio_put(SPKR_DRIVE, on);
 }
 
-void buzzer_on_off(const int pattern[]) {
-    for (int i = 0; pattern[i] != 0; i++) {
-        buzzer_beep(pattern[i++]);
-        int off_time = pattern[i];
+void _buzzer_on_off_cont(void* data) {
+    int32_t *pattern = (int32_t*)data;
+    buzzer_on_off(pattern);
+}
+void buzzer_on_off(const int32_t *pattern) {
+    while (*pattern) {
+        buzzer_beep(*pattern++);
+        int off_time = *pattern++;
         if (off_time == 0) {
             return;
         }
-//        sleep_ms(off_time); ZZZ - can't sleep
+        if (!cmt_message_loop_0_running()) {
+            sleep_ms(off_time);
+        }
+        else {
+            cmt_sleep_ms(off_time, _buzzer_on_off_cont, (void*)pattern);
+        }
     }
 }
 
@@ -261,88 +280,42 @@ void display_reset_on(bool on) {
     }
 }
 
+static void _led_flash_cont(void* user_data) {
+    led_on(false);
+}
 void led_flash(int ms) {
     led_on(true);
-//    sleep_ms(ms); ZZZ - no sleeping
-    led_on(false);
+    if (!cmt_message_loop_0_running()) {
+        sleep_ms(ms);
+        _led_flash_cont(NULL);
+    }
+    else {
+        cmt_sleep_ms(ms, _led_flash_cont, NULL);
+    }
 }
 
 void led_on(bool on) {
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, on);
-    // ZZZ - Temp energize sounder too
-    kob_sounder_energize(on);
-    // ZZZ - Temp tone if debug on
-    if (option_value(OPTION_DEBUG)) {
-        buzzer_on(on);
-    }
-    else {
-        buzzer_on(false);
-    }
 }
 
-void led_on_off(const int32_t pattern[]) {
-    for (int i = 0; pattern[i] != 0; i++) {
-        led_flash(pattern[i++]);
-        int off_time = pattern[i];
+void _led_on_off_cont(void* user_data) {
+    int32_t* pattern = (int32_t*)user_data;
+    led_on_off(pattern);
+}
+void led_on_off(const int32_t *pattern) {
+    while (*pattern) {
+        led_flash(*pattern++);
+        int off_time = *pattern++;
         if (off_time == 0) {
             return;
         }
-//        sleep_ms(off_time); // ZZZ - no sleeping
-    }
-}
-
-struct _led_blink_mcode_context {
-    uint32_t len;
-    uint32_t index;
-    alarm_id_t alarm_id;
-    int* code;
-};
-static struct _led_blink_mcode_context _mcode_context = {0, 0, (alarm_id_t)0, (int*)NULL};
-
-int64_t _led_blink_mcode_handler(const alarm_id_t id, void* request_state) {
-    if (_mcode_context.alarm_id != 0) {
-        cancel_alarm(_mcode_context.alarm_id);
-        _mcode_context.alarm_id = 0;
-    }
-    if (_mcode_context.index == _mcode_context.len) {
-        if (_mcode_context.code) {
-            free(_mcode_context.code);
-            _mcode_context.code = NULL;
+        if (!cmt_message_loop_0_running()) {
+            sleep_ms(off_time);
         }
-        led_on(false);
-        return 0;
-    }
-    int ms = *(_mcode_context.code + _mcode_context.index);
-    if (ms == 0) {
-        if (_mcode_context.code) {
-            free(_mcode_context.code);
-            _mcode_context.code = NULL;
+        else {
+            cmt_sleep_ms(off_time, _led_on_off_cont, (void*)pattern);
         }
-        led_on(false);
-        return 0;
     }
-    _mcode_context.index++;
-    led_on(ms > 0);
-    _mcode_context.alarm_id = add_alarm_in_ms(abs(ms), _led_blink_mcode_handler, NULL, true);
-
-    return 0;
-}
-
-void led_blink_mcode(const int32_t* code, uint32_t len) {
-    if (_mcode_context.alarm_id != 0) {
-        cancel_alarm(_mcode_context.alarm_id);
-        _mcode_context.alarm_id = 0;
-        led_on(false);
-    }
-    if (_mcode_context.code) {
-        free(_mcode_context.code);
-    }
-    _mcode_context.code = malloc(len);
-    memcpy(_mcode_context.code, code, len);
-    _mcode_context.len = len;
-    _mcode_context.index = 0;
-    _mcode_context.alarm_id = 0;
-    _led_blink_mcode_handler(0, NULL);
 }
 
 uint32_t now_ms() {
@@ -353,26 +326,9 @@ uint64_t now_us() {
     return (time_us_64());
 }
 
-bool mk_debug() {
-    return _mk_debug;
-}
-
-void mk_debug_set(bool on) {
-    bool temp = _mk_debug;
-    _mk_debug = on;
-    if (on != temp && cmt_message_loops_running()) {
-        cmt_msg_t msg = { MSG_DEBUG_CHANGED };
-        msg.data.debug = _mk_debug;
-        postBothMsgNoWait(&msg);
-    }
-}
-
 uint8_t options_read(void) {
     uint8_t opt_value = 0x00;
-    uint8_t opt_bit = gpio_get(OPTIONS_4_IN);
-    opt_value |= opt_bit;
-    opt_value <<= 1;
-    opt_bit = gpio_get(OPTIONS_3_IN);
+    uint8_t opt_bit = gpio_get(OPTIONS_3_IN);
     opt_value |= opt_bit;
     opt_value <<= 1;
     opt_bit = gpio_get(OPTIONS_2_IN);
@@ -380,7 +336,7 @@ uint8_t options_read(void) {
     opt_value <<= 1;
     opt_bit = gpio_get(OPTIONS_1_IN);
     opt_value |= opt_bit;
-    opt_value ^= 0x0F;  // Invert the final value (the switches are tied to GND)
+    opt_value ^= 0x07;  // Invert the final value (the switches are tied to GND)
     _options_value = opt_value;
 
     return (opt_value);
@@ -400,7 +356,7 @@ int _format_printf_datetime(char* buf, size_t len) {
 }
 
 void debug_printf(const char* format, ...) {
-    if (option_value(OPTION_DEBUG)) {
+    if (mk_debug()) {
         char buf[512];
         int index = _format_printf_datetime(buf, sizeof(buf));
         index += snprintf(&buf[index], sizeof(buf) - index, " DEBUG: ");

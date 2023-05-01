@@ -1,8 +1,8 @@
 /**
- * @brief Push button switch on the rotory encoder.
+ * @brief Push button switch on the rotary encoder.
  * @ingroup ui
  *
- * This provides input from the momentary action push-button switch on the rotory encoder.
+ * This provides input from the momentary action push-button switch on the rotary encoder.
  *
  * Copyright 2023 AESilky
  *

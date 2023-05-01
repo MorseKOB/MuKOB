@@ -1,5 +1,5 @@
 /**
- * MuKOB User Interface - On the display, rotory, touch.
+ * MuKOB User Interface - On the display, rotary, touch.
  *
  * Copyright 2023 AESilky
  * SPDX-License-Identifier: MIT License

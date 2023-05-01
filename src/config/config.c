@@ -12,7 +12,6 @@
 #include "config.h"
 #include "config_fops.h"
 
-#include "cmd_t.h" // Command processing type definitions
 #include "mkboard.h"
 #include "mkwire.h"
 #include "net.h"

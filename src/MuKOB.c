@@ -11,6 +11,7 @@
 //
 #include "be.h"
 #include "mkboard.h"
+#include "mkdebug.h"
 #include "morse.h"
 #include "ui.h"
 
@@ -47,7 +48,7 @@ int main()
     board_init();
 
     // Indicate that we are awake
-    if (option_value(OPTION_DEBUG)) {
+    if (mk_debug()) {
         buzzer_beep(150);
     }
     led_on_off(say_hi);

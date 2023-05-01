@@ -18,8 +18,8 @@
 
 
 #define _SCHEDULED_MESSAGES_MAX 16
+#define _SM_OVERHEAD_US_PER_MS 35 // From testing (@SEE be._handle_be_test)
 #define _SMD_FREE_INDICATOR (-1)
-#define _OVERHEAD_US_PER_MS 25 // From testing
 
 typedef bool (*get_msg_nowait_fn)(cmt_msg_t* msg);
 
@@ -75,8 +75,7 @@ static void _scheduled_msg_init() {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
         smd->remaining = _SMD_FREE_INDICATOR;
     }
-
-    bool success = add_repeating_timer_us(1000, _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
+    bool success = add_repeating_timer_us((1000 - _SM_OVERHEAD_US_PER_MS), _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
     if (!success) {
         error_printf(false, "CMT - Could not create repeating timer for scheduled messages.\n");
     }
@@ -95,20 +94,14 @@ bool cmt_message_loops_running() {
 }
 
 void cmt_handle_sleep(cmt_msg_t* msg) {
-    cmt_sleep_fn* fn = msg->data.sleep_fn;
+    cmt_sleep_fn fn = msg->data.cmt_sleep->sleep_fn;
     if (fn) {
-        (*fn)();
+        (fn)(msg->data.cmt_sleep->user_data);
     }
 }
 
-void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn) {
+void cmt_sleep_ms(int32_t ms, cmt_sleep_fn sleep_fn, void* user_data) {
     bool scheduled = false;
-
-    // Calculate our overhead and adjust if possible
-    uint64_t req_us = ms * 1000;
-    uint64_t overhead_us = ms * _OVERHEAD_US_PER_MS;
-    int32_t adj_ms = (req_us - overhead_us) / 1000;
-    adj_ms = (adj_ms > 0 ? adj_ms : 1);
 
     uint8_t core_num = (uint8_t)get_core_num();
     register uint32_t flags = save_and_disable_interrupts();
@@ -119,11 +112,12 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn) {
         if (_SMD_FREE_INDICATOR == smd->remaining) {
             // This is free;
             smd->sleep_msg.id = MSG_CMT_SLEEP;
-            smd->sleep_msg.data.sleep_fn = sleep_fn;
+            smd->sleep_msg.data.cmt_sleep->sleep_fn = sleep_fn;
+            smd->sleep_msg.data.cmt_sleep->user_data = user_data;
             smd->client_msg = &smd->sleep_msg;
             smd->ms_requested = ms;
             smd->corenum = core_num;
-            smd->remaining = adj_ms;
+            smd->remaining = ms;
             scheduled = true;
             break;
         }
@@ -138,12 +132,6 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn) {
 void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
     bool scheduled = false;
 
-    // Calculate our overhead and adjust if possible
-    uint64_t req_us = ms * 1000;
-    uint64_t overhead_us = ms * _OVERHEAD_US_PER_MS;
-    int32_t adj_ms = (req_us - overhead_us) / 1000;
-    adj_ms = (adj_ms > 0 ? adj_ms : 1);
-
     uint8_t core_num = (uint8_t)get_core_num();
     register uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
@@ -155,7 +143,7 @@ void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
             smd->client_msg = msg;
             smd->ms_requested = ms;
             smd->corenum = core_num;
-            smd->remaining = adj_ms;
+            smd->remaining = ms;
             scheduled = true;
             break;
         }
@@ -163,7 +151,7 @@ void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
     mutex_exit(&sm_mutex);
     restore_interrupts(flags);
     if (!scheduled) {
-        panic("CMT - No SMD available for use.");
+        panic("CMT - No SM Data slot available for use.");
     }
 }
 

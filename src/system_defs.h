@@ -48,28 +48,31 @@ extern "C" {
 #define SPI_CS_TOUCH    6       // DP-09
 //
 #define IRQ_KOB_KEY     17      // DP-22
-#define IRQ_ROTORY_TURN 14      // DP-19
-#define IRQ_ROTORY_SW   13      // DP-17
+#define IRQ_rotary_TURN 14      // DP-19
+#define IRQ_rotary_SW   13      // DP-17
 #define IRQ_SPACEBAR_SW 28      // DP-34
 #define IRQ_TOUCH       7       // DP-10
 
 // PIO
-// MuKOB uses PIO for reading the rotory encoder. This narrows the pins that can be used.
-#define ROTORY_A_IN             14  // DP-19 - IRQ on same pin. 'B" must be the next GPIO (15)
-#define ROTORY_B_IN             15  // DP-20 - Must be 1 greater than 'A' in.
+// MuKOB uses PIO for reading the rotary encoder. This narrows the pins that can be used.
+#define ROTARY_A_IN             14  // DP-19 - IRQ on same pin. 'B" must be the next GPIO (15)
+#define ROTARY_B_IN             15  // DP-20 - Must be 1 greater than 'A' in.
 
 // Other GPIO
 #define DISPLAY_RESET_OUT       26  // DP-31
 #define DISPLAY_BACKLIGHT_OUT   27  // DP-32
 #define KOB_KEY_IN              17  // DP-22 - IRQ on same pin.
 #define KOB_SOUNDER_OUT         16  // DP-21
-#define OPTIONS_1_IN            18  // DP-24 - Dip switch for options is 1234 - 4 BAUD OFF-OFF=115200 OFF-ON=38400
-#define OPTIONS_2_IN            19  // DP-25 - Dip switch for options is 1234 - 3 BAUD ON-OFF=19200 ON-ON=9600
-#define OPTIONS_3_IN            20  // DP-26 - Dip switch for options is 1234 - 2 ON = MKOB4 Interface (key-sounder interface)
-#define OPTIONS_4_IN            21  // DP-27 - Dip switch for options is 1234 - 1 ON = Debug logging
-#define ROTORY_PB_SW_IN         13  // DP-17 - IRQ on same pin.
+#define OPTIONS_3_IN            20  // DP-26 - Options DIP switch is 123 - 3 USB/BAUD OFF-OFF=115200 OFF-ON=19200
+#define OPTIONS_2_IN            19  // DP-25 - Options DIP switch is 123 - 2 USB/BAUD  ON-OFF=9600    ON-ON=USB
+#define OPTIONS_1_IN            18  // DP-24 - Options DIP switch is 123 - 1 ON = MKOB4 Interface
+#define ROTARY_PB_SW_IN         13  // DP-17 - IRQ on same pin.
 #define SPACEBAR_SW             28  // DP-34 - IRQ on same pin.
 #define SPKR_DRIVE              22  // DP-29 - Speaker drive
+
+// Rotary switch push button state
+#define ROTARY_PB_SW_PUSHED 0 // Switch is to GND
+#define ROTARY_PB_SW_UNPUSHED 1
 
 // Buzzer/Tone support
 #define SPEAKER_OFF 0
@@ -91,11 +94,9 @@ extern "C" {
 #define KOB_SOUNDER_ENERGIZED 0
 
 // Options bit masks
-enum option_t {
+typedef enum _option_mask_ {
     OPTION_BAUD_RATE  = 0x0C,  // 1100 < Mask for the baud rate select option
-    OPTION_MKOB_IFACE = 0x02,  // 0010 < Mask for MKOB interface peripheral option
-    OPTION_DEBUG      = 0x01,  // 0001 < Mask for Debug functionality option
-};
+} option_mask_t;
 
 /** @brief Macro to get the size of a structure member */
 #define member_size(type, member) sizeof(((type *)0)->member)

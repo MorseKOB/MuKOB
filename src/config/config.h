@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "pico/types.h"
 
-#include "cmd_t.h"
+#include "cmd_t.h" // Command processing type definitions
 
 #define CONFIG_NAME_MAX_LEN 15
 
