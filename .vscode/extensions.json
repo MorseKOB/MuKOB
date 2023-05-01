@@ -3,6 +3,7 @@
     "marus25.cortex-debug",
     "ms-vscode.cmake-tools",
     "ms-vscode.cpptools",
-    "ms-vscode.makefile-tools"
+    "ms-vscode.cpptools-extension-pack",
+    "ms-vscode.vscode-serial-monitor"
   ]
 }

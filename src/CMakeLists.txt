@@ -47,8 +47,8 @@ add_subdirectory(ui)
 # Add executable.
 add_executable(MuKOB
   MuKOB.c
-  debugging.c
   mkboard.c
+  mkdebug.c
   spi_ops.c
 )
 
@@ -85,7 +85,7 @@ include_directories(
   ui/cmd
   ui/display
   ui/display/ili9341_spi
-  ui/rotory_encoder
+  ui/rotary_encoder
   ui/term
   util
   lib/sd_card/sd_driver
@@ -116,7 +116,7 @@ target_link_libraries(MuKOB
   morse
   mukob_test
   net
-  rotory_encoder
+  rotary_encoder
   term
   ui
   util

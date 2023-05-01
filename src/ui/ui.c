@@ -18,7 +18,7 @@
 #include "mkwire.h"
 #include "multicore.h"
 #include "re_pbsw.h"
-#include "rotory_encoder.h"
+#include "rotary_encoder.h"
 #include "util.h"
 #include "ui_disp.h"
 #include "ui_term.h"
@@ -376,10 +376,10 @@ static void _ui_init_terminal_shell() {
 
 void _ui_gpio_irq_handler(uint gpio, uint32_t events) {
     switch (gpio) {
-        case IRQ_ROTORY_SW:
+        case IRQ_rotary_SW:
             re_pbsw_irq_handler(gpio, events);
             break;
-        case IRQ_ROTORY_TURN:
+        case IRQ_rotary_TURN:
             re_turn_irq_handler(gpio, events);
             break;
     }
@@ -400,9 +400,9 @@ void start_ui(void) {
 
 void ui_module_init() {
     re_pbsw_module_init();
-    rotory_encoder_module_init();
-    gpio_set_irq_enabled_with_callback(IRQ_ROTORY_TURN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &_ui_gpio_irq_handler);
-    gpio_set_irq_enabled(IRQ_ROTORY_SW, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    rotary_encoder_module_init();
+    gpio_set_irq_enabled_with_callback(IRQ_rotary_TURN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &_ui_gpio_irq_handler);
+    gpio_set_irq_enabled(IRQ_rotary_SW, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
     ui_disp_build();
     _ui_init_terminal_shell();

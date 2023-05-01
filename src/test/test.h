@@ -3,7 +3,7 @@
  * @ingroup test
  *
  * Many of these aren't actually tests. Rather, they tend to be routines
- * that display patterns, send things to the terminal, get rotory control
+ * that display patterns, send things to the terminal, get rotary control
  * values, etc., that can be helpful for seeing, demo'ing, and debugging
  * functionality.
  *

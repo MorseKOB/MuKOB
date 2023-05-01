@@ -1,52 +1,27 @@
 {
-  "cmake.configureOnOpen": true,
-  "cmake.generator": "Unix Makefiles",
-  "cmake.statusbar.advanced": {
-    "debug" : {
-      "visibility": "hidden"
+    // These settings tweaks to the cmake plugin will ensure
+    // that you debug using cortex-debug instead of trying to launch
+    // a Pico binary on the host
+    "cmake.statusbar.advanced": {
+        "debug": {
+            "visibility": "hidden"
+        },
+        "launch": {
+            "visibility":"hidden"
+        },
+        "build": {
+            "visibility": "default"
+        },
+        "buildTarget": {
+            "visibility": "default"
+        }
     },
-    "launch" : {
-      "visibility": "hidden"
+    "cmake.buildBeforeRun": true,
+    "cmake.configureOnOpen": true,
+    "cmake.configureSettings": {
+      "CMAKE_MODULE_PATH": "${env:PICO_INSTALL_PATH}/pico-sdk-tools"
     },
-    "build" : {
-    },
-    "buildTarget" : {
-      "visibility": "hidden"
-    }
-  },
-  "files.associations": {
-    "stdlib.h": "c",
-    "stdbool.h": "c",
-    "net.h": "c",
-    "system-defs.h": "c",
-    "rtc.h": "c",
-    "ctime": "c",
-    "udp.h": "c",
-    "system_defs.h": "c",
-    "printf.h": "c",
-    "stdio.h": "c",
-    "*.tcc": "c",
-    "cstdlib": "c",
-    "memory": "c",
-    "chrono": "c",
-    "future": "c",
-    "limits": "c",
-    "numeric": "c",
-    "ranges": "c",
-    "ratio": "c",
-    "streambuf": "c",
-    "tuple": "c",
-    "type_traits": "c",
-    "utility": "c",
-    "time.h": "c",
-    "cmt.h": "c",
-    "cstdio": "c",
-    "ui_disp.h": "c",
-    "util.h": "c",
-    "morse.h": "c"
-  },
-  "cmake.buildBeforeRun": true,
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-  "cortex-debug.openocdPath": "${env:OPENOCD_PATH}",
-  "cmake.sourceDirectory": "${workspaceFolder}/src"
+    "cmake.generator": "Ninja",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.sourceDirectory": "${workspaceFolder}/src"
 }

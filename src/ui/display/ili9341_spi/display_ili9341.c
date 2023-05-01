@@ -5,11 +5,12 @@
  */
 #include <stdlib.h>
 #include "system_defs.h"
-#include "mkboard.h"
 #include "display_ili9341.h"
 #include "display_i.h"
 #include "font.h"
 #include "font_10_16.h"
+#include "mkboard.h"
+#include "mkdebug.h"
 #include "string.h"
 
 static void _disp_char(uint16_t aline, uint16_t col, char c, paint_control_t paint);
@@ -425,7 +426,7 @@ void disp_module_init(void) {
     ili9341_disp_info_t* disp_info = ili9341_info();
 
     // If in debug mode, print info about the display...
-    if (option_value(OPTION_DEBUG)) {
+    if (mk_debug()) {
         debug_printf("Display MFG:         %02hhx\n", disp_info->lcd_mfg_id);
         debug_printf("Display Ver:         %02hhx\n", disp_info->lcd_version);
         debug_printf("Display ID:          %02hhx\n", disp_info->lcd_mfg_id);

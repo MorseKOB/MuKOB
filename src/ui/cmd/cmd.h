@@ -16,7 +16,7 @@ extern "C" {
 
 
 #define CMD_WAKEUP_CHAR ':'
-#define CMD_CONNECT_TOGGLE_CHAR '\003' // ^C
+#define CMD_WIRE_CONNECT_TOGGLE_CHAR '\027' // ^W
 #define CMD_REINIT_TERM_CHAR '\022' // ^R
 
 #define CMD_PROMPT ':'

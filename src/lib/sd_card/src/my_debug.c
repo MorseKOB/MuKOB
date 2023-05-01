@@ -16,10 +16,10 @@ specific language governing permissions and limitations under the License.
 #include "my_debug.h"
 
 #include "system_defs.h"
-#include "mkboard.h"
+#include "mkdebug.h"
 
 void my_printf(const char *pcFormat, ...) {
-    if (option_value(OPTION_DEBUG)) {
+    if (mk_debug()) {
         char pcBuffer[256] = {0};
         va_list xArgs;
         va_start(xArgs, pcFormat);

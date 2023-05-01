@@ -9,6 +9,7 @@
 #include "cmd.h"
 
 #include "config.h"
+#include "mkdebug.h"
 #include "mkwire.h"
 #include "morse.h"
 #include "term.h"
@@ -27,6 +28,7 @@ static char _cmdline_parsed[UI_TERM_GETLINE_MAX_LEN_];
 static int _cmd_connect(int argc, char** argv, const char* unparsed);
 static int _cmd_encode(int argc, char** argv, const char* unparsed);
 static int _cmd_help(int argc, char** argv, const char* unparsed);
+static int _cmd_keys(int argc, char** argv, const char* unparsed);
 static int _cmd_speed(int argc, char** argv, const char* unparsed);
 static int _cmd_wire(int argc, char** argv, const char* unparsed);
 
@@ -49,8 +51,15 @@ static const cmd_handler_entry_t _cmd_help_entry = {
     _cmd_help,
     1,
     "help",
-    "[command_name]",
-    "List of commands or information for a specific command.",
+    "[-a|--all] [command_name [command_name...]]",
+    "List of commands or information for a specific command(s).\n  -a|--all : Display hidden commands.\n",
+};
+static const cmd_handler_entry_t _cmd_keys_entry = {
+    _cmd_keys,
+    4,
+    "keys",
+    "",
+    "List of the keyboard control key actions.\n",
 };
 static const cmd_handler_entry_t _cmd_speed_entry = {
     _cmd_speed,
@@ -71,12 +80,14 @@ static const cmd_handler_entry_t _cmd_wire_entry = {
  * @brief List of Command Handlers
  */
 static const cmd_handler_entry_t* _command_entries[] = {
+    & cmd_mkdebug_entry,    // .debug - 'DOT' commands come first
     & cmd_bootcfg_entry,
     & cmd_cfg_entry,
     & cmd_configure_entry,
     & _cmd_connect_entry,
     & _cmd_encode_entry,
     & _cmd_help_entry,
+    & _cmd_keys_entry,
     & cmd_load_entry,
     & cmd_save_entry,
     & _cmd_speed_entry,
@@ -93,8 +104,8 @@ static void _hook_keypress();
 // Class data
 
 static cmd_state_t _cmd_state = CMD_SNOOZING;
-static term_color_pair_t _scr_color_save;
-static scr_position_t _scr_cursor_position_save;
+//static term_color_pair_t _scr_color_save;
+//static scr_position_t _scr_cursor_position_save;
 
 
 // Command functions
@@ -164,39 +175,66 @@ static int _cmd_encode(int argc, char** argv, const char* unparsed) {
 }
 
 static int _cmd_help(int argc, char** argv, const char* unparsed) {
-    const cmd_handler_entry_t** cmds = _command_entries;
+    const cmd_handler_entry_t** cmds;
     const cmd_handler_entry_t* cmd;
-    if (1 == argc) {
-        // List all of the commands with thier usage.
-        ui_term_puts("Commands:\n");
-        while (NULL != (cmd = *cmds++)) {
-            cmd_help_display(cmd, HELP_DISP_NAME);
+    bool disp_commands = true;
+    bool disp_hidden = false;
+
+    argv++;
+    if (argc > 1) {
+        // They entered an option and/or command names
+        if (strcmp("-a", *argv) == 0 || strcmp("--all", *argv) == 0) {
+            disp_hidden = true;
+            argv++; argc--;
         }
     }
-    else {
-        // They entered command names
+    if (argc > 1) {
         char* user_cmd;
         for (int i = 1; i < argc; i++) {
             cmds = _command_entries;
-            user_cmd = argv[i];
+            user_cmd = *argv++;
             int user_cmd_len = strlen(user_cmd);
-            bool command_matched = false;
             while (NULL != (cmd = *cmds++)) {
                 int cmd_name_len = strlen(cmd->name);
                 if (user_cmd_len <= cmd_name_len && user_cmd_len >= cmd->min_match) {
                     if (0 == strncmp(cmd->name, user_cmd, user_cmd_len)) {
                         // This command matches
-                        command_matched = true;
+                        disp_commands = false;
                         cmd_help_display(cmd, HELP_DISP_LONG);
                         break;
                     }
                 }
             }
-            if (!command_matched) {
+            if (disp_commands) {
                 ui_term_printf("Unknown: '%s'\n", user_cmd);
             }
         }
     }
+    if (disp_commands) {
+        // List all of the commands with thier usage.
+        ui_term_puts("Commands:\n");
+        cmds = _command_entries;
+        while (NULL != (cmd = *cmds++)) {
+            bool dot_cmd = ('.' == *(cmd->name));
+            if (!dot_cmd || (dot_cmd && disp_hidden)) {
+                cmd_help_display(cmd, HELP_DISP_NAME);
+            }
+        }
+    }
+
+    return (0);
+}
+
+static int _cmd_keys(int argc, char** argv, const char* unparsed) {
+    if (argc > 1) {
+        cmd_help_display(&_cmd_keys_entry, HELP_DISP_USAGE);
+        return (-1);
+    }
+    ui_term_printf("':' : While connected, enters command mode for one command.\n");
+    ui_term_printf("^H  : Backspace (same as Backspace key on most terminals).\n");
+    ui_term_printf("^R  : Refresh the terminal screen.\n");
+    ui_term_printf("^W  : Toggle the 'wire' connection (connect/disconnect).\n");
+    ui_term_printf("ESC : Clear the input line.\n");
 
     return (0);
 }
@@ -485,7 +523,7 @@ void cmd_help_display(const cmd_handler_entry_t* cmd, const cmd_help_display_for
 void cmd_module_init() {
     _cmd_state = CMD_SNOOZING;
     // Register the control character handlers.
-    ui_term_register_control_char_handler(CMD_CONNECT_TOGGLE_CHAR, _handle_connect_toggle_char);
+    ui_term_register_control_char_handler(CMD_WIRE_CONNECT_TOGGLE_CHAR, _handle_connect_toggle_char);
     ui_term_register_control_char_handler(CMD_REINIT_TERM_CHAR, _handle_reinit_terminal_char);
     // Hook keypress looking for a ':' to wake us up.
     _hook_keypress();

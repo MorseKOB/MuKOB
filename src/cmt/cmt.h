@@ -27,6 +27,7 @@ typedef enum _MSG_ID_ {
     //
     // Back-End messages
     MSG_BACKEND_NOOP = 0x4000,
+    MSG_BE_TEST,
     MSG_CMT_SLEEP,
     MSG_KOB_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
@@ -62,7 +63,12 @@ typedef enum _MSG_ID_ {
  * @brief Function prototype for a sleep function.
  * @ingroup cmt
  */
-typedef void (*cmt_sleep_fn)(void);
+typedef void (*cmt_sleep_fn)(void* user_data);
+
+typedef struct _cmt_sleep_data_ {
+    cmt_sleep_fn sleep_fn;
+    void* user_data;
+} _cmt_sleep_data_t;
 
 /**
  * @brief Message data.
@@ -77,7 +83,7 @@ typedef union _MSG_DATA_VALUE {
     key_read_state_t key_read_state;
     kob_status_t kob_status;
     mcode_seq_t* mcode_seq;
-    cmt_sleep_fn* sleep_fn;
+    _cmt_sleep_data_t* cmt_sleep;
     const char* station_id;
     char* str;
     int32_t status;
@@ -181,8 +187,9 @@ extern void cmt_handle_sleep(cmt_msg_t* msg);
  *
  * @param ms The time in milliseconds from now.
  * @param sleep_fn The function to call when the time expires.
+ * @param user_data A pointer to user data that the 'sleep_fn' will be called with.
  */
-extern void cmt_sleep_ms(int32_t ms, cmt_sleep_fn* sleep_fn);
+extern void cmt_sleep_ms(int32_t ms, cmt_sleep_fn sleep_fn, void* user_data);
 
 /**
  * @brief Schedule a message to post in the future.
