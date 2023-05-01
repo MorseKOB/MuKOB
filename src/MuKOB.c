@@ -49,7 +49,7 @@ int main()
 
     // Indicate that we are awake
     if (mk_debug()) {
-        buzzer_beep(150);
+        tone_sound_pattern(150);
     }
     led_on_off(say_hi);
 

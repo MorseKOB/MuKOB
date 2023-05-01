@@ -165,8 +165,9 @@ static void _d_decode_char(float next_space) {
 
 static char _d_lookup_char(char* dds) {
     if (*dds) {
+        int tlen = (CODE_TYPE_AMERICAN == _code_type ? mta_len : mti_len);
         const char** morse_table = (CODE_TYPE_AMERICAN == _code_type ? american_morse : international_morse);
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < tlen; i++) {
             if (strcmp(dds, morse_table[i]) == 0) {
                 return (' ' + i);
             }

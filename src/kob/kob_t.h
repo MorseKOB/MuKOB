@@ -36,13 +36,14 @@ typedef struct _KEY_READ_STATE_ {
  * @brief Status of the KOB and loop.
  * @ingroup kob
  *
- * Status values pertaining to the Key, Sounder, and Loop, reported to
+ * Status values pertaining to the Key, Sounder, Tone, and Loop, reported to
  * other modules.
  */
 typedef struct _KOB_STATUS_ {
     bool circuit_closed;
     bool key_closed;
     bool sounder_energized;
+    bool tone_energized;
 } kob_status_t;
 
 #ifdef __cplusplus
