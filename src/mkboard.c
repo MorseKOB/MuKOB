@@ -97,14 +97,14 @@ int board_init() {
 
     // SPI 0 initialization for the touch and SD card. Use SPI at 8MHz.
     spi_init(SPI_TSD_DEVICE, 8000 * 1000);
-    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
     gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    // SPI 1 initialization for the display. Use SPI at 20MHz.
-    spi_init(SPI_DISPLAY_DEVICE, 20000 * 1000);
-    gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TSD_MISO, GPIO_FUNC_SPI);
+    // SPI 1 initialization for the display. Use SPI at 18MHz.
+    spi_init(SPI_DISPLAY_DEVICE, 18000 * 1000);
     gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_DISPLAY_MISO, GPIO_FUNC_SPI);
     // Chip selects for the SPI paripherals
     gpio_set_function(SPI_CS_DISPLAY,   GPIO_FUNC_SIO);
     gpio_set_function(SPI_DC_DISPLAY,   GPIO_FUNC_SIO);  // Data/Command

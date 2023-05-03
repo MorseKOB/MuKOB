@@ -37,7 +37,7 @@ mcode_seq_t* mcode_seq_alloc(mcode_source_t source, code_element_t* code_seq, in
     // Find an empty one
     for (int j = 0; j < 2; j++) {
         for (int i = 0; i < _MCODE_SEQ_POOL_SIZE; i++) {
-            register uint32_t flags = save_and_disable_interrupts();
+            uint32_t flags = save_and_disable_interrupts();
             mutex_enter_blocking(&mcs_mutex);
             register bool was_free = _mcode_seq_pool[i].free;
             _mcode_seq_pool[i].free = false;

@@ -84,7 +84,9 @@ include_directories(
   ui
   ui/cmd
   ui/display
-  ui/display/ili9341_spi
+  ui/display/ili_lcd_spi
+  ui/display/ili_lcd_spi/ili9341_spi
+  ui/display/ili_lcd_spi/ili9488_spi
   ui/rotary_encoder
   ui/term
   util
@@ -110,7 +112,7 @@ target_link_libraries(MuKOB
   cmt
   data
   display
-  ili9341_spi
+  ili_lcd_spi
   kob
   mks
   morse

@@ -78,6 +78,7 @@ static void _scheduled_msg_init() {
     bool success = add_repeating_timer_us((1000 - _SM_OVERHEAD_US_PER_MS), _schd_msg_timer_callback, NULL, &_schd_msg_timer_data);
     if (!success) {
         error_printf(false, "CMT - Could not create repeating timer for scheduled messages.\n");
+        panic("CMT - Could not create repeating timer for scheduled messages.");
     }
 }
 
@@ -104,7 +105,7 @@ void cmt_sleep_ms(int32_t ms, cmt_sleep_fn sleep_fn, void* user_data) {
     bool scheduled = false;
 
     uint8_t core_num = (uint8_t)get_core_num();
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     // Get a free smd
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
@@ -133,7 +134,7 @@ void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
     bool scheduled = false;
 
     uint8_t core_num = (uint8_t)get_core_num();
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     // Get a free smd
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
@@ -157,7 +158,7 @@ void schedule_msg_in_ms(int32_t ms, cmt_msg_t* msg) {
 
 
 void scheduled_msg_cancel(msg_id_t sched_msg_id) {
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
@@ -172,7 +173,7 @@ void scheduled_msg_cancel(msg_id_t sched_msg_id) {
 
 extern bool scheduled_message_exists(msg_id_t sched_msg_id) {
     bool exists = false;
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     mutex_enter_blocking(&sm_mutex);
     for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
         _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];

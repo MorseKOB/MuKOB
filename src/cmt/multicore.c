@@ -30,7 +30,7 @@ void get_core0_msg_blocking(cmt_msg_t* msg) {
 
 bool get_core0_msg_nowait(cmt_msg_t* msg) {
     register bool retrieved = false;
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     retrieved = queue_try_remove(&core0_queue, msg);
     restore_interrupts(flags);
 
@@ -43,7 +43,7 @@ void get_core1_msg_blocking(cmt_msg_t* msg) {
 
 bool get_core1_msg_nowait(cmt_msg_t* msg) {
     register bool retrieved = false;
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     retrieved = queue_try_remove(&core1_queue, msg);
     restore_interrupts(flags);
 
@@ -89,7 +89,7 @@ static void _check_q1_level(char c, int id) {
 void post_to_core0_blocking(cmt_msg_t *msg) {
     msg->t = now_ms();
     _check_q0_level('B', msg->id);
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     queue_add_blocking(&core0_queue, msg);
     restore_interrupts(flags);
 }
@@ -98,7 +98,7 @@ bool post_to_core0_nowait(cmt_msg_t *msg) {
     msg->t = now_ms();
     _check_q0_level('N', msg->id);
     register bool posted = false;
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     posted = queue_try_add(&core0_queue, msg);
     restore_interrupts(flags);
 
@@ -108,7 +108,7 @@ bool post_to_core0_nowait(cmt_msg_t *msg) {
 void post_to_core1_blocking(cmt_msg_t* msg) {
     msg->t = now_ms();
     _check_q1_level('B', msg->id);
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     queue_add_blocking(&core1_queue, msg);
     restore_interrupts(flags);
 }
@@ -117,7 +117,7 @@ bool post_to_core1_nowait(cmt_msg_t* msg) {
     msg->t = now_ms();
     _check_q1_level('N', msg->id);
     register bool posted = false;
-    register uint32_t flags = save_and_disable_interrupts();
+    uint32_t flags = save_and_disable_interrupts();
     posted = queue_try_add(&core1_queue, msg);
     restore_interrupts(flags);
 

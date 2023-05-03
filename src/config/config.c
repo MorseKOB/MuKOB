@@ -94,12 +94,12 @@ static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_remote =
 static int _cih_sound_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_sound_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
 static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_sound =
-{ "sound", 'a', "sound", "Use system audio to sound code", _cih_sound_reader, _cih_sound_writer };
+{ "sound", 'a', "sound", "Use audio (tone)", _cih_sound_reader, _cih_sound_writer };
 
 static int _cih_sounder_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_sounder_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
 static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_sounder =
-{ "sounder", 'A', "sounder", "Use connected sounder", _cih_sounder_reader, _cih_sounder_writer };
+{ "sounder", 'A', "sounder", "Use sounder", _cih_sounder_reader, _cih_sounder_writer };
 
 static int _cih_spacing_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_spacing_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
