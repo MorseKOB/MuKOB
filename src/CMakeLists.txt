@@ -65,6 +65,7 @@ include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
   ${PICO_SDK_PATH}/lib/lwip/src/include
   ${PICO_SDK_PATH}/src/common/pico_stdlib/include
+  ${PICO_SDK_PATH}/src/rp2_common/hardware_adc/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_dma/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_spi/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_i2c/include
@@ -122,6 +123,7 @@ target_link_libraries(MuKOB
   term
   ui
   util
+  hardware_adc
   hardware_clocks
   hardware_exception
   hardware_i2c

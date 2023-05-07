@@ -26,7 +26,7 @@ typedef enum _MSG_ID_ {
     MSG_DEBUG_CHANGED,
     //
     // Back-End messages
-    MSG_BACKEND_NOOP = 0x4000,
+    MSG_BACKEND_NOOP = 0x0100,
     MSG_BE_TEST,
     MSG_CMT_SLEEP,
     MSG_KOB_KEY_READ,
@@ -43,7 +43,7 @@ typedef enum _MSG_ID_ {
     MSG_WIRE_SET,
     //
     // Front-End/UI messages
-    MSG_UI_NOOP = 0x8000,
+    MSG_UI_NOOP = 0x0200,
     MSG_BE_INITIALIZED,
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
@@ -138,8 +138,15 @@ typedef struct _MSG_HANDLER_ENTRY {
     msg_handler_fn msg_handler;
 } msg_handler_entry_t;
 
-typedef struct _MSG_DISPATCH_CNTX {
-} msg_dispatch_cntx_t;
+typedef struct _PROC_STATUS_ACCUM_ {
+    uint32_t ts_psa;                               // Timestamp of last PS Accumulator/sec update
+    uint32_t t_active;
+    uint32_t t_idle;
+    uint32_t t_msgr;
+    uint16_t retrived;
+    uint16_t idle;
+    float core_temp;
+} proc_status_accum_t;
 
 typedef struct _MSG_LOOP_CNTX {
     uint8_t corenum;                                // The core number the loop is running on
@@ -180,6 +187,14 @@ extern bool cmt_message_loops_running();
  * @param msg (not used)
  */
 extern void cmt_handle_sleep(cmt_msg_t* msg);
+
+/**
+ * @brief Get the last Process Status Accumulator per second values.
+ *
+ * @param psas Pointer to Process Status Accumulator structure to fill with values.
+ * @param corenum The core number (0|1) to get the process status values for.
+ */
+void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum);
 
 /**
  * @brief Sleep for milliseconds and call a function.

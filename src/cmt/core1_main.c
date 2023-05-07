@@ -18,7 +18,7 @@
 #include "pico/multicore.h"
 
 void core1_main() {
-    info_printf("CORE-%d - *** Started ***\n", get_core_num());
+    info_printf(true, "CORE-%d - *** Started ***\n", get_core_num());
 
     // Set up the UI
     ui_module_init();

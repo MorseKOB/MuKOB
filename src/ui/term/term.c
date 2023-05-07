@@ -281,13 +281,13 @@ void term_module_init() {
         error_printf(false, "Term - Terminal did not respond with info.\n");
     }
     // Maybe process the response? For now, just store it and print it.
-    info_printf("Term - Info/ID: %s\n", (_term_info + 1)); // Skip the ESC
+    info_printf(true, "Term - Info/ID: %s\n", (_term_info + 1)); // Skip the ESC
     // Ask for the terminal name and see what we got
     if (term_get_name(_term_name, _TERM_NAME_MAX_) < 1) {
         error_printf(false, "Term - Terminal did not respond with a name.\n");
     }
     // Maybe process the response? For now, just store it and print it.
-    info_printf("Term - Name: %s\n", (_term_name));
+    info_printf(true, "Term - Name: %s\n", (_term_name));
     // Set the terminal type to one we want
     term_set_type(VT_510_TYPE_SPEC, VT_510_ID_SPEC);
     term_set_size(25, 80);

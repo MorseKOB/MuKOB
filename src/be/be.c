@@ -26,11 +26,6 @@
 static config_t* _last_cfg;
 static cmt_msg_t _msg_wire_set = { MSG_WIRE_SET, {0} };
 
-typedef struct _BE_IDLE_FN_DATA_ {
-    unsigned long int idle_num;
-    unsigned long int msg_burst;
-} be_idle_fn_data_t;
-
 // Message handler functions...
 static void _handle_be_test(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
@@ -55,13 +50,8 @@ static void _be_idle_function_3();
 static cmt_msg_t _msg_be_send_status;
 static cmt_msg_t _msg_be_initialized;
 
-static be_idle_fn_data_t _msg_activity_data = { 0, 0 };
-
 static uint32_t _last_rtc_update_ts; // ms timestamp of the last time we updated the RTC
 static uint32_t _last_status_update_ts; // ms timestamp of last status update
-
-#define LEAVE_IDLE_FUNCTION()    {_msg_activity_data.idle_num++; _msg_activity_data.msg_burst = 0;}
-#define LEAVE_MSG_HANDLER()    {_msg_activity_data.idle_num = 0; _msg_activity_data.msg_burst++;}
 
 static const msg_handler_entry_t _be_test = { MSG_BE_TEST, _handle_be_test };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
@@ -105,7 +95,7 @@ static const idle_fn _be_idle_functions[] = {
     (idle_fn)0, // Last entry must be a NULL
 };
 
-const msg_loop_cntx_t be_msg_loop_cntx = {
+msg_loop_cntx_t be_msg_loop_cntx = {
     BE_CORE_NUM, // Back-end runs on Core 0
     _be_handler_entries,
     _be_idle_functions,
@@ -120,7 +110,6 @@ const msg_loop_cntx_t be_msg_loop_cntx = {
 
 static void _be_idle_function_1() {
     options_read();  // Re-read the option switches
-    LEAVE_IDLE_FUNCTION();
 }
 
 static void _be_idle_function_2() {
@@ -131,7 +120,6 @@ static void _be_idle_function_2() {
         const config_sys_t* cfgsys = config_sys();
         network_update_rtc(cfgsys->tz_offset);
     }
-    LEAVE_IDLE_FUNCTION();
 }
 
 static void _be_idle_function_3() {
@@ -142,7 +130,6 @@ static void _be_idle_function_3() {
         postBEMsgNoWait(&_msg_be_send_status); // Don't wait. We will do it again in a bit.
         _last_status_update_ts = now;
     }
-    LEAVE_IDLE_FUNCTION();
 }
 
 
@@ -166,7 +153,7 @@ static void _handle_be_test(cmt_msg_t* msg) {
         int64_t error = ((now - last_time) - (period * 1000 * 1000));
         int64_t total_error = (now - (first_t + (times * (period * 1000 * 1000))));
         float error_per_ms = ((error * 1.0) / (period * 1000.0));
-        info_printf("\n%5d - Error us/ms:%5.2f  Avg:%5d\n", times, error_per_ms, (total_error / (times * period)));
+        info_printf(true, "\n%5d - Error us/ms:%5.2f  Avg:%5d\n", times, error_per_ms, (total_error / (times * period)));
     }
     msg_time.data.ts_us = now_us(); // Get the 'next' -> 'last_time' fresh
     schedule_msg_in_ms((period * 1000), &msg_time);
@@ -175,7 +162,6 @@ static void _handle_be_test(cmt_msg_t* msg) {
 
 static void _handle_cmt_sleep(cmt_msg_t* msg) {
     cmt_handle_sleep(msg);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_config_changed(cmt_msg_t* msg) {
@@ -200,28 +186,23 @@ static void _handle_config_changed(cmt_msg_t* msg) {
         kob_module_cfg_update(cfg->invert_key_input, cfg->key_has_closer, cfg->sounder, cfg->sound, cfg->local);
      }
     _last_cfg = config_copy(_last_cfg, cfg);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_kob_key_read(cmt_msg_t* msg) {
     kob_read_code_from_key(msg);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_kob_sound_code_cont(cmt_msg_t* msg) {
     kob_sound_code_continue();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_mks_keep_alive_send(cmt_msg_t* msg) {
     mkwire_keep_alive_send();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_morse_decode_flush(cmt_msg_t* msg) {
     // Call the morse decode flush function to force a decode operation to complete.
     morse_decode_flush();
-    LEAVE_MSG_HANDLER();
 }
 
 /**
@@ -235,12 +216,10 @@ static void _handle_morse_to_decode(cmt_msg_t* msg) {
     kob_sound_code(mcode_seq);
     morse_decode(mcode_seq);
     mcode_seq_free(mcode_seq);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_send_be_status(cmt_msg_t* msg) {
     // Update our status
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_ui_initialized(cmt_msg_t* msg) {
@@ -263,18 +242,15 @@ static void _handle_ui_initialized(cmt_msg_t* msg) {
 
 static void _handle_wire_disconnect(cmt_msg_t* msg) {
     mkwire_disconnect();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wire_connect(cmt_msg_t* msg) {
     unsigned short wire = msg->data.wire;
     mkwire_connect(wire);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wire_connect_toggle(cmt_msg_t* msg) {
     mkwire_connect_toggle();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wire_set(cmt_msg_t* msg) {

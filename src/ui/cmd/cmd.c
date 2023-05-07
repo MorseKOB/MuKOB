@@ -7,8 +7,10 @@
  */
 
 #include "cmd.h"
+#include "system_defs.h"
 
 #include "config.h"
+#include "cmt.h"
 #include "mkdebug.h"
 #include "mkwire.h"
 #include "morse.h"
@@ -29,6 +31,7 @@ static int _cmd_connect(int argc, char** argv, const char* unparsed);
 static int _cmd_encode(int argc, char** argv, const char* unparsed);
 static int _cmd_help(int argc, char** argv, const char* unparsed);
 static int _cmd_keys(int argc, char** argv, const char* unparsed);
+static int _cmd_proc_status(int argc, char** argv, const char* unparsed);
 static int _cmd_speed(int argc, char** argv, const char* unparsed);
 static int _cmd_wire(int argc, char** argv, const char* unparsed);
 
@@ -61,6 +64,13 @@ static const cmd_handler_entry_t _cmd_keys_entry = {
     "",
     "List of the keyboard control key actions.\n",
 };
+static const cmd_handler_entry_t _cmd_proc_status_entry = {
+    _cmd_proc_status,
+    3,
+    ".ps",
+    "",
+    "Display process status per second.\n",
+};
 static const cmd_handler_entry_t _cmd_speed_entry = {
     _cmd_speed,
     1,
@@ -80,7 +90,8 @@ static const cmd_handler_entry_t _cmd_wire_entry = {
  * @brief List of Command Handlers
  */
 static const cmd_handler_entry_t* _command_entries[] = {
-    & cmd_mkdebug_entry,    // .debug - 'DOT' commands come first
+    & cmd_mkdebug_entry,        // .debug - 'DOT' commands come first
+    & _cmd_proc_status_entry,   // .ps
     & cmd_bootcfg_entry,
     & cmd_cfg_entry,
     & cmd_configure_entry,
@@ -93,7 +104,7 @@ static const cmd_handler_entry_t* _command_entries[] = {
     & _cmd_speed_entry,
     & cmd_station_entry,
     & _cmd_wire_entry,
-    ((cmd_handler_entry_t*)0), // Last entry must be a NULL
+    ((cmd_handler_entry_t*)0),  // Last entry must be a NULL
 };
 
 
@@ -235,6 +246,25 @@ static int _cmd_keys(int argc, char** argv, const char* unparsed) {
     ui_term_printf("^R  : Refresh the terminal screen.\n");
     ui_term_printf("^W  : Toggle the 'wire' connection (connect/disconnect).\n");
     ui_term_printf("ESC : Clear the input line.\n");
+
+    return (0);
+}
+
+static void _cmd_ps_print(const proc_status_accum_t* ps, int corenum) {
+    int uaf = ONE_SECOND_MS - (ps->t_active + ps->t_idle + ps->t_msgr);
+    ui_term_printf("Core %d: Temp:%0.1f R:%hu I:%hu PT:%u IT:%u MRT:%u UAF:%d\n",
+        corenum, ps->core_temp, ps->retrived, ps->idle, ps->t_active, ps->t_idle, ps->t_msgr, uaf);
+}
+
+static int _cmd_proc_status(int argc, char** argv, const char* unparsed) {
+    if (argc > 1) {
+        cmd_help_display(&_cmd_proc_status_entry, HELP_DISP_USAGE);
+    }
+    proc_status_accum_t ps0, ps1;
+    cmt_proc_status_sec(&ps0, 0);
+    cmt_proc_status_sec(&ps1, 1);
+    _cmd_ps_print(&ps0, 0);
+    _cmd_ps_print(&ps1, 1);
 
     return (0);
 }

@@ -249,10 +249,10 @@ static void _printc_for_printf_term(char c, void* arg) {
 
 int ui_term_printf(const char* format, ...) {
     int pl = 0;
-    if (_code_displaying) {
-        putchar('\n');
-        pl = 1;
-    }
+    // if (_code_displaying) {
+    //     putchar('\n');
+    //     pl = 1;
+    // }
     va_list xArgs;
     va_start(xArgs, format);
     pl += vfctprintf(_printc_for_printf_term, NULL, format, xArgs);

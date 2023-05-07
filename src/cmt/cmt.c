@@ -8,7 +8,9 @@
  *
 */
 #include "cmt.h"
+#include "system_defs.h"
 #include "mkboard.h"
+#include "mkdebug.h"
 #include "util.h"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
@@ -39,6 +41,9 @@ static repeating_timer_t _schd_msg_timer_data;
 static bool _msg_loop_0_running = false;
 static bool _msg_loop_1_running = false;
 
+auto_init_mutex(ps_mutex);
+static proc_status_accum_t _psa[2]; // One Proc Status Accumulator for each core
+static proc_status_accum_t _psa_sec[2]; // Proc Status Accumulator per second for each core
 
 /**
  * @brief Repeating alarm callback handler.
@@ -98,6 +103,21 @@ void cmt_handle_sleep(cmt_msg_t* msg) {
     cmt_sleep_fn fn = msg->data.cmt_sleep->sleep_fn;
     if (fn) {
         (fn)(msg->data.cmt_sleep->user_data);
+    }
+}
+
+void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum) {
+    if (corenum < 2) {
+        proc_status_accum_t* psa_sec = &_psa_sec[corenum];
+        mutex_enter_blocking(&ps_mutex);
+        psas->core_temp = psa_sec->core_temp;
+        psas->idle = psa_sec->idle;
+        psas->retrived = psa_sec->retrived;
+        psas->t_active = psa_sec->t_active;
+        psas->t_idle = psa_sec->t_idle;
+        psas->t_msgr = psa_sec->t_msgr;
+        psas->ts_psa = psa_sec->ts_psa;
+        mutex_exit(&ps_mutex);
     }
 }
 
@@ -188,18 +208,50 @@ extern bool scheduled_message_exists(msg_id_t sched_msg_id) {
     return (exists);
 }
 
+/*
+ * Endless loop reading and dispatching messages.
+ * This is call once from each core.
+ */
 void message_loop(const msg_loop_cntx_t* loop_context) {
-    get_msg_nowait_fn get_msg_function = (loop_context->corenum == 0 ? get_core0_msg_nowait : get_core1_msg_nowait);
+    uint8_t corenum = loop_context->corenum;
+    get_msg_nowait_fn get_msg_function = (corenum == 0 ? get_core0_msg_nowait : get_core1_msg_nowait);
     cmt_msg_t msg;
     const idle_fn* idle_functions = loop_context->idle_functions;
-    if (loop_context->corenum == 0) {
+    proc_status_accum_t *psa = &_psa[corenum];
+    proc_status_accum_t *psa_sec = &_psa_sec[corenum];
+    psa->ts_psa = now_ms();
+
+    if (corenum == 0) {
         _msg_loop_0_running = true;
     }
     else {
         _msg_loop_1_running = true;
     }
+
     while (1) { // Endless loop reading and dispatching messages to the handlers...
+        uint32_t t_start = now_ms();
+        if (t_start - psa->ts_psa >= ONE_SECOND_MS) {
+            mutex_enter_blocking(&ps_mutex);
+            psa_sec->idle = psa->idle;
+            psa->idle = 0;
+            psa_sec->retrived = psa->retrived;
+            psa->retrived = 0;
+            psa_sec->t_active = psa->t_active;
+            psa->t_active = 0;
+            psa_sec->t_idle = psa->t_idle;
+            psa->t_idle = 0;
+            psa_sec->t_msgr = psa->t_msgr;
+            psa->t_msgr = 0;
+            psa_sec->core_temp = onboard_temp_c();
+            psa_sec->ts_psa = t_start;
+            psa->ts_psa = t_start;
+            mutex_exit(&ps_mutex);
+        }
+
         if (get_msg_function(&msg)) {
+            uint32_t as = now_ms();
+            psa->t_msgr += as - t_start;
+            psa->retrived++;
             // Find the handler
             const msg_handler_entry_t** handler_entries = loop_context->handler_entries;
             while (*handler_entries) {
@@ -209,10 +261,14 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
                 }
             }
             // No more handlers found for this message.
-            (void)0; // something to set a breakpoint on if wanted
+            uint32_t ht = now_ms() - as;
+            psa->t_active += ht;
         }
         else {
             // No message available, allow next idle function to run
+            int32_t is = now_ms();
+            psa->t_msgr += is - t_start;
+            psa->idle++;
             const idle_fn idle_function = *idle_functions;
             if (idle_function) {
                 idle_function();
@@ -222,6 +278,8 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
                 // end of function list
                 idle_functions = loop_context->idle_functions; // reset the pointer
             }
+            uint32_t it = now_ms() - is;
+            psa->t_idle += it;
         }
     }
 }

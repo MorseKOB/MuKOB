@@ -22,14 +22,15 @@
 #include "pico/printf.h"
 #include "pico/time.h"
 #include "pico/types.h"
-#include "hardware/spi.h"
+#include "hardware/adc.h"
+#include "hardware/clocks.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
-#include "hardware/timer.h"
-#include "hardware/clocks.h"
 #include "hardware/rtc.h"
-#include "pico/cyw43_arch.h"
+#include "hardware/spi.h"
+#include "hardware/timer.h"
 #include "pico/bootrom.h"
+#include "pico/cyw43_arch.h"
 
 #include "system_defs.h"
 
@@ -187,6 +188,12 @@ int board_init() {
     // Read and cache the option switch value
     options_read();
 
+    // Initialize hardware AD converter, enable onboard temperature sensor and
+    //  select its channel.
+    adc_init();
+    adc_set_temp_sensor_enabled(true);
+    adc_select_input(4); // Inputs 0-3 are GPIO pins, 4 is the built-in temp sensor
+
     // Get the configuration
     config_module_init();
     const config_sys_t* system_cfg = config_sys();
@@ -326,6 +333,25 @@ uint64_t now_us() {
     return (time_us_64());
 }
 
+/* References for this implementation:
+ * raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
+ * pico-examples/adc/adc_console/adc_console.c */
+float onboard_temp_c() {
+
+    /* 12-bit conversion, assume max value == ADC_VREF == 3.3 V */
+    const float conversionFactor = 3.3f / (1 << 12);
+
+    float adc = (float)adc_read() * conversionFactor;
+    float tempC = 27.0f - (adc - 0.706f) / 0.001721f;
+
+    return (tempC);
+}
+
+float onboard_temp_f() {
+
+    return (onboard_temp_f() * 9 / 5 + 32);
+}
+
 uint8_t options_read(void) {
     uint8_t opt_value = 0x00;
     uint8_t opt_bit = gpio_get(OPTIONS_3_IN);
@@ -355,10 +381,13 @@ int _format_printf_datetime(char* buf, size_t len) {
     return (snprintf(buf, len, "%02d-%02d-%04d %02d:%02d:%02d", t.month, t.day, t.year, t.hour, t.min, t.sec));
 }
 
-void debug_printf(const char* format, ...) {
+void debug_printf(bool incl_dts, const char* format, ...) {
     if (mk_debug()) {
         char buf[512];
-        int index = _format_printf_datetime(buf, sizeof(buf));
+        int index = 0;
+        if (incl_dts) {
+            index = _format_printf_datetime(buf, sizeof(buf));
+        }
         index += snprintf(&buf[index], sizeof(buf) - index, " DEBUG: ");
         va_list xArgs;
         va_start(xArgs, format);
@@ -382,9 +411,12 @@ void error_printf(bool inc_dts, const char* format, ...) {
     printf("%s\033[0m", buf);
 }
 
-void info_printf(const char* format, ...) {
+void info_printf(bool incl_dts, const char* format, ...) {
     char buf[512];
-    int index = _format_printf_datetime(buf, sizeof(buf));
+    int index = 0;
+    if (incl_dts) {
+        index = _format_printf_datetime(buf, sizeof(buf));
+    }
     index += snprintf(&buf[index], sizeof(buf) - index, " INFO: ");
     va_list xArgs;
     va_start(xArgs, format);

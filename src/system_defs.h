@@ -101,6 +101,17 @@ typedef enum _option_mask_ {
 /** @brief Macro to get the size of a structure member */
 #define member_size(type, member) sizeof(((type *)0)->member)
 
+// Some general purpose time constants
+#define ONE_SECOND_MS 1000
+#define FIVE_SECONDS_MS 5000
+#define TEN_SECONDS_MS 10000
+#define FIFTEEN_SECONDS_MS 15000
+#define THIRTY_SECONDS_MS 30000
+#define ONE_MINUTE_MS 60000
+#define FIVE_MINUTES_MS 300000
+#define TEN_MINUTES_MS 600000
+#define ONE_HOUR_MS 3600000
+
 #ifdef __cplusplus
 }
 #endif
