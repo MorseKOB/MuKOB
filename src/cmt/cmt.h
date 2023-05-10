@@ -29,7 +29,7 @@ typedef enum _MSG_ID_ {
     MSG_BACKEND_NOOP = 0x0100,
     MSG_BE_TEST,
     MSG_CMT_SLEEP,
-    MSG_KOB_KEY_READ,
+    MSG_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
     MSG_MKS_PACKET_RECEIVED,
@@ -139,13 +139,15 @@ typedef struct _MSG_HANDLER_ENTRY {
 } msg_handler_entry_t;
 
 typedef struct _PROC_STATUS_ACCUM_ {
-    uint32_t ts_psa;                               // Timestamp of last PS Accumulator/sec update
-    uint32_t t_active;
-    uint32_t t_idle;
-    uint32_t t_msgr;
-    uint16_t retrived;
-    uint16_t idle;
-    float core_temp;
+    volatile int64_t cs;
+    volatile uint32_t ts_psa;                               // Timestamp of last PS Accumulator/sec update
+    volatile uint32_t t_active;
+    volatile uint32_t t_idle;
+    volatile uint32_t t_msgr;
+    volatile uint16_t retrived;
+    volatile uint16_t idle;
+    volatile uint32_t int_status;
+    volatile float core_temp;
 } proc_status_accum_t;
 
 typedef struct _MSG_LOOP_CNTX {
@@ -194,7 +196,14 @@ extern void cmt_handle_sleep(cmt_msg_t* msg);
  * @param psas Pointer to Process Status Accumulator structure to fill with values.
  * @param corenum The core number (0|1) to get the process status values for.
  */
-void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum);
+extern void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum);
+
+/**
+ * @brief The number of scheduled messages waiting.
+ *
+ * @return int Number of scheduled messages.
+ */
+extern int cmt_sched_msg_waiting();
 
 /**
  * @brief Sleep for milliseconds and call a function.

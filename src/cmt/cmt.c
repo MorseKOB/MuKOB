@@ -12,6 +12,7 @@
 #include "mkboard.h"
 #include "mkdebug.h"
 #include "util.h"
+#include "hardware/structs/nvic.h"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
@@ -41,7 +42,6 @@ static repeating_timer_t _schd_msg_timer_data;
 static bool _msg_loop_0_running = false;
 static bool _msg_loop_1_running = false;
 
-auto_init_mutex(ps_mutex);
 static proc_status_accum_t _psa[2]; // One Proc Status Accumulator for each core
 static proc_status_accum_t _psa_sec[2]; // Proc Status Accumulator per second for each core
 
@@ -109,16 +109,52 @@ void cmt_handle_sleep(cmt_msg_t* msg) {
 void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum) {
     if (corenum < 2) {
         proc_status_accum_t* psa_sec = &_psa_sec[corenum];
-        mutex_enter_blocking(&ps_mutex);
-        psas->core_temp = psa_sec->core_temp;
-        psas->idle = psa_sec->idle;
-        psas->retrived = psa_sec->retrived;
-        psas->t_active = psa_sec->t_active;
-        psas->t_idle = psa_sec->t_idle;
-        psas->t_msgr = psa_sec->t_msgr;
-        psas->ts_psa = psa_sec->ts_psa;
-        mutex_exit(&ps_mutex);
+        proc_status_accum_t psa;
+        int64_t cs = 0;
+        do {
+            psa.cs = psa_sec->cs;   // Get the 'per-sec' checksum
+            psa.core_temp = psa_sec->core_temp;
+            psa.idle = psa_sec->idle;
+            cs = psa.idle;
+            psa.retrived = psa_sec->retrived;
+            cs += psa.retrived;
+            psa.t_active = psa_sec->t_active;
+            cs += psa.t_active;
+            psa.t_idle = psa_sec->t_idle;
+            cs += psa.t_idle;
+            psa.t_msgr = psa_sec->t_msgr;
+            cs += psa.t_msgr;
+            psa.int_status = psa_sec->int_status;
+            cs += psa.int_status;
+            psa.ts_psa = psa_sec->ts_psa;
+
+        } while(psa.cs != cs);
+        psas->core_temp = psa.core_temp;
+        psas->idle = psa.idle;
+        psas->retrived = psa.retrived;
+        psas->t_active = psa.t_active;
+        psas->t_idle = psa.t_idle;
+        psas->t_msgr = psa.t_msgr;
+        psas->int_status = psa.int_status;
+        psas->ts_psa = psa.ts_psa;
+        psas->cs = psa.cs;
     }
+}
+
+int cmt_sched_msg_waiting() {
+    int count = 0;
+    uint32_t flags = save_and_disable_interrupts();
+    mutex_enter_blocking(&sm_mutex);
+    for (int i = 0; i < _SCHEDULED_MESSAGES_MAX; i++) {
+        _scheduled_msg_data_t* smd = &_scheduled_message_datas[i];
+        if (_SMD_FREE_INDICATOR != smd->remaining) {
+            count++;
+        }
+    }
+    mutex_exit(&sm_mutex);
+    restore_interrupts(flags);
+
+    return (count);
 }
 
 void cmt_sleep_ms(int32_t ms, cmt_sleep_fn sleep_fn, void* user_data) {
@@ -210,9 +246,10 @@ extern bool scheduled_message_exists(msg_id_t sched_msg_id) {
 
 /*
  * Endless loop reading and dispatching messages.
- * This is call once from each core.
+ * This is called/started once from each core, so two instances are running.
  */
 void message_loop(const msg_loop_cntx_t* loop_context) {
+    // Setup occurs once when called by a core.
     uint8_t corenum = loop_context->corenum;
     get_msg_nowait_fn get_msg_function = (corenum == 0 ? get_core0_msg_nowait : get_core1_msg_nowait);
     cmt_msg_t msg;
@@ -221,6 +258,7 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
     proc_status_accum_t *psa_sec = &_psa_sec[corenum];
     psa->ts_psa = now_ms();
 
+    // Indicate that the message loop is running for the calling core.
     if (corenum == 0) {
         _msg_loop_0_running = true;
     }
@@ -228,24 +266,34 @@ void message_loop(const msg_loop_cntx_t* loop_context) {
         _msg_loop_1_running = true;
     }
 
-    while (1) { // Endless loop reading and dispatching messages to the handlers...
+    // Enter into the endless loop reading and dispatching messages to the handlers...
+    while (1) {
         uint32_t t_start = now_ms();
+        // Store and reset the process status accumulators once every second
         if (t_start - psa->ts_psa >= ONE_SECOND_MS) {
-            mutex_enter_blocking(&ps_mutex);
+            int64_t cs = 0;
+            psa_sec->cs = -1;
             psa_sec->idle = psa->idle;
+            cs += psa_sec->idle;
             psa->idle = 0;
             psa_sec->retrived = psa->retrived;
+            cs += psa_sec->retrived;
             psa->retrived = 0;
             psa_sec->t_active = psa->t_active;
+            cs += psa_sec->t_active;
             psa->t_active = 0;
             psa_sec->t_idle = psa->t_idle;
+            cs += psa_sec->t_idle;
             psa->t_idle = 0;
             psa_sec->t_msgr = psa->t_msgr;
+            cs += psa_sec->t_msgr;
             psa->t_msgr = 0;
+            psa_sec->int_status = nvic_hw->iser;
+            cs += psa_sec->int_status;
             psa_sec->core_temp = onboard_temp_c();
             psa_sec->ts_psa = t_start;
             psa->ts_psa = t_start;
-            mutex_exit(&ps_mutex);
+            psa_sec->cs = cs;
         }
 
         if (get_msg_function(&msg)) {

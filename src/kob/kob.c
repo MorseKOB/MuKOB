@@ -127,7 +127,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
 }
 
 extern bool kob_key_is_closed(void) {
-    bool closed = (KOB_KEY_CLOSED == gpio_get(KOB_KEY_IN));
+    bool closed = (KEY_CLOSED == gpio_get(KEY_IN));
 
     return (_invert_key_input ? !closed : closed);
 }
@@ -137,7 +137,7 @@ extern bool kob_key_is_closed(void) {
  */
 void kob_read_code_from_key(cmt_msg_t* msg) {
     // If our message is also in the scheduled messages, cancel it.
-    scheduled_msg_cancel(MSG_KOB_KEY_READ);
+    scheduled_msg_cancel(MSG_KEY_READ);
     if (KEY_READ_COMPLETE == msg->data.key_read_state.phase) {
         // Check the assembled code
         if (_kr_codeseq_index > 0) {
@@ -233,7 +233,7 @@ void kob_sound_code(mcode_seq_t* mcode_seq) {
 }
 
 void kob_sounder_energize(bool energize) {
-    gpio_put(KOB_SOUNDER_OUT, (energize ? KOB_SOUNDER_ENERGIZED : KOB_SOUNDER_DEENERGIZED));
+    gpio_put(SOUNDER_OUT, (energize ? SOUNDER_ENERGIZED : SOUNDER_DEENERGIZED));
     _kob_status.sounder_energized = energize;
 }
 
@@ -255,7 +255,7 @@ void kob_module_init(bool invert_key_input, bool key_has_closer, bool sounder_en
     _kob_status.circuit_closed = kob_key_is_closed();
     _kob_status.key_closed = kob_key_is_closed();
     // Initialize our messages
-    _msg_key_read_code.id = MSG_KOB_KEY_READ;
+    _msg_key_read_code.id = MSG_KEY_READ;
     _msg_key_read_code.data.key_read_state.phase = KEY_READ_START;
     _msg_sound_code.id = MSG_KOB_SOUND_CODE_CONT;
     // Set the sounder and tone

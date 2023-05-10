@@ -56,7 +56,7 @@ static uint32_t _last_status_update_ts; // ms timestamp of last status update
 static const msg_handler_entry_t _be_test = { MSG_BE_TEST, _handle_be_test };
 static const msg_handler_entry_t _config_changed_handler_entry = { MSG_CONFIG_CHANGED, _handle_config_changed };
 static const msg_handler_entry_t _cmt_sm_tick_handler_entry = { MSG_CMT_SLEEP, _handle_cmt_sleep };
-static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KOB_KEY_READ, _handle_kob_key_read };
+static const msg_handler_entry_t _kob_key_read_handler_entry = { MSG_KEY_READ, _handle_kob_key_read };
 static const msg_handler_entry_t _kob_sound_code_cont_handler_entry = { MSG_KOB_SOUND_CODE_CONT, _handle_kob_sound_code_cont };
 static const msg_handler_entry_t _mks_keep_alive_send_handler_entry = { MSG_MKS_KEEP_ALIVE_SEND, _handle_mks_keep_alive_send };
 static const msg_handler_entry_t _morse_decode_flush_handler_entry = { MSG_MORSE_DECODE_FLUSH, _handle_morse_decode_flush };
@@ -230,7 +230,7 @@ static void _handle_ui_initialized(cmt_msg_t* msg) {
     // Start things running.
 
     // Kick off our key code reading
-    msg->id = MSG_KOB_KEY_READ;
+    msg->id = MSG_KEY_READ;
     msg->data.key_read_state.phase = KEY_READ_START;
     kob_read_code_from_key(msg);
 

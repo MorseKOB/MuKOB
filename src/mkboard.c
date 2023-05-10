@@ -144,19 +144,26 @@ int board_init() {
     // GPIO Outputs (other than chip-selects)
     gpio_set_function(DISPLAY_RESET_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_RESET_OUT, GPIO_OUT);
+    gpio_set_drive_strength(DISPLAY_RESET_OUT, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_ON);           // Hold reset on until rest of board is initialized
     gpio_set_function(DISPLAY_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_BACKLIGHT_OUT, GPIO_OUT);
+    gpio_set_drive_strength(DISPLAY_BACKLIGHT_OUT, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);     // No backlight until the display is initialized
     gpio_set_function(TONE_DRIVE,   GPIO_FUNC_SIO);
     gpio_set_dir(TONE_DRIVE, GPIO_OUT);
+    gpio_set_drive_strength(TONE_DRIVE, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(TONE_DRIVE, TONE_OFF);
-    gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
-    gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
-    gpio_set_drive_strength(KOB_SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
-    gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
+    gpio_set_function(SOUNDER_OUT,   GPIO_FUNC_SIO);
+    gpio_set_dir(SOUNDER_OUT, GPIO_OUT);
+    gpio_set_drive_strength(SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
+    gpio_put(SOUNDER_OUT, SOUNDER_DEENERGIZED);
 
     // GPIO Inputs
+    //    Key
+    gpio_init(KEY_IN);
+    gpio_set_dir(KEY_IN, GPIO_IN);
+    gpio_pull_up(KEY_IN);
     //    Options Switch
     gpio_init(OPTIONS_1_IN);
     gpio_set_dir(OPTIONS_1_IN, GPIO_IN);

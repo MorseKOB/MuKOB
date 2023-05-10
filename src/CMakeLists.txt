@@ -73,6 +73,7 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_multicore/include
+  ${PICO_SDK_PATH}/src/rp2040/hardware_structs/include
   be
   config
   cmt

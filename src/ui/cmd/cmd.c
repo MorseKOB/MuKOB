@@ -252,8 +252,8 @@ static int _cmd_keys(int argc, char** argv, const char* unparsed) {
 
 static void _cmd_ps_print(const proc_status_accum_t* ps, int corenum) {
     int uaf = ONE_SECOND_MS - (ps->t_active + ps->t_idle + ps->t_msgr);
-    ui_term_printf("Core %d: Temp:%0.1f R:%hu I:%hu PT:%u IT:%u MRT:%u UAF:%d\n",
-        corenum, ps->core_temp, ps->retrived, ps->idle, ps->t_active, ps->t_idle, ps->t_msgr, uaf);
+    ui_term_printf("Core %d: Temp:%0.1f R:%hu I:%hu PT:%u IT:%u MRT:%u UAF:%d IS:0x%0.8x\n",
+        corenum, ps->core_temp, ps->retrived, ps->idle, ps->t_active, ps->t_idle, ps->t_msgr, uaf, ps->int_status);
 }
 
 static int _cmd_proc_status(int argc, char** argv, const char* unparsed) {
@@ -261,10 +261,13 @@ static int _cmd_proc_status(int argc, char** argv, const char* unparsed) {
         cmd_help_display(&_cmd_proc_status_entry, HELP_DISP_USAGE);
     }
     proc_status_accum_t ps0, ps1;
+    int smwc;
     cmt_proc_status_sec(&ps0, 0);
     cmt_proc_status_sec(&ps1, 1);
+    smwc = cmt_sched_msg_waiting();
     _cmd_ps_print(&ps0, 0);
     _cmd_ps_print(&ps1, 1);
+    ui_term_printf("Scheduled messages: %d\n", smwc);
 
     return (0);
 }
