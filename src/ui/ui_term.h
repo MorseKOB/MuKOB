@@ -45,12 +45,14 @@ extern "C" {
 // Current sender line (at the top)
 #define UI_TERM_SENDER_COLOR_FG TERM_CHR_COLOR_BLUE
 #define UI_TERM_SENDER_COLOR_BG TERM_CHR_COLOR_BR_YELLOW
-#define UI_TERM_SENDER_LINE 2
+#define UI_TERM_SENDER_LINE (2)
 
 // Station list
-#define UI_TERM_STATION_LIST_START_LINE (UI_TERM_LINES - 1 - 4)
-#define UI_TERM_STATION_LIST_END_LINE (UI_TERM_STATION_LIST_START_LINE + 3)
-#define UI_TERM_STATION_LIST_LINES (UI_TERM_STATION_LIST_END_LINE - UI_TERM_STATION_LIST_START_LINE)
+#define UI_TERM_STATION_LIST_COLOR_FG TERM_CHR_COLOR_BR_MAGENTA
+#define UI_TERM_STATION_LIST_BOX_COLOR_FG TERM_CHR_COLOR_MAGENTA
+#define UI_TERM_STATION_LIST_COLOR_BG TERM_CHR_COLOR_BLACK
+#define UI_TERM_STATIONS_PER_LINE (3)
+#define UI_TERM_STATION_LIST_LAST_LINE (UI_TERM_LINES - 1)
 
 // Bottom status
 #define UI_TERM_STATUS_COLOR_FG TERM_CHR_COLOR_BR_YELLOW
@@ -60,11 +62,7 @@ extern "C" {
 #define UI_TERM_STATUS_TIME_COL ((UI_TERM_COLUMNS / 2) - 3)
 
 // Scroll margins
-#define UI_TERM_SCROLL_START_LINE 3
-#define UI_TERM_SCROLL_END_LINE (UI_TERM_STATION_LIST_START_LINE - 1)
-
-// Command line (last line of scroll area)
-#define UI_TERM_CMDLINE (UI_TERM_SCROLL_END_LINE)
+#define UI_TERM_SCROLL_START_LINE (3)
 
 // Labels
 #define UI_TERM_WIRE_LABEL "Wire:"
@@ -255,6 +253,13 @@ extern void ui_term_register_control_char_handler(char c, ui_term_control_char_h
 extern void ui_term_register_input_available_handler(ui_term_input_available_handler handler_fn);
 
 /**
+ * @brief The line number of the end of the scroll region.
+ * 
+ * @return uint16_t The line number, one-based.
+ */
+extern uint16_t ui_term_scroll_end_line_get();
+
+/**
  * @brief Refresh the loop circuit closed indicator in the header.
  * @ingroup ui
  *
@@ -298,9 +303,13 @@ extern void ui_term_update_sender(const char* id);
  * @brief Update the active stations list area.
  * @ingroup ui
  *
+ * The list is NULL terminated, but we also pass in the count to allow formatting
+ * without having to scan the list first.
+ *
  * @param stations List of Station ID structure pointers.
+ * @param count The number of stations in the list.
  */
-extern void ui_term_update_stations(const mk_station_id_t** stations);
+extern void ui_term_update_stations(const mk_station_id_t** stations, int count);
 
 /**
  * @brief Update the speed value.

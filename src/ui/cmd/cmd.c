@@ -476,7 +476,7 @@ void cmd_attn_handler(cmt_msg_t* msg) {
         if (CMD_WAKEUP_CHAR == c) {
             // Wakeup received, change state to building line.
             _cmd_state = CMD_COLLECTING_LINE;
-            term_cursor_moveto(UI_TERM_CMDLINE, 1);
+            term_cursor_moveto(ui_term_scroll_end_line_get(), 1);
             ui_term_use_cmd_color();
             putchar('\n');
             putchar(CMD_PROMPT);

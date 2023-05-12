@@ -270,18 +270,19 @@ static void _handle_wire_station_msgs(cmt_msg_t *msg) {
         }
         const mk_station_id_t *ss[count];
         const mk_station_id_t **ssp = ss;
-        int ssc = 0;
+        int sc = 0;
+        // Don't include the current sender.
         for (int i = 0; i < count; i++) {
             const mk_station_id_t *station = *stations++;
             if (strcmp(_sender_id, station->id) != 0) {
                 *ssp++ = station;
-                ssc++;
+                sc++;
             }
         }
-        ss[ssc] = (mk_station_id_t*)0; // Mark end with NULL
-        _sort_station_list(ss, ssc);
-        ui_disp_update_stations(ss);
-        ui_term_update_stations(ss);
+        ss[sc] = (mk_station_id_t*)0; // Mark end with NULL
+        _sort_station_list(ss, sc);
+        ui_disp_update_stations(ss, sc);
+        ui_term_update_stations(ss, sc);
     }
 }
 

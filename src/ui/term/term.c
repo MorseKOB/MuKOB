@@ -138,6 +138,10 @@ static void _stdio_chars_available(void *param) {
     }
 }
 
+inline void term_charset(vt_charset_t cs) {
+    printf("%s%c", SCS, (char)cs);
+}
+
 inline void term_clear() {
     printf("%s2J", CSI); // Some guides indicate 'ESC c', but that is 'Reset' not just 'Clear'
 }
