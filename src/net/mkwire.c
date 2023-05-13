@@ -120,6 +120,7 @@ typedef struct mkspkt_code {
 // *** Local function declarations...
 
 void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb);
+static void _clear_stations();
 static pbuf_t* _connect_req_builder();
 static pbuf_t* _disconnect_req_builder();
 static bool _keep_alive_timer_callback(repeating_timer_t* rt);
@@ -193,8 +194,9 @@ void mkwire_disconnect() {
         _udp_pcb = NULL;
         _connected_state = WIRE_NOT_CONNECTED;
     }
-    // Post a message to the UI letting it know we are disconnected
     _send_keep_alive = false;
+    _clear_stations();
+    // Post a message to the UI letting it know we are disconnected
     _msg_connect_state.data.status = _connected_state;
     postUIMsgBlocking(&_msg_connect_state);
 }
@@ -258,6 +260,7 @@ void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
         }
         _udp_pcb = udp_pcb;
         _connected_state = WIRE_CONNECTED;
+        _clear_stations();
         // Set up to receive incoming messages from the MKServer.
         udp_recv(_udp_pcb, _mks_recv, NULL);  // Can pass user-data in 3rd arg if needed
         // Post message to send our ID
@@ -266,6 +269,33 @@ void _bind_handler(err_enum_t status, struct udp_pcb* udp_pcb) {
         _msg_connect_state.data.status = _connected_state;
         postUIMsgBlocking(&_msg_connect_state);
     }
+}
+
+/**
+ * @brief Clear all of the stations and post a message with the cleared list.
+ * @ingroup wire
+ */
+static void _clear_stations() {
+    for (int i = 0; i < MK_MAX_ACTIVE_STATIONS; i++) {
+        mk_station_id_t *stn = &_stations_heap[i];
+        stn->ts_init = 0;
+        stn->ts_ping = 0;
+        stn->ts_recv = 0;
+        *stn->id = '\000';
+        _stations_list[i] = (mk_station_id_t*)0;
+    }
+    _stations_list[MK_MAX_ACTIVE_STATIONS] = (mk_station_id_t*)0; // NULL to terminate list
+    // Clear current sender
+    *_current_sender.id = '\000';
+    _current_sender.ts_init = 0;
+    _current_sender.ts_ping = 0;
+    _current_sender.ts_recv = 0;
+    // Post messages
+    _msg_current_sender.data.station_id = _current_sender.id;
+    postUIMsgBlocking(&_msg_current_sender);
+    cmt_msg_t msg_send;
+    msg_send.id = MSG_WIRE_STATIONS_CLEARED;
+    postUIMsgBlocking(&msg_send);
 }
 
 /**

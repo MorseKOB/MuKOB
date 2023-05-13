@@ -56,6 +56,7 @@
 
 static uint16_t _active_stations_lines;
 static bool _code_displaying;
+static char* _current_sender;
 static kob_status_t _kob_status;
 
 static void _header_fill_fixed() {
@@ -175,8 +176,15 @@ void ui_disp_update_sender(const char* id) {
     text_color_pair_t cp;
     char buf[disp_info_columns() + 1];
 
-    // Put a newline in the code window
-    disp_print_crlf(0, Paint);
+    // If we had a sender print a new-line and a line of dashes in the code window
+    if (*id && *_current_sender) {
+        disp_print_crlf(0, No_Paint);
+        for (int i = 0; i < disp_info_columns; i++) {
+            buf[i] = '-';
+        }
+        disp_prints(buf, Paint);
+    }
+    _current_sender = id;
     disp_text_colors_get(&cp);
     disp_text_colors_set(UI_DISP_SENDER_COLOR_FG, UI_DISP_SENDER_COLOR_BG);
     disp_line_clear(UI_DISP_SENDER_LINE, (id ? No_Paint : Paint));

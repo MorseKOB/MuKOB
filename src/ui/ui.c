@@ -69,6 +69,7 @@ static const msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGE
 static const msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
 static const msg_handler_entry_t _wire_current_sender_handler_entry = { MSG_WIRE_CURRENT_SENDER, _handle_wire_station_msgs };
 static const msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD, _handle_wire_station_msgs };
+static const msg_handler_entry_t _wire_stations_cleared_handler_entry = { MSG_WIRE_STATIONS_CLEARED, _handle_wire_station_msgs };
 
 /**
  * @brief List of handler entries.
@@ -85,6 +86,7 @@ static const msg_handler_entry_t* _handler_entries[] = {
     &_cmd_key_pressed_handler_entry,
     &_wire_current_sender_handler_entry,
     &_wire_station_id_handler_entry,
+    &_wire_stations_cleared_handler_entry,
     &_wire_connected_state_handler_entry,
     &_wifi_status_handler_entry,
     &_wire_changed_handler_entry,
@@ -245,7 +247,7 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
 }
 
 /**
- * Handle both messages from the wire that involve a Station ID.
+ * Handle all messages from the wire that involve a Station ID.
  */
 static void _handle_wire_station_msgs(cmt_msg_t *msg) {
     const char* msg_station_id = msg->data.station_id;
@@ -283,6 +285,15 @@ static void _handle_wire_station_msgs(cmt_msg_t *msg) {
         _sort_station_list(ss, sc);
         ui_disp_update_stations(ss, sc);
         ui_term_update_stations(ss, sc);
+    }
+    else if (MSG_WIRE_STATIONS_CLEARED == msg->id) {
+        // Remove all of the stations and the current sender.
+        _sender_id = NULL;
+        ui_disp_update_sender(_sender_id);
+        ui_term_update_sender(_sender_id);
+        const mk_station_id_t** stations = mkwire_active_stations();
+        ui_disp_update_stations(stations, 0);
+        ui_term_update_stations(stations, 0);
     }
 }
 

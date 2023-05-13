@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <string.h>
 
+static char* _current_sender;
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
 
@@ -100,10 +101,21 @@ static void _draw_station_list_box(uint16_t lines) {
     }
     term_charset(VT_ASCII);
     // If the start line is different, change the scroll area
+    bool scroll_area_smaller = (nsls < _station_list_separator_line);
     if (nsls != _station_list_separator_line) {
         _station_list_separator_line = nsls;
         _scroll_end_line = _station_list_separator_line - 1;
         term_set_margin_top_bottom(UI_TERM_SCROLL_START_LINE, _scroll_end_line);
+        if (scroll_area_smaller) {
+            // Restore the previous cursor and if the line is beyond the scroll area, adjust it.
+            term_set_origin_mode(TERM_OM_IN_MARGINS);
+            term_cursor_restore();
+            scr_position_t pos = term_get_cursor_position();
+            if (pos.line > _scroll_end_line) {
+                term_cursor_moveto(_scroll_end_line, pos.column);
+            }
+            return;
+        }
     }
     // Put screen back
     term_set_origin_mode(TERM_OM_IN_MARGINS);
@@ -434,8 +446,15 @@ void ui_term_update_kob_status(const kob_status_t* kob_status) {
 void ui_term_update_sender(const char* id) {
     char buf[UI_TERM_COLUMNS + 1];
 
-    // Put a newline in the code window
-    putchar('\n');
+    // If we had a sender print a new-line and a line of dashes in the code window
+    if (*id && *_current_sender) {
+        putchar('\n');
+        for (int i = 0; i < UI_TERM_COLUMNS; i++) {
+            buf[i] = '-';
+        }
+        printf("%s", buf);
+    }
+    _current_sender = id;
     // Save the current location and colors and update the 'Sender' line
     term_cursor_save();
     term_color_fg(UI_TERM_SENDER_COLOR_FG);
@@ -466,7 +485,6 @@ void ui_term_update_speed(uint16_t speed) {
 }
 
 void ui_term_update_stations(const mk_station_id_t** stations, int count) {
-    // Save the current location and colors
     int lines = count / UI_TERM_STATIONS_PER_LINE;
     if (lines * UI_TERM_STATIONS_PER_LINE < count) {
         lines++;
