@@ -1,4 +1,4 @@
-# IDE files
+# IDE/OS files
 .DS_Store
 
 # Build and Output
@@ -12,6 +12,12 @@ build/
 **/cmake_install.cmake
 **/install_manifest.txt
 **/compie_commands.json
+
+# PCB
+*backups/*
+*.dsn
+Fp-info-cache
+*Gerber/*
 
 # Word temporary
 ~$*.docx
