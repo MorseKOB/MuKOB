@@ -111,7 +111,7 @@ err_enum_t udp_socket_bind(const char* hostname, uint16_t port, udp_bind_handler
 
     // Set up a timeout so we can call the bind handler even if the DNS lookup fails.
     op_context->timeout_alarm_id = add_alarm_in_ms(DNS_TIMEOUT, _udp_bind_dns_timeout_handler, op_context, true);
-    debug_printf("Set udp_socket_bind DNS timeout: %d  (%ums)\n", op_context->timeout_alarm_id, DNS_TIMEOUT);
+    debug_printf(true, "Set udp_socket_bind DNS timeout: %d  (%ums)\n", op_context->timeout_alarm_id, DNS_TIMEOUT);
     cyw43_arch_lwip_begin();
     {
         status = dns_gethostbyname_addrtype(hostname, &op_context->ipaddr, _udp_bind_dns_found, op_context, LWIP_DNS_ADDRTYPE_IPV4_IPV6);
@@ -275,7 +275,7 @@ static void _udp_bind_dns_found(const char* hostname, const ip_addr_t* ipaddr, v
 
     // Cancel the pending timeout for the DNS operation.
     if (op_context->timeout_alarm_id != 0) {
-        debug_printf("Cancel udp_socket_bind DNS timeout: %d\n", op_context->timeout_alarm_id);
+        debug_printf(true, "Cancel udp_socket_bind DNS timeout: %d\n", op_context->timeout_alarm_id);
         cancel_alarm(op_context->timeout_alarm_id);
         op_context->timeout_alarm_id = 0;
     }
@@ -353,7 +353,7 @@ static void _udp_sop_dns_found(const char* hostname, const ip_addr_t* ipaddr, vo
                     // Set up a timeout so we can free things up and call the handler even we don't receive a response.
                     uint32_t toms = (op_context->timeout_ms > 0 ? op_context->timeout_ms : UDP_SO_FAILSAFE_TO);
                     op_context->timeout_alarm_id = add_alarm_in_ms(toms, _udp_sop_timeout_handler, op_context, true);
-                    debug_printf("Set udp_single_operation timeout: %d  (%ums)\n", op_context->timeout_alarm_id, toms);
+                    debug_printf(true, "Set udp_single_operation timeout: %d  (%ums)\n", op_context->timeout_alarm_id, toms);
 
                     return;
                 }
@@ -388,7 +388,7 @@ static void _udp_sop_recv(void* arg, struct udp_pcb* pcb, pbuf_t* p, const ip_ad
 
     // Cancel the pending timeout for this operation.
     if (op_context->timeout_alarm_id != 0) {
-        debug_printf("Cancel udp_single_operation timeout: %d\n", op_context->timeout_alarm_id);
+        debug_printf(true, "Cancel udp_single_operation timeout: %d\n", op_context->timeout_alarm_id);
         cancel_alarm(op_context->timeout_alarm_id);
         op_context->timeout_alarm_id = 0;
     }

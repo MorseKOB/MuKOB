@@ -113,9 +113,13 @@ extern void ui_disp_update_speed(uint16_t speed);
  * @brief Update the active stations list area.
  * @ingroup ui
  *
+ * The list is NULL terminated, but we also pass in the count to allow formatting
+ * without having to scan the list first.
+ *
  * @param stations List of Station ID structure pointers.
+ * @param count The number of stations in the list.
  */
-extern void ui_disp_update_stations(const mk_station_id_t** stations);
+extern void ui_disp_update_stations(const mk_station_id_t** stations, int count);
 
 /**
  * @brief Update the status bar.

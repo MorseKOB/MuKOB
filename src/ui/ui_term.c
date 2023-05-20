@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <string.h>
 
+static char* _current_sender;
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
 
@@ -30,6 +31,9 @@ static int _code_column;
 static char _code_displayed[2 * UI_TERM_COLUMNS];
 
 static kob_status_t _kob_status;
+
+static uint16_t _scroll_end_line;
+static uint16_t _station_list_separator_line;
 
 static ui_term_input_available_handler _input_available_handler;
 static ui_term_getline_callback_fn _getline_callback; // Function pointer to be called when an input line is ready
@@ -61,11 +65,68 @@ void _input_ready_hook(void) {
     term_register_notify_on_input(_input_ready_hook);
 }
 
-static void _header_fill_fixed() {
-    term_color_fg(UI_TERM_HEADER_COLOR_FG);
-    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+static void _draw_station_list_box(uint16_t lines) {
+    uint16_t nsls = UI_TERM_STATION_LIST_LAST_LINE - (lines);
+    // Save current cursor and set color
     term_cursor_save();
     term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_color_fg(UI_TERM_STATION_LIST_BOX_COLOR_FG);
+    term_color_bg(UI_TERM_STATION_LIST_COLOR_BG);
+    if (nsls > _station_list_separator_line && _station_list_separator_line > 0) {
+        // Need to erase lines from old box
+        term_cursor_moveto(_station_list_separator_line, 1);
+        for (int i = 0; i <= (UI_TERM_STATION_LIST_LAST_LINE - _station_list_separator_line); i++) {
+            term_erase_line();
+            term_cursor_down_1();
+        }
+    }
+    // Move to begining of separator line and set
+    term_cursor_moveto(nsls, 1);
+    // Draw the top
+    term_charset(VT_100_LINEDRAW);
+    for (int i = 0; i < UI_TERM_COLUMNS; i++) {
+        if (i == (UI_TERM_COLUMNS / UI_TERM_STATIONS_PER_LINE) || i == ((((UI_TERM_COLUMNS / UI_TERM_STATIONS_PER_LINE) * 2) + 1))) {
+            putchar(VT_LD_TCT);
+        }
+        else {
+            putchar(VT_LD_HOR);
+        }
+    }
+    // Draw the bars
+    for (int i = nsls + 1; i <= nsls + lines; i++) {
+        term_cursor_moveto(i, ((UI_TERM_COLUMNS / UI_TERM_STATIONS_PER_LINE) + 1));
+        putchar(VT_LD_VER);
+        term_cursor_right(UI_TERM_COLUMNS / UI_TERM_STATIONS_PER_LINE);
+        putchar(VT_LD_VER);
+    }
+    term_charset(VT_ASCII);
+    // If the start line is different, change the scroll area
+    bool scroll_area_smaller = (nsls < _station_list_separator_line);
+    if (nsls != _station_list_separator_line) {
+        _station_list_separator_line = nsls;
+        _scroll_end_line = _station_list_separator_line - 1;
+        term_set_margin_top_bottom(UI_TERM_SCROLL_START_LINE, _scroll_end_line);
+        if (scroll_area_smaller) {
+            // Restore the previous cursor and if the line is beyond the scroll area, adjust it.
+            term_set_origin_mode(TERM_OM_IN_MARGINS);
+            term_cursor_restore();
+            scr_position_t pos = term_get_cursor_position();
+            if (pos.line > _scroll_end_line) {
+                term_cursor_moveto(_scroll_end_line, pos.column);
+            }
+            return;
+        }
+    }
+    // Put screen back
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
+}
+
+static void _header_fill_fixed() {
+    term_cursor_save();
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
     term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, 1);
     term_erase_line();
     term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_WIRE_LABEL_COL);
@@ -165,10 +226,9 @@ static void _term_init() {
     term_set_title(UI_TERM_NAME_VERSION);
     term_set_size(UI_TERM_LINES, UI_TERM_COLUMNS);
     term_clear();
-    term_set_margin_top_bottom(UI_TERM_SCROLL_START_LINE, UI_TERM_SCROLL_END_LINE);
-    term_set_origin_mode(TERM_OM_IN_MARGINS);
-    term_clear();
+    _draw_station_list_box(0);
     term_cursor_on(false);
+    term_cursor_moveto(1,1);
     ui_term_use_code_color();
 }
 
@@ -178,7 +238,7 @@ void ui_term_build(void) {
     _status_fill_fixed();
     ui_term_display_speed();
     ui_term_display_wire();
-    ui_term_update_sender(mkwire_current_sender()); // Build a blank sender line
+    ui_term_update_sender(mkwire_current_sender());
     ui_term_update_status();
     ui_term_update_connected_state(mkwire_connected_state());
     ui_term_update_kob_status(kob_status());
@@ -249,10 +309,10 @@ static void _printc_for_printf_term(char c, void* arg) {
 
 int ui_term_printf(const char* format, ...) {
     int pl = 0;
-    if (_code_displaying) {
-        putchar('\n');
-        pl = 1;
-    }
+    // if (_code_displaying) {
+    //     putchar('\n');
+    //     pl = 1;
+    // }
     va_list xArgs;
     va_start(xArgs, format);
     pl += vfctprintf(_printc_for_printf_term, NULL, format, xArgs);
@@ -343,6 +403,10 @@ void ui_term_register_input_available_handler(ui_term_input_available_handler ha
     _input_available_handler = handler_fn;
 }
 
+uint16_t ui_term_scroll_end_line_get() {
+    return _scroll_end_line;
+}
+
 void ui_term_update_circuit_closed(bool closed) {
     // TODO
 }
@@ -382,8 +446,15 @@ void ui_term_update_kob_status(const kob_status_t* kob_status) {
 void ui_term_update_sender(const char* id) {
     char buf[UI_TERM_COLUMNS + 1];
 
-    // Put a newline in the code window
-    putchar('\n');
+    // If we had a sender print a new-line and a line of dashes in the code window
+    if (*id && *_current_sender) {
+        putchar('\n');
+        for (int i = 0; i < UI_TERM_COLUMNS; i++) {
+            buf[i] = '-';
+        }
+        printf("%s", buf);
+    }
+    _current_sender = id;
     // Save the current location and colors and update the 'Sender' line
     term_cursor_save();
     term_color_fg(UI_TERM_SENDER_COLOR_FG);
@@ -413,8 +484,35 @@ void ui_term_update_speed(uint16_t speed) {
     term_cursor_restore();
 }
 
-void ui_term_update_stations(const mk_station_id_t** stations) {
-    // ZZZ TODO display active stations
+void ui_term_update_stations(const mk_station_id_t** stations, int count) {
+    int lines = count / UI_TERM_STATIONS_PER_LINE;
+    if (lines * UI_TERM_STATIONS_PER_LINE < count) {
+        lines++;
+    }
+    _draw_station_list_box(lines);
+    if (count > 0) {
+        int start_line = UI_TERM_STATION_LIST_LAST_LINE - (lines - 1);
+        int slen = UI_TERM_COLUMNS / UI_TERM_STATIONS_PER_LINE;
+        term_cursor_save();
+        term_color_fg(UI_TERM_STATION_LIST_COLOR_FG);
+        term_color_bg(UI_TERM_STATION_LIST_COLOR_BG);
+        term_set_origin_mode(TERM_OM_UPPER_LEFT);
+        // Display the stations
+        for (int l = 0; l < lines; l++) {
+            term_cursor_moveto((start_line + l), 1);
+            for (int c = 0; c < UI_TERM_STATIONS_PER_LINE; c++) {
+                const mk_station_id_t* station = *stations;
+                const char* name = (station ? station->id : "");
+                printf("%-*.*s", slen, slen, name);
+                term_cursor_right_1();
+                if (*stations) {
+                    stations++;
+                }
+            }
+        }
+        term_set_origin_mode(TERM_OM_IN_MARGINS);
+        term_cursor_restore();
+    }
 }
 
 void ui_term_update_status() {

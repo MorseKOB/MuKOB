@@ -65,6 +65,7 @@ include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
   ${PICO_SDK_PATH}/lib/lwip/src/include
   ${PICO_SDK_PATH}/src/common/pico_stdlib/include
+  ${PICO_SDK_PATH}/src/rp2_common/hardware_adc/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_dma/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_spi/include
   ${PICO_SDK_PATH}/src/rp2_common/hardware_i2c/include
@@ -72,6 +73,7 @@ include_directories(
   ${PICO_SDK_PATH}/src/rp2_common/hardware_rtc/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_cyw43_arch/include
   ${PICO_SDK_PATH}/src/rp2_common/pico_multicore/include
+  ${PICO_SDK_PATH}/src/rp2040/hardware_structs/include
   be
   config
   cmt
@@ -84,7 +86,9 @@ include_directories(
   ui
   ui/cmd
   ui/display
-  ui/display/ili9341_spi
+  ui/display/ili_lcd_spi
+  ui/display/ili_lcd_spi/ili9341_spi
+  ui/display/ili_lcd_spi/ili9488_spi
   ui/rotary_encoder
   ui/term
   util
@@ -110,7 +114,7 @@ target_link_libraries(MuKOB
   cmt
   data
   display
-  ili9341_spi
+  ili_lcd_spi
   kob
   mks
   morse
@@ -120,6 +124,7 @@ target_link_libraries(MuKOB
   term
   ui
   util
+  hardware_adc
   hardware_clocks
   hardware_exception
   hardware_i2c

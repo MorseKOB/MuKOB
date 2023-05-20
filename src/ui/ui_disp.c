@@ -56,6 +56,7 @@
 
 static uint16_t _active_stations_lines;
 static bool _code_displaying;
+static char* _current_sender;
 static kob_status_t _kob_status;
 
 static void _header_fill_fixed() {
@@ -175,8 +176,15 @@ void ui_disp_update_sender(const char* id) {
     text_color_pair_t cp;
     char buf[disp_info_columns() + 1];
 
-    // Put a newline in the code window
-    disp_print_crlf(0, Paint);
+    // If we had a sender print a new-line and a line of dashes in the code window
+    if (*id && *_current_sender) {
+        disp_print_crlf(0, No_Paint);
+        for (int i = 0; i < disp_info_columns; i++) {
+            buf[i] = '-';
+        }
+        disp_prints(buf, Paint);
+    }
+    _current_sender = id;
     disp_text_colors_get(&cp);
     disp_text_colors_set(UI_DISP_SENDER_COLOR_FG, UI_DISP_SENDER_COLOR_BG);
     disp_line_clear(UI_DISP_SENDER_LINE, (id ? No_Paint : Paint));
@@ -194,18 +202,13 @@ void ui_disp_update_speed(uint16_t speed) {
     disp_string_color(UI_DISP_HEADER_INFO_LINE, UI_DISP_HEADER_SPEED_VALUE_COL, buf, UI_DISP_HEADER_COLOR_FG, UI_DISP_HEADER_COLOR_BG, Paint);
 }
 
-void ui_disp_update_stations(const mk_station_id_t** stations) {
-    // See how many there are
-    int sc = 0;
-    while (*(stations + sc)) {
-        sc++;
-    }
+void ui_disp_update_stations(const mk_station_id_t** stations, int count) {
     // Erase the current stations area
     for (int j = (UI_DISP_STATUS_LINE - 1); j > (UI_DISP_STATUS_LINE - (_active_stations_lines + 1)); j--) {
         disp_line_clear(j, No_Paint);
     }
     // How many lines to display
-    int lines = (sc <= UI_DISP_STATIONS_LINES_MAX ? sc : UI_DISP_STATIONS_LINES_MAX);
+    int lines = (count <= UI_DISP_STATIONS_LINES_MAX ? count : UI_DISP_STATIONS_LINES_MAX);
     // Set the scroll area if needed (if it needs to be different from the current)
     if ((lines + UI_DISP_BOTTOM_FIXED_LINES) != disp_info_fixed_bottom_lines()) {
         disp_scroll_area_define(UI_DISP_TOP_FIXED_LINES, (lines + UI_DISP_BOTTOM_FIXED_LINES));

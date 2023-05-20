@@ -31,7 +31,7 @@ static int _mkdebug_cmd_debug(int argc, char** argv, const char* unparsed) {
 
 const cmd_handler_entry_t cmd_mkdebug_entry = {
     _mkdebug_cmd_debug,
-    4,
+    2,
     ".debug",
     "[ON|OFF]",
     "Set/reset debug flag.",
