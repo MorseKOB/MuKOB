@@ -48,6 +48,19 @@ static int _snd_code_index;
 static bool _snd_phase1;
 static uint32_t _snd_t_last;
 
+static void _post_status_changed(bool wait) {
+    _msg_kob_status.id = MSG_KOB_STATUS;
+    _msg_kob_status.data.kob_status.circuit_closed = _kob_status.circuit_closed;
+    _msg_kob_status.data.kob_status.key_closed = _kob_status.key_closed;
+    _msg_kob_status.data.kob_status.sounder_energized = _kob_status.sounder_energized;
+    if (wait) {
+        postUIMsgBlocking(&_msg_kob_status);
+    }
+    else {
+        postUIMsgNoWait(&_msg_kob_status);
+    }
+}
+
 void _kob_key_read_code_continue(cmt_msg_t* msg) {
     key_read_state_t state = msg->data.key_read_state;
     uint32_t now;
@@ -81,10 +94,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
             _kr_codeseq[_kr_codeseq_index++] = (MORSE_EXTENDED_MARK_END_INDICATOR); // Circuit/Closer Open
             _kob_status.circuit_closed = false;
             // Let the UI know that the state changed
-            _msg_kob_status.data.kob_status.circuit_closed = _kob_status.circuit_closed;
-            _msg_kob_status.data.kob_status.key_closed = _kob_status.key_closed;
-            _msg_kob_status.data.kob_status.sounder_energized = _kob_status.sounder_energized;
-            postUIMsgNoWait(&_msg_kob_status);
+            _post_status_changed(false);
             // Done assempling this code sequence
             _msg_key_read_code.data.key_read_state.phase = KEY_READ_COMPLETE;
             postBEMsgBlocking(&_msg_key_read_code);
@@ -104,10 +114,7 @@ void _kob_key_read_code_continue(cmt_msg_t* msg) {
         _kr_codeseq[_kr_codeseq_index++] = (MORSE_EXTENDED_MARK_START_INDICATOR); // Circuit/Closer Closed
         _kob_status.circuit_closed = true;
         // Let the UI know the closer state changed
-        _msg_kob_status.data.kob_status.circuit_closed = _kob_status.circuit_closed;
-        _msg_kob_status.data.kob_status.key_closed = _kob_status.key_closed;
-        _msg_kob_status.data.kob_status.sounder_energized = _kob_status.sounder_energized;
-        postUIMsgNoWait(&_msg_kob_status);
+        _post_status_changed(false);
         // Done assempling this code sequence
         _msg_key_read_code.data.key_read_state.phase = KEY_READ_COMPLETE;
         postBEMsgBlocking(&_msg_key_read_code);
@@ -246,13 +253,22 @@ const kob_status_t* kob_status() {
     return (&_kob_status);
 }
 
+void kob_update_circuit_closed(bool closed) {
+    bool cc = _kob_status.circuit_closed;
+    _kob_status.circuit_closed = closed;
+    if (closed != cc) {
+        // State changed. Post a message.
+        _post_status_changed(false);
+    }
+}
+
 void kob_module_init(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local) {
     _key_closer_is_open = false; // Assume the key closer is starting out closed
     _key_was_last_closed = false; // Set key open to start
     _key_last_read_time = 0;
     _kr_codeseq_index = 0;
     _snd_t_last = now_ms();
-    _kob_status.circuit_closed = kob_key_is_closed();
+    _kob_status.circuit_closed = false;
     _kob_status.key_closed = kob_key_is_closed();
     // Initialize our messages
     _msg_key_read_code.id = MSG_KEY_READ;
@@ -261,11 +277,7 @@ void kob_module_init(bool invert_key_input, bool key_has_closer, bool sounder_en
     // Set the sounder and tone
     kob_module_cfg_update(invert_key_input, key_has_closer, sounder_enabled, tone_enabled, sound_local);
     // Let the UI know the current status
-    _msg_kob_status.id = MSG_KOB_STATUS;
-    _msg_kob_status.data.kob_status.circuit_closed = _kob_status.circuit_closed;
-    _msg_kob_status.data.kob_status.key_closed = _kob_status.circuit_closed;
-    _msg_kob_status.data.kob_status.sounder_energized = _kob_status.sounder_energized;
-    postUIMsgNoWait(&_msg_kob_status);
+    _post_status_changed(false);
 }
 
 void kob_module_cfg_update(bool invert_key_input, bool key_has_closer, bool sounder_enabled, bool tone_enabled, bool sound_local) {

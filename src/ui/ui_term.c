@@ -17,7 +17,7 @@
 #include <ctype.h>
 #include <string.h>
 
-static char* _current_sender;
+static const char* _current_sender;
 static term_color_t _color_term_text_current_bg;
 static term_color_t _color_term_text_current_fg;
 
@@ -408,7 +408,16 @@ uint16_t ui_term_scroll_end_line_get() {
 }
 
 void ui_term_update_circuit_closed(bool closed) {
-    // TODO
+    char* circuit_state = (closed ? UI_TERM_CIRCUIT_CLOSED : UI_TERM_CIRCUIT_OPEN);
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_CIRCUIT_COL);
+    printf("%s", circuit_state);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
 }
 
 void ui_term_update_connected_state(wire_connected_state_t state) {
@@ -425,7 +434,16 @@ void ui_term_update_connected_state(wire_connected_state_t state) {
 }
 
 void ui_term_update_key_closed(bool closed) {
-    // TODO
+    char* closer_state = (closed ? UI_TERM_CLOSER_CLOSED : UI_TERM_CLOSER_OPEN);
+
+    term_cursor_save();
+    term_color_fg(UI_TERM_HEADER_COLOR_FG);
+    term_color_bg(UI_TERM_HEADER_COLOR_BG);
+    term_set_origin_mode(TERM_OM_UPPER_LEFT);
+    term_cursor_moveto(UI_TERM_HEADER_INFO_LINE, UI_TERM_HEADER_CLOSER_COL);
+    printf("%s", closer_state);
+    term_set_origin_mode(TERM_OM_IN_MARGINS);
+    term_cursor_restore();
 }
 
 void ui_term_update_kob_status(const kob_status_t* kob_status) {

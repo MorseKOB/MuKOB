@@ -222,7 +222,7 @@ ili_disp_info_t* ili_info(void) {
     // then a 'dummy' byte read, then one or more data reads.
     //
     // The largest read is a 'dummy' + 4 bytes, so use a 5 byte array to read into.
-    uint8_t data[5];
+    uint8_t data[6];
 
     _op_begin();
     {
@@ -265,10 +265,10 @@ ili_disp_info_t* ili_info(void) {
         _read_controller_values(ILI_RDID3, data, 2);
         _ili_disp_info.lcd_id3_drv = data[1];
         // ID 4 (IC)
-        _read_controller_values(ILI_RDID4, data, 4);
-        _ili_disp_info.lcd_id4_ic_ver    = data[1];
-        _ili_disp_info.lcd_id4_ic_model1 = data[2];
-        _ili_disp_info.lcd_id4_ic_model2 = data[3];
+        _read_controller_values(ILI_RDID4, data, 5);
+        _ili_disp_info.lcd_id4_ic_ver    = data[2];
+        _ili_disp_info.lcd_id4_ic_model1 = data[3];
+        _ili_disp_info.lcd_id4_ic_model2 = data[4];
     }
     _op_end();
 
@@ -372,7 +372,7 @@ void ili_line_paint(uint16_t line, rgb16_t* buf) {
 
 void ili_screen_clr(rgb16_t color, bool force) {
     if (force || _screen_dirty) {
-        memset(_ili_line_buf, color, _screen_width);
+        memset(_ili_line_buf, color, _screen_width * sizeof(rgb16_t));
         _op_begin();
         {
             _set_window_fullscreen();
@@ -404,22 +404,22 @@ ili_ctrl_type ili_module_init(void) {
 
     const uint8_t* init_cmd_data;
 
-    // See which controller we have 9341 or 9488 so we can initialize appropriately.
-    bool ZZZ = true;
+    // See which controller we have 9341 or 9488  (or none) so we can initialize appropriately.
+    bool ZZZ = false;
     ili_disp_info_t* info = ili_info();
     if (ZZZ || (info->lcd_id4_ic_model1 == ILI9341_ID_MODEL1 && info->lcd_id4_ic_model2 == ILI9341_ID_MODEL2)) {
         _ili_controller_type = ILI_CTRL_9341;
         init_cmd_data = ili9341_init_cmd_data;
         _screen_height = ILI9341_HEIGHT;
         _screen_width = ILI9341_WIDTH;
-        _ili_line_buf = malloc(ILI9341_WIDTH);
+        _ili_line_buf = malloc(_screen_width * sizeof(rgb16_t));
     }
     else if (!ZZZ || (info->lcd_id4_ic_model1 == ILI9488_ID_MODEL1 && info->lcd_id4_ic_model2 == ILI9488_ID_MODEL2)) {
         _ili_controller_type = ILI_CTRL_9341;
         init_cmd_data = ili9488_init_cmd_data;
         _screen_height = ILI9488_HEIGHT;
         _screen_width = ILI9488_WIDTH;
-        _ili_line_buf = malloc(ILI9488_WIDTH);
+        _ili_line_buf = malloc(_screen_width * sizeof(rgb16_t));
     }
     else {
         warn_printf(false, "Cannot determine display controller type (9341 or 9488)");

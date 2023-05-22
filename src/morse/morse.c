@@ -12,6 +12,7 @@
 #include "morse_tables.h" // Morse data that is in text files in PyKOB
 
 #include "cmt.h"
+#include "kob.h"
 #include "mkdebug.h"
 #include "util.h"
 
@@ -323,6 +324,10 @@ void morse_decode(mcode_seq_t* mcode_seq) {
     // Set up a 'flusher' alarm (skip if debugging decode)
     if (!(debugging_flags & DEBUGGING_MORSE_DECODE)) {
         schedule_msg_in_ms((20 * _d_tru_dot), &_decode_flusher_msg);
+    }
+    bool cc = kob_status()->circuit_closed;
+    if (cc != _d_circuit_latched_closed) {
+        // ZZZ kob_update_circuit_closed(_d_circuit_latched_closed);
     }
 }
 
