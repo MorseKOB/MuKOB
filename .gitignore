@@ -17,7 +17,6 @@ build/
 *backups/*
 *.dsn
 Fp-info-cache
-*Gerber/*
 
 # Word temporary
 ~$*.docx
