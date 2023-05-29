@@ -14,7 +14,7 @@ build/
 **/compie_commands.json
 
 # PCB
-*backups/*
+*/*-backups/*
 *.dsn
 Fp-info-cache
 

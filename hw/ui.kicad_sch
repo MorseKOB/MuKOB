@@ -2,7 +2,15 @@
 
   (uuid 4022f6eb-90e0-48a5-a11f-229d489c3e03)
 
-  (paper "A4")
+  (paper "A")
+
+  (title_block
+    (title "MuKOB - Device")
+    (date "2023-05-25")
+    (rev "1")
+    (company "AESilky")
+    (comment 1 "Copyright 2023 AESilky")
+  )
 
   (lib_symbols
   )
