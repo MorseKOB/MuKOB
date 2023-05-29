@@ -1,6 +1,4 @@
 (sym_lib_table
   (version 7)
-  (lib (name "RPi_Pico")(type "KiCad")(uri "C:/Users/aesil/hw/PicoW-VGA-KiCAD/RPi_Pico.kicad_sym")(options "")(descr ""))
-  (lib (name "rpikobhat-rescue")(type "KiCad")(uri "C:/Users/aesil/hw/rpikobhat-greg/rpikobhat-rescue.kicad_sym")(options "")(descr ""))
-  (lib (name "raspberrypi_hat")(type "KiCad")(uri "C:/Users/aesil/hw/rpikobhat-greg/raspberrypi_hat.kicad_sym")(options "")(descr ""))
+  (lib (name "MuKOB")(type "KiCad")(uri "C:/Users/aesil/proj/mukob-hw/MuKOB/hw/MuKOB.kicad_sym")(options "")(descr ""))
 )
