@@ -2169,13 +2169,13 @@
     (pin "1" (uuid b3e8b74f-9dbf-4b62-9d7d-a7e3d4814c7a))
     (pin "2" (uuid a0bd3334-849b-489f-b60e-c495e65a4c43))
     (pin "3" (uuid 50889567-aed4-4de8-96d7-f93c3e5aa118))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b62))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b1))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b62))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b63))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b2))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b63))
     (pin "5" (uuid 630a599a-59fe-4cc4-8060-a0f1608d748e))
     (pin "6" (uuid 1291e702-fca5-449c-b8f0-e5b1af09b146))
     (pin "7" (uuid 456805c2-847f-405d-839f-c0039cb5a9d4))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b1))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b2))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
@@ -2235,13 +2235,13 @@
     (pin "1" (uuid 6009d08d-a7a8-4099-8bf2-e49852d9dd8a))
     (pin "2" (uuid e30ed5fe-77e8-4b8d-82c9-26e1568ce8ca))
     (pin "3" (uuid 3d8511be-7499-4a41-9c0c-2009aaa207a2))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507460))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422e7))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507460))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507461))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422e8))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507461))
     (pin "5" (uuid b70d53fe-145d-4bbc-ab17-609b29a39d98))
     (pin "6" (uuid c0c10013-3624-4b17-a40e-0a90844bbce7))
     (pin "7" (uuid 25cf0da5-87f2-484b-98cf-eecb512275ea))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422e7))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422e8))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
