@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "MuKOB")(type "KiCad")(uri "${KIPRJMOD}/MuKOB.kicad_sym")(options "")(descr ""))
+)
