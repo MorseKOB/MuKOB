@@ -34,11 +34,6 @@
 static void _sort_station_list(const mk_station_id_t *stations[], int len);
 static void _ui_init_terminal_shell();
 
-typedef struct _UI_IDLE_FN_DATA_ {
-    unsigned long int idle_num;
-    unsigned long int msg_burst;
-} ui_idle_fn_data_t;
-
 // Message handler functions...
 static void _handle_be_initialized(cmt_msg_t* msg);
 static void _handle_code_window_output(cmt_msg_t* msg);
@@ -58,12 +53,7 @@ static cmt_msg_t _msg_ui_initialized;
 static cmt_msg_t _msg_ui_update_status;
 static cmt_msg_t _msg_ui_update_wire;
 
-static ui_idle_fn_data_t _msg_activity_data = { 0, 0 };
-
 static uint32_t _last_status_update_ts; // ms timestamp of last status update
-
-#define LEAVE_IDLE_FUNCTION()    {_msg_activity_data.idle_num++; _msg_activity_data.msg_burst = 0;}
-#define LEAVE_MSG_HANDLER()    {_msg_activity_data.idle_num = 0; _msg_activity_data.msg_burst++;}
 
 static const msg_handler_entry_t _be_initialized_handler_entry = { MSG_BE_INITIALIZED, _handle_be_initialized };
 static const msg_handler_entry_t _cmd_key_pressed_handler_entry = { MSG_CMD_KEY_PRESSED, cmd_attn_handler };
@@ -79,6 +69,7 @@ static const msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGE
 static const msg_handler_entry_t _wire_connected_state_handler_entry = { MSG_WIRE_CONNECTED_STATE, _handle_wire_connected_state };
 static const msg_handler_entry_t _wire_current_sender_handler_entry = { MSG_WIRE_CURRENT_SENDER, _handle_wire_station_msgs };
 static const msg_handler_entry_t _wire_station_id_handler_entry = { MSG_WIRE_STATION_ID_RCVD, _handle_wire_station_msgs };
+static const msg_handler_entry_t _wire_stations_cleared_handler_entry = { MSG_WIRE_STATIONS_CLEARED, _handle_wire_station_msgs };
 
 /**
  * @brief List of handler entries.
@@ -95,6 +86,7 @@ static const msg_handler_entry_t* _handler_entries[] = {
     &_cmd_key_pressed_handler_entry,
     &_wire_current_sender_handler_entry,
     &_wire_station_id_handler_entry,
+    &_wire_stations_cleared_handler_entry,
     &_wire_connected_state_handler_entry,
     &_wifi_status_handler_entry,
     &_wire_changed_handler_entry,
@@ -131,7 +123,6 @@ static void _ui_idle_function_1() {
         postUIMsgNoWait(&_msg_ui_update_status); // Don't wait. We will do it again in a bit.
         _last_status_update_ts = now;
     }
-    LEAVE_IDLE_FUNCTION();
 }
 
 
@@ -163,7 +154,6 @@ static void _handle_config_changed(cmt_msg_t* msg) {
     const config_t* cfg = config_current();
     ui_disp_update_speed(cfg->text_speed);
     ui_term_update_speed(cfg->text_speed);
-    LEAVE_MSG_HANDLER();
 }
 
 /**
@@ -198,7 +188,6 @@ static void _handle_code_window_output(cmt_msg_t* msg) {
         ui_term_puts(str);
     }
     free(str);
-    LEAVE_MSG_HANDLER();
 }
 
 /**
@@ -213,32 +202,27 @@ static void _handle_code_window_output(cmt_msg_t* msg) {
  */
 static void _handle_init_terminal(cmt_msg_t* msg) {
     _ui_init_terminal_shell();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_kob_status(cmt_msg_t* msg) {
     ui_disp_update_kob_status(&(msg->data.kob_status));
     ui_term_update_kob_status(&(msg->data.kob_status));
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_update_ui_status(cmt_msg_t* msg) {
     ui_disp_update_status();
     ui_term_update_status();
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wifi_conn_status_update(cmt_msg_t* msg) {
     uint32_t wifi_status = msg->data.status;
-    debug_printf("UI - Update wifi status: %u\n", wifi_status);
-    LEAVE_MSG_HANDLER();
+    debug_printf(true, "UI - Update wifi status: %u\n", wifi_status);
 }
 
 static void _handle_wire_changed(cmt_msg_t* msg) {
     uint16_t wire_no = msg->data.wire;
     ui_disp_update_wire(wire_no);
     ui_term_update_wire(wire_no);
-    LEAVE_MSG_HANDLER();
 }
 
 static void _handle_wire_connected_state(cmt_msg_t* msg) {
@@ -260,11 +244,10 @@ static void _handle_wire_connected_state(cmt_msg_t* msg) {
             postUIMsgBlocking(&msg);
         }
     }
-    LEAVE_MSG_HANDLER();
 }
 
 /**
- * Handle both messages from the wire that involve a Station ID.
+ * Handle all messages from the wire that involve a Station ID.
  */
 static void _handle_wire_station_msgs(cmt_msg_t *msg) {
     const char* msg_station_id = msg->data.station_id;
@@ -289,20 +272,29 @@ static void _handle_wire_station_msgs(cmt_msg_t *msg) {
         }
         const mk_station_id_t *ss[count];
         const mk_station_id_t **ssp = ss;
-        int ssc = 0;
+        int sc = 0;
+        // Don't include the current sender.
         for (int i = 0; i < count; i++) {
             const mk_station_id_t *station = *stations++;
             if (strcmp(_sender_id, station->id) != 0) {
                 *ssp++ = station;
-                ssc++;
+                sc++;
             }
         }
-        ss[ssc] = (mk_station_id_t*)0; // Mark end with NULL
-        _sort_station_list(ss, ssc);
-        ui_disp_update_stations(ss);
-        ui_term_update_stations(ss);
+        ss[sc] = (mk_station_id_t*)0; // Mark end with NULL
+        _sort_station_list(ss, sc);
+        ui_disp_update_stations(ss, sc);
+        ui_term_update_stations(ss, sc);
     }
-    LEAVE_MSG_HANDLER();
+    else if (MSG_WIRE_STATIONS_CLEARED == msg->id) {
+        // Remove all of the stations and the current sender.
+        _sender_id = NULL;
+        ui_disp_update_sender(_sender_id);
+        ui_term_update_sender(_sender_id);
+        const mk_station_id_t** stations = mkwire_active_stations();
+        ui_disp_update_stations(stations, 0);
+        ui_term_update_stations(stations, 0);
+    }
 }
 
 

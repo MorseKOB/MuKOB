@@ -40,10 +40,10 @@ typedef struct _KEY_READ_STATE_ {
  * other modules.
  */
 typedef struct _KOB_STATUS_ {
-    bool circuit_closed;
-    bool key_closed;
-    bool sounder_energized;
-    bool tone_energized;
+    volatile bool circuit_closed;
+    volatile bool key_closed;
+    volatile bool sounder_energized;
+    volatile bool tone_energized;
 } kob_status_t;
 
 #ifdef __cplusplus

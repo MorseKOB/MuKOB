@@ -50,8 +50,9 @@ typedef void (*term_notify_on_input_fn)(void);
 #define NEL     "\eE"   // Next Line
 #define OSC     "\e]"   // Operating System Command
 #define RI      "\eM"   // Reverse Index (UP 1)
-#define ST      "\e\\"  // String Terminator
+#define SCS     "\e("   // Select Character Set (+0 Line Draw, +B ASCII)
 #define SS3     "\eO"   // Single Shift 3
+#define ST      "\e\\"  // String Terminator
 #else
 // Debug values to be able to see what is being sent to the terminal.
 #define BS      'ß'
@@ -66,8 +67,8 @@ typedef void (*term_notify_on_input_fn)(void);
 #define NEL     "ÑL"
 #define OSC     "Ë]"
 #define RI      "Û"
-#define ST      "Ë\\"
 #define SS3     "ËO"
+#define ST      "Ë\\"
 #endif
 
 /**
@@ -130,6 +131,41 @@ typedef enum _VT_TERM_ID_SPECIFIER_ {
     VT_420_ID_SPEC = 9,
     VT_510_ID_SPEC = 10,
 } vt_term_id_spec_t;
+
+/**
+ * @brief Select Linedraw or ASCII character sets using 'SCS'.
+ */
+typedef enum _VT_CHARSET_ {
+    VT_100_LINEDRAW = '0',
+    VT_ASCII        = 'B',
+} vt_charset_t;
+#define VT_LD_BRC 'j'  // Bottom-Right-Corner
+#define VT_LD_TRC 'k'  // Top-Right-Corner
+#define VT_LD_TLC 'l'  // Top-Left-Corner
+#define VT_LD_BLC 'm'  // Bottom-Left-Corner
+#define VT_LD_CTR 'n'  // Center-Cross
+#define VT_LD_HOR 'q'  // Horizontal-Bar
+#define VT_LD_LCT 't'  // Left-Center
+#define VT_LD_RCT 'u'  // Right-Center
+#define VT_LD_BCT 'v'  // Bottom-Center
+#define VT_LD_TCT 'w'  // Top-Center
+#define VT_LD_VER 'x'  // Vertical-Bar
+//
+#define VT_LD_DEG 'f'  // Degree
+#define VT_LD_PMS 'g'  // +- Sign
+#define VT_LD_LTE 'y'  // <= Sign
+#define VT_LD_GTE 'z'  // >= Sign
+#define VT_LD_PI  '{'  // Pi Character
+#define VT_LD_PS  '}'  // Pound Sterling
+#define VT_LD_DOT '~'  // Dot (center dot)
+
+/**
+ * @brief Set the terminal character set.
+ * @ingroup term
+ * 
+ * @param cs vt_charset_t to use
+ */
+extern void term_charset(vt_charset_t cs);
 
 /**
  * @brief Clear the full screen

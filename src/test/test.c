@@ -66,7 +66,7 @@ int test_config_new_free(){
     config_free(cfg_copy);
     config_free(cfg);
     if (errors == 0) {
-        debug_printf("Test - Config: No errors running `test_config_new_free`\n");
+        debug_printf(true, "Test - Config: No errors running `test_config_new_free`\n");
     }
     else {
         error_printf(true, "Test - Config: %d errors running `test_config_new_free`\n");

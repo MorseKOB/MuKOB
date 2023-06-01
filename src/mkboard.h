@@ -120,6 +120,20 @@ extern uint32_t now_ms();
 extern uint64_t now_us();
 
 /**
+ * @brief Get the temperature from the on-chip temp sensor if Celsius.
+ * 
+ * @return float Celsius temperature
+ */
+float onboard_temp_c();
+
+/**
+ * @brief Get the temperature from the on-chip temp sensor in Farenheit.
+ *
+ * @return float Farenheit temperature
+ */
+float onboard_temp_f();
+
+/**
  * @brief Read the option switch
  * @ingroup board
  *
@@ -149,11 +163,11 @@ uint8_t options_read(void);
 bool option_value(uint opt);
 
 /** @brief Printf like function that includes the datetime and type prefix */
-void debug_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+void debug_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
 void error_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
-void info_printf(const char* format, ...) __attribute__((format(_printf_, 1, 2)));
+void info_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 /** @brief Printf like function that includes the datetime and type prefix */
 void warn_printf(bool inc_dts, const char* format, ...) __attribute__((format(_printf_, 1, 2)));
 
