@@ -19,7 +19,7 @@ As defined, the pin assignments are
 | |             'GND' |   8  |  |  33  | 'GND/AGND'        |
 | |      Touch Select |   9  |  |  32  | Display Backlight |
 | |         Touch IRQ |  10  |  |  31  | Display Reset     |
-| |  Display CMD/Data |  11  |  |  30  | 'RUN'             |
+| | Display CMD-/Data |  11  |  |  30  | 'RUN'             |
 | |    Display Select |  12  |  |  29  | Speaker           |
 | |             'GND' |  13  |  |  28  | 'GND'             |
 | |  Display SPI1-SCK |  14  |  |  27  | Options SW - 4    |

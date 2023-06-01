@@ -14,10 +14,11 @@ build/
 **/compie_commands.json
 
 # PCB
-*backups/*
+*/#auto_saved_files#
+*/#auto_saved_files#/*
+*/*-backups/*
 *.dsn
 Fp-info-cache
-*Gerber/*
 
 # Word temporary
 ~$*.docx
