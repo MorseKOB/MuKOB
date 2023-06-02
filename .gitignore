@@ -17,6 +17,7 @@ build/
 */#auto_saved_files#
 */#auto_saved_files#/*
 */*-backups/*
+*/_reports/*
 *.dsn
 Fp-info-cache
 
