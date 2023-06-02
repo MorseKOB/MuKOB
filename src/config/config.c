@@ -41,10 +41,7 @@ typedef struct _CFG_W_MARKER_ {
     config_t config;
 } _cfg_w_marker_t;
 
-static int _cih_config_version_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_config_version_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
-static cfg_item_handler_class_t _cihc_config_version =
-{ _CFG_VERSION_KEY, '\000', NULL, "Config version", _cih_config_version_reader, _cih_config_version_writer };
 
 static int _cih_auto_connect_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_auto_connect_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
@@ -81,10 +78,7 @@ static int _cih_local_writer(const cfg_item_handler_class_t* self, const config_
 static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_local =
 { "local", 'L', "local", "Sound and copy local code", _cih_local_reader, _cih_local_writer };
 
-static int _cih_name_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_name_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
-static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_name =
-{ "name", 'N', "name", "Config name", _cih_name_reader, _cih_name_writer };
 
 static int _cih_remote_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value);
 static int _cih_remote_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full);
@@ -128,8 +122,6 @@ static struct _CFG_ITEM_HANDLER_CLASS_ _cihc_wire =
  * The entries should be in the order that the config lines should be written to the config file.
  */
 static const cfg_item_handler_class_t* _cfg_handlers[] = {
-    & _cihc_config_version,
-    & _cihc_name,
     & _cihc_auto_connect,
     & _cihc_code_type,
     & _cihc_key_has_closer,
@@ -146,12 +138,6 @@ static const cfg_item_handler_class_t* _cfg_handlers[] = {
     & _cihc_wire,
     ((const cfg_item_handler_class_t*)0), // NULL last item to signify end
 };
-
-
-static int _scih_config_version_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value);
-static int _scih_config_version_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full);
-static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_config_version =
-{ _CFG_VERSION_KEY, "Config version", _SYSCFG_VER_ID, _scih_config_version_reader, _scih_config_version_writer };
 
 static int _scih_tz_offset_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value);
 static int _scih_tz_offset_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full);
@@ -179,7 +165,6 @@ static const struct _SYS_CFG_ITEM_HANDLER_CLASS_ _scihc_ssid =
 { "wifi_ssid", "Wi-Fi SSID (name)", _SYSCFG_WS_ID, _scih_ssid_reader, _scih_ssid_writer };
 
 static const sys_cfg_item_handler_class_t* _sys_cfg_handlers[] = {
-    & _scihc_config_version,
     & _scihc_tz_offset,
     & _scihc_boot_cfg_number,
     & _scihc_wifi_password,
@@ -195,25 +180,6 @@ static int _current_cfg_number;
 static config_t* _current_cfg;
 
 static cmt_msg_t _msg_config_changed = { MSG_CONFIG_CHANGED, {0} };
-
-static int _cih_config_version_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value) {
-    int iv = atoi(value);
-    cfg->cfg_version = (uint16_t)iv;
-
-    return (1);
-}
-
-static int _cih_config_version_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full) {
-    int len = 0;
-
-    if (full) {
-        len = sprintf(buf, "# Config file/format version.\n%s=", self->key);
-    }
-    // format the value we are responsible for
-    len += sprintf(buf + len, "%hd", cfg->cfg_version);
-
-    return (len);
-}
 
 static int _cih_auto_connect_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value) {
     int retval = -1;
@@ -335,31 +301,6 @@ static int _cih_local_writer(const cfg_item_handler_class_t* self, const config_
     }
     // format the value we are responsible for
     len += sprintf(buf + len, "%hd", binary_from_int(cfg->local));
-
-    return (len);
-}
-
-static int _cih_name_reader(const cfg_item_handler_class_t* self, config_t* cfg, const char* value) {
-    int retval = -1;
-
-    if (cfg->name) {
-        free(cfg->name);
-    }
-    cfg->name = str_value_create(value);
-    retval = 1;
-
-    return (retval);
-}
-
-static int _cih_name_writer(const cfg_item_handler_class_t* self, const config_t* cfg, char* buf, bool full) {
-    int len = 0;
-
-    // If full - print comment and key
-    if (full) {
-        len = sprintf(buf, "# Configuration name.\n%s=", self->key);
-    }
-    // format the value we are responsible for
-    len += sprintf(buf + len, "%s", cfg->name);
 
     return (len);
 }
@@ -581,29 +522,6 @@ static int _cih_wire_writer(const cfg_item_handler_class_t* self, const config_t
     }
     // format the value we are responsible for
     len += sprintf(buf + len, "%hd", cfg->wire);
-
-    return (len);
-}
-
-static int _scih_config_version_reader(const sys_cfg_item_handler_class_t* self, config_sys_t* sys_cfg, const char* value) {
-    int retval = -1;
-
-    int iv = atoi(value);
-    sys_cfg->cfg_version = (uint16_t)iv;
-    retval = 1;
-
-    return (retval);
-}
-
-static int _scih_config_version_writer(const sys_cfg_item_handler_class_t* self, const config_sys_t* sys_cfg, char* buf, bool full) {
-    int len = 0;
-
-    // If full - print comment and key
-    if (full) {
-        len = sprintf(buf, "# Config file/format version.\n%s=", self->key);
-    }
-    // format the value we are responsible for
-    len += sprintf(buf + len, "%hd", sys_cfg->cfg_version);
 
     return (len);
 }
@@ -886,7 +804,7 @@ static int _config_cmd_configure(int argc, char** argv, const char* unparsed) {
 
     // List the current configuration
     retval = 0; // If we get here, we can return 'OK'
-    ui_term_printf("Current Config: %d  Boot Config: %d\n", _current_cfg_number, _system_cfg.boot_cfg_number);
+    ui_term_printf("Current Config: %s (%d)  Boot Config: %d\n", _current_cfg->name ,_current_cfg_number, _system_cfg.boot_cfg_number);
     // Run through the handlers and have each list the configuration value...
     handlers = _cfg_handlers;
     // Find the longest label

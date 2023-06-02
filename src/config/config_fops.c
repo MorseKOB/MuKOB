@@ -20,7 +20,9 @@
 
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 
 static bool _initialized;
 
@@ -57,15 +59,9 @@ static FRESULT _cfo_unmount_sd() {
 
 int _process_cfg_line(config_t* config, char* line) {
     int retval = 0;
-    char* cfgline = strnltonull((char*)strskipws(line));
     char* key;
     char* value;
     const char* eq = "=";
-
-    if (*cfgline == '\000' || *cfgline == '#') {
-        // It's blank or a comment line. Nothing to do.
-        return (retval);
-    }
 
     // Use strtok_r rather than strtok in case the other core needs to tokenize something.
     key = strtok_r(line, eq, &line);
@@ -90,11 +86,75 @@ int _process_cfg_line(config_t* config, char* line) {
     return (retval);
 }
 
+/**
+ * @brief The first non-blank/non-comment line is the version. It doesn't
+ * use the `name=value` format as the rest of the config (except the name) does.
+ *
+ * @param config The config object to put the version into.
+ * @param line The line read from the config file.
+ * @return int Greater than 0 if a version was processed.
+ */
+int _process_cfg_version_line(config_t* config, char* line) {
+    int iv = atoi(line);
+    config->cfg_version = (uint16_t)iv;
+
+    return (1);
+}
+
+/**
+ * @brief The first non-blank/non-comment line is the version. It doesn't
+ * use the `name=value` format as the rest of the config does.
+ *
+ * @param config The config object to get the version from.
+ * @param line The line read from the system config file.
+ * @return int Greater than 0 if a version was processed.
+ */
+int _write_cfg_version_line(const config_t* config, char* buf) {
+    int len = 0;
+
+    // Print comment and value
+    len = sprintf(buf, "# Config file/format version.\n%hd\n", config->cfg_version);
+
+    return (len);
+}
+
+/**
+ * @brief The second non-blank/non-comment line is the name. It doesn't
+ * use the `name=value` format as the rest of the config (except the version) does.
+ *
+ * @param config The config object to put the version into.
+ * @param line The line read from the config file.
+ * @return int Greater than 0 if a name was processed.
+ */
+int _process_cfg_name_line(config_t* config, char* line) {
+    int retval = -1;
+    // The max length for a config name is 
+    char name[CONFIG_NAME_MAX_LEN + 1];
+    strcpynt(name, line, CONFIG_NAME_MAX_LEN);
+
+    if (config->name) {
+        free(config->name);
+    }
+    config->name = str_value_create(name);
+    retval = 1;
+
+    return (retval);
+}
+
+int _write_cfg_name_line(const config_t* config, char* buf) {
+    // Print comment and name
+    int len = sprintf(buf, "# Configuration name.\n%s\n", config->name);
+
+    return (len);
+}
+
 FRESULT cfo_read_cfg(config_t* cfg, uint16_t cfg_num) {
     FRESULT fr = FR_OK;
     FIL fil;
     char buf[100];
     char cfg_file_name[16];
+    bool version_read = false;
+    bool name_read = false;
 
     // Build the filename using the config number.
     sprintf(cfg_file_name, _CFG_FILENAME_FORMAT, cfg_num);
@@ -111,7 +171,20 @@ FRESULT cfo_read_cfg(config_t* cfg, uint16_t cfg_num) {
         return (fr);
     }
     while (f_gets(buf, sizeof(buf), &fil)) {
-        if (_process_cfg_line(cfg, buf) < 0) {
+        char* cfgline = strnltonull((char*)strskipws(buf));
+        if (*cfgline == '\000' || *cfgline == '#') {
+            // It's blank or a comment line. Nothing to do.
+            continue;
+        }
+        if (!version_read) {
+            version_read = (_process_cfg_version_line(cfg, cfgline) > 0);
+            continue;
+        }
+        if (!name_read) {
+            name_read = (_process_cfg_name_line(cfg, cfgline) > 0);
+            continue;
+        }
+        if (_process_cfg_line(cfg, cfgline) < 0) {
             return (FR_INVALID_PARAMETER);
         }
     }
@@ -124,15 +197,9 @@ FRESULT cfo_read_cfg(config_t* cfg, uint16_t cfg_num) {
 
 uint16_t _process_sys_cfg_line(config_sys_t* sys_cfg, char* line) {
     uint16_t retval = 0; // Bit ID of the item set
-    char* cfgline = strnltonull((char*)strskipws(line));
     char* key;
     char* value;
     const char* eq = "=";
-
-    if (*cfgline == '\000' || *cfgline == '#') {
-        // It's blank or a comment line. Nothing to do.
-        return (retval);
-    }
 
     // Use strtok_r rather than strtok incase the other core needs to tokenize something.
     key = strtok_r(line, eq, &line);
@@ -160,6 +227,38 @@ uint16_t _process_sys_cfg_line(config_sys_t* sys_cfg, char* line) {
     return (retval);
 }
 
+/**
+ * @brief The first non-blank/non-comment line is the version. It doesn't
+ * use the `name=value` format as the rest of the config does.
+ *
+ * @param config The config object to put the version into.
+ * @param line The line read from the system config file.
+ * @return int Greater than 0 if a version was processed.
+ */
+int _process_sys_cfg_version_line(config_sys_t* sys_cfg, char* line) {
+    int iv = atoi(line);
+    sys_cfg->cfg_version = (uint16_t)iv;
+
+    return (1);
+}
+
+/**
+ * @brief The first non-blank/non-comment line is the version. It doesn't
+ * use the `name=value` format as the rest of the config does.
+ *
+ * @param sys_cfg The config object to get the version from.
+ * @param line The line read from the system config file.
+ * @return int Greater than 0 if a version was processed.
+ */
+int _write_sys_cfg_version_line(const config_sys_t* sys_cfg, char* buf) {
+    int len = 0;
+
+    // If full - print comment and key
+    len = sprintf(buf, "# Config file/format version.\n%hd\n", sys_cfg->cfg_version);
+
+    return (len);
+}
+
 uint16_t cfo_read_sys_cfg(config_sys_t * sys_cfg) {
     uint16_t not_init = (
         _SYSCFG_NOT_LOADED
@@ -185,7 +284,19 @@ uint16_t cfo_read_sys_cfg(config_sys_t * sys_cfg) {
         return (not_init);
     }
     while (f_gets(buf, sizeof(buf), &fil)) {
-        not_init ^= _process_sys_cfg_line(sys_cfg, buf);
+        char* cfgline = strnltonull((char*)strskipws(buf));
+        if (*cfgline == '\000' || *cfgline == '#') {
+            // It's blank or a comment line. Nothing to do.
+            continue;
+        }
+        // Need to get a version first
+        if (not_init & _SYSCFG_VER_ID) {
+            if (_process_sys_cfg_version_line(sys_cfg, cfgline) > 0) {
+                not_init ^= _SYSCFG_VER_ID;
+                continue;
+            }
+        }
+        not_init ^= _process_sys_cfg_line(sys_cfg, cfgline);
     }
     not_init &= !_SYSCFG_NOT_LOADED;
     // Close file
@@ -240,10 +351,33 @@ extern FRESULT cfo_save_cfg(const config_t* cfg, uint16_t cfg_num) {
         _cfo_unmount_sd();
         return (fr);
     }
-    // Write the config values out
+    // The first (non-blank/non-comment) line is the version
+    int len = _write_cfg_version_line(cfg, buf);
+    unsigned int bytes_written = 0;
+    fr = f_write(&fil, buf, len, &bytes_written);
+    if (FR_OK != fr || len != bytes_written) {
+        if (FR_OK == fr) {
+            error_printf(false, "Config - Writting config %s. Bytes expected: %d  Written: %d", cfg_file_name, len, bytes_written);
+            fr = FR_INVALID_PARAMETER;
+        }
+        return (fr);
+    }
+
+    // The second (non-blank/non-comment) line is the name
+    len = _write_cfg_name_line(cfg, buf);
+    bytes_written = 0;
+    fr = f_write(&fil, buf, len, &bytes_written);
+    if (FR_OK != fr || len != bytes_written) {
+        if (FR_OK == fr) {
+            error_printf(false, "Config - Writting config %s. Bytes expected: %d  Written: %d", cfg_file_name, len, bytes_written);
+            fr = FR_INVALID_PARAMETER;
+        }
+        return (fr);
+    }
+
+    // Write the rest of the config values out
     const cfg_item_handler_class_t** handlers = _cfg_handlers;
     while (*handlers) {
-        unsigned int bytes_written = 0;
         const cfg_item_handler_class_t* handler = *handlers;
         int len = handler->writer(handler, cfg, buf, true);
         len += sprintf(buf + len, "\n");
@@ -282,12 +416,24 @@ FRESULT cfo_save_sys_cfg(const config_sys_t* sys_cfg) {
         _cfo_unmount_sd();
         return (fr);
     }
-    // Write the config values out
+
+    // The first (non-blank/non-comment) line is the version
+    int len = _write_sys_cfg_version_line(sys_cfg, buf);
+    unsigned int bytes_written = 0;
+    fr = f_write(&fil, buf, len, &bytes_written);
+    if (FR_OK != fr || len != bytes_written) {
+        if (FR_OK == fr) {
+            error_printf(false, "Config - Writting config %s. Bytes expected: %d  Written: %d", _sys_cfg_filename, len, bytes_written);
+            fr = FR_INVALID_PARAMETER;
+        }
+        return (fr);
+    }
+
+    // Write the rest of the config values out
     const sys_cfg_item_handler_class_t** handlers = _sys_cfg_handlers;
     while (*handlers) {
-        unsigned int bytes_written = 0;
         const sys_cfg_item_handler_class_t* handler = *handlers;
-        int len = handler->writer(handler, sys_cfg, buf, true);
+        len = handler->writer(handler, sys_cfg, buf, true);
         len += sprintf(buf + len, "\n");
         fr = f_write(&fil, buf, len, &bytes_written);
         if (FR_OK != fr || len != bytes_written) {

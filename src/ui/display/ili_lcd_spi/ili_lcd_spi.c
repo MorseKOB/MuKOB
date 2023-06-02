@@ -405,7 +405,7 @@ ili_ctrl_type ili_module_init(void) {
     const uint8_t* init_cmd_data;
 
     // See which controller we have 9341 or 9488  (or none) so we can initialize appropriately.
-    bool ZZZ = false;
+    bool ZZZ = true;
     ili_disp_info_t* info = ili_info();
     if (ZZZ || (info->lcd_id4_ic_model1 == ILI9341_ID_MODEL1 && info->lcd_id4_ic_model2 == ILI9341_ID_MODEL2)) {
         _ili_controller_type = ILI_CTRL_9341;
