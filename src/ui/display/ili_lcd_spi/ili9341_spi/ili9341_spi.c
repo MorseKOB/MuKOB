@@ -20,7 +20,7 @@ const uint8_t ili9341_init_cmd_data[] = {
     ILI_PWCTL2  , 1, 0x13,              // AVDD=VCIx2 VGH=VCIx6 VGL=-VCIx3
     ILI_VMCTL1  , 2, 0x3e, 0x28,        // VCOM Voltage: VCH=4.25v VCL:-1.5v
     ILI_VMCTL2  , 1, 0x86,              // VCOM Offset: Enabled, VMH-58, VML-58
-    ILI_MADCTL  , 1, 0x98,              // Memory Access Control: YX=Invert, Landscape, BGR, Vnorm, Hnorm
+    ILI_MADCTL  , 1, 0x48,              // Memory Access Control: YX=Invert, Portrate, BGR, Vrev, Hnorm
     ILI_VSCRSADD, 2, 0x00, 0x00,        // Vertical Scroll Start: 0x0000
     ILI_PIXFMT  , 1, 0x55,              // Pixel Format: 16 RGB 5,6,5 bits
     ILI_FRMCTL1 , 2, 0x00, 0x1B,        // Frame Ctl (Normal Mode): fosc/1, rate=70Hz
