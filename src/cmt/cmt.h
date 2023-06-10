@@ -15,6 +15,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "gfx.h"
 #include "kob_t.h"
 #include "morse.h"
 #include "pico/types.h"
@@ -51,6 +52,7 @@ typedef enum _MSG_ID_ {
     MSG_CODE_TEXT,
     MSG_DISPLAY_MESSAGE,
     MSG_KOB_STATUS,
+    MSG_TOUCH_PANEL,
     MSG_UPDATE_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
@@ -88,6 +90,7 @@ typedef union _MSG_DATA_VALUE {
     const char* station_id;
     char* str;
     int32_t status;
+    gfx_point* touch_point;
     unsigned short wire;
 } msg_data_value_t;
 

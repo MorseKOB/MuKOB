@@ -123,15 +123,17 @@ typedef unsigned short rgb16_t; // R5G6B5
 
 /**
  * @brief ILI Controller type.
+ * @ingroup display
  */
-typedef enum _ili_ctrl_type {
-    ILI_CTRL_NONE = 0,
-    ILI_CTRL_9341 = 9341,
-    ILI_CTRL_9488 = 9488,
-} ili_ctrl_type;
+typedef enum _ili_controller_type {
+    ILI_CONTROLLER_NONE = 0,
+    ILI_CONTROLLER_9341 = 9341,
+    ILI_CONTROLLER_9488 = 9488,
+} ili_controller_type;
 
 /**
  * @brief ILI Display information.
+ * @ingroup display
  */
 typedef struct _ili_disp_info_ {
     // ID (CMD 0x04)
@@ -179,7 +181,7 @@ typedef struct _ili_disp_info_ {
  *
  * @param cmd The command byte to send (@see ILI_xxx defines)
  */
-extern void ili_command(uint8_t cmd);
+extern void ili_send_command(uint8_t cmd);
 
 /**
  * @brief Send a command byte and argument data to the controller.
@@ -195,7 +197,7 @@ extern void ili_command(uint8_t cmd);
  * @param data A pointer to a byte buffer of argument data
  * @param count The number of data bytes to send from the buffer
  */
-extern void ili_command_wd(uint8_t cmd, uint8_t* data, size_t count);
+extern void ili_send_command_wd(uint8_t cmd, uint8_t* data, size_t count);
 
 /**
  * @brief Display all of the colors in the palette
@@ -229,7 +231,7 @@ extern ili_disp_info_t* ili_info(void);
  * @brief Initialize the display.
  * @ingroup display
 */
-extern ili_ctrl_type ili_module_init(void);
+extern ili_controller_type ili_module_init(void);
 
 /**
  * @brief Paint a buffer of rgb16_t values to one horizontal line
