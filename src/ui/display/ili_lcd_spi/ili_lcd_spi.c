@@ -38,7 +38,7 @@ static uint16_t _old_y1 = 0xffff, _old_y2 = 0xffff;
 static bool _screen_dirty = true; // start out assuming dirty
 
 static ili_disp_info_t _ili_disp_info;
-static ili_ctrl_type _ili_controller_type = ILI_CTRL_NONE;
+static ili_controller_type _ili_controller_type = ILI_CONTROLLER_NONE;
 
 /**
  * Set the chip select for the display.
@@ -85,9 +85,9 @@ static void _op_end() {
 */
 static int _read_controller_values(uint8_t cmd, uint8_t* data, size_t count) {
     _command_mode(true);
-    spi_display_write(&cmd, 1);
+    spi_display_write8_buf(&cmd, 1);
     _command_mode(false);
-    int read = spi_display_read(0xFF, data, count);
+    int read = spi_display_read(SPI_HIGH_TXD_FOR_READ, data, count);
 
     return (read);
 }
@@ -98,7 +98,7 @@ static int _read_controller_values(uint8_t cmd, uint8_t* data, size_t count) {
 */
 static void _send_command(uint8_t cmd) {
     _command_mode(true);
-    spi_display_write(&cmd, 1);
+    spi_display_write8_buf(&cmd, 1);
     _command_mode(false);
 }
 
@@ -108,7 +108,7 @@ static void _send_command(uint8_t cmd) {
 */
 static void _send_command_wd(uint8_t cmd, const uint8_t* data, size_t count) {
     _send_command(cmd);
-    spi_display_write(data, count);
+    spi_display_write8_buf(data, count);
 }
 
 /** @brief Set window. MUST BE CALLED WITHIN `_op_begin` and `_op_end`!!! */
@@ -119,7 +119,8 @@ static void _set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
         _send_command(ILI_CASET); // Column address set
         words[0] = x;
         words[1] = x2;
-        spi_display_write16(words, 2);
+        spi_display_write16(words[0]);
+        spi_display_write16(words[1]);
         _old_x1 = x;
         _old_x2 = x2;
     }
@@ -127,7 +128,8 @@ static void _set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
         _send_command(ILI_PASET); // Page address set
         words[0] = y;
         words[1] = y2;
-        spi_display_write16(words, 2);
+        spi_display_write16(words[0]);
+        spi_display_write16(words[1]);
         _old_y1 = y;
         _old_y2 = y2;
     }
@@ -143,7 +145,7 @@ static void _set_window_fullscreen(void) {
  * @brief Paint a buffer onto the screen. MUST BE CALLED WITHIN AN OPERATION!
 */
 static void _write_area(const rgb16_t* rgb_pixel_data, uint16_t pixels) {
-    spi_display_write16(rgb_pixel_data, pixels);
+    spi_display_write16_buf(rgb_pixel_data, pixels);
 }
 
 /**
@@ -160,7 +162,7 @@ void ili_colors_show() {
             for (int r = 0; r < 32; r++) {
                 rgb16_t red = r << 11;
                 for (int col = 0; col < 4; col++) {
-                    spi_display_write16(&red, 1);
+                    spi_display_write16(red);
                 }
             }
         }
@@ -170,7 +172,7 @@ void ili_colors_show() {
             for (int g = 0; g < 64; g++) {
                 rgb16_t grn = g << 5;
                 for (int col = 0; col < 2; col++) {
-                    spi_display_write16(&grn, 1);
+                    spi_display_write16(grn);
                 }
             }
         }
@@ -180,21 +182,21 @@ void ili_colors_show() {
             for (int b = 0; b < 32; b++) {
                 rgb16_t blu = b;
                 for (int col = 0; col < 4; col++) {
-                    spi_display_write16(&blu, 1);
+                    spi_display_write16(blu);
                 }
             }
         }
         // Colors 0 - 0xFFFF
         _set_window(0, 12, 320, 228);
         for (rgb16_t i = 0; i < 0xFFFF; i++) {
-            spi_display_write16(&i, 1);
+            spi_display_write16(i);
         }
     }
     _op_end();
     _screen_dirty = true;
 }
 
-void ili_command(uint8_t cmd) {
+void ili_send_command(uint8_t cmd) {
     _op_begin();
     {
         _send_command(cmd);
@@ -202,7 +204,7 @@ void ili_command(uint8_t cmd) {
     _op_end();
 }
 
-void ili_command_wd(uint8_t cmd, uint8_t* data, size_t count) {
+void ili_send_command_wd(uint8_t cmd, uint8_t* data, size_t count) {
     _op_begin();
     {
         _send_command_wd(cmd, data, count);
@@ -324,10 +326,10 @@ void ili_scroll_set_area(uint16_t top_fixed_lines, uint16_t bottom_fixed_lines) 
         words[0] = top_fixed_lines;
         words[1] = _screen_height - (top_fixed_lines + bottom_fixed_lines);
         words[2] = bottom_fixed_lines;
-        spi_display_write16(words, 3);
+        spi_display_write16_buf(words, 3);
         _send_command(ILI_VSCRSADD);
         uint16_t row = top_fixed_lines;
-        spi_display_write16(&row, 1);
+        spi_display_write16(row);
         // Set window within the scroll area
     }
     _op_end();
@@ -337,7 +339,7 @@ void ili_scroll_set_start(uint16_t row) {
     _op_begin();
     {
         _send_command(ILI_VSCRSADD);
-        spi_display_write16(&row, 1);
+        spi_display_write16(row);
     }
     _op_end();
 }
@@ -393,7 +395,7 @@ void ili_screen_clr(rgb16_t color, bool force) {
     }
 }
 
-ili_ctrl_type ili_module_init(void) {
+ili_controller_type ili_module_init(void) {
     // Take reset low, then high
     gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_OFF);
     sleep_ms(20);
@@ -408,14 +410,14 @@ ili_ctrl_type ili_module_init(void) {
     bool ZZZ = true;
     ili_disp_info_t* info = ili_info();
     if (ZZZ || (info->lcd_id4_ic_model1 == ILI9341_ID_MODEL1 && info->lcd_id4_ic_model2 == ILI9341_ID_MODEL2)) {
-        _ili_controller_type = ILI_CTRL_9341;
+        _ili_controller_type = ILI_CONTROLLER_9341;
         init_cmd_data = ili9341_init_cmd_data;
         _screen_height = ILI9341_HEIGHT;
         _screen_width = ILI9341_WIDTH;
         _ili_line_buf = malloc(_screen_width * sizeof(rgb16_t));
     }
     else if (!ZZZ || (info->lcd_id4_ic_model1 == ILI9488_ID_MODEL1 && info->lcd_id4_ic_model2 == ILI9488_ID_MODEL2)) {
-        _ili_controller_type = ILI_CTRL_9341;
+        _ili_controller_type = ILI_CONTROLLER_9341;
         init_cmd_data = ili9488_init_cmd_data;
         _screen_height = ILI9488_HEIGHT;
         _screen_width = ILI9488_WIDTH;
@@ -425,7 +427,7 @@ ili_ctrl_type ili_module_init(void) {
         warn_printf(false, "Cannot determine display controller type (9341 or 9488)");
     }
 
-    if (_ili_controller_type != ILI_CTRL_NONE) {
+    if (_ili_controller_type != ILI_CONTROLLER_NONE) {
         uint8_t cmd, x, numArgs;
         _op_begin();
         {

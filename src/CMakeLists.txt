@@ -36,6 +36,7 @@ add_subdirectory(be)
 add_subdirectory(config)
 add_subdirectory(cmt)
 add_subdirectory(data)
+add_subdirectory(gfx)
 add_subdirectory(kob)
 add_subdirectory(mks)
 add_subdirectory(morse)
@@ -78,6 +79,7 @@ include_directories(
   config
   cmt
   data
+  gfx
   kob
   mks
   morse
@@ -114,6 +116,7 @@ target_link_libraries(MuKOB
   cmt
   data
   display
+  gfx
   ili_lcd_spi
   kob
   mks

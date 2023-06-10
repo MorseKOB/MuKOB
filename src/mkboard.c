@@ -36,12 +36,14 @@
 
 #include "config.h"
 #include "display.h"
+#include "ili_lcd_spi.h"
 #include "kob.h"
 #include "mkboard.h"
 #include "mkdebug.h"
 #include "multicore.h"
 #include "net.h"
 #include "term.h"
+#include "touch.h"
 #include "util.h"
 
 static uint8_t _options_value = 0;
@@ -96,11 +98,11 @@ int board_init() {
     }
     cyw43_arch_enable_sta_mode();
 
-    // SPI 0 initialization for the touch and SD card. Use SPI at 8MHz.
-    spi_init(SPI_TSD_DEVICE, 8000 * 1000);
-    gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_TSD_MISO, GPIO_FUNC_SPI);
+    // SPI 0 initialization for the touch and SD card. Use SPI at 2.2MHz.
+    spi_init(SPI_TOUCH_DEVICE, 2200 * 1000);
+    gpio_set_function(SPI_TOUCH_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TOUCH_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TOUCH_MISO, GPIO_FUNC_SPI);
     // SPI 1 initialization for the display. Use SPI at 18MHz.
     spi_init(SPI_DISPLAY_DEVICE, 18000 * 1000);
     gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
@@ -117,8 +119,8 @@ int board_init() {
     gpio_set_dir(SPI_CS_SDCARD, GPIO_OUT);
     gpio_set_dir(SPI_CS_TOUCH, GPIO_OUT);
     // Signal drive strengths
-    gpio_set_drive_strength(SPI_TSD_SCK, GPIO_DRIVE_STRENGTH_4MA);      // Multiple devices connected
-    gpio_set_drive_strength(SPI_TSD_MOSI, GPIO_DRIVE_STRENGTH_4MA);     // Multiple devices connected
+    gpio_set_drive_strength(SPI_TOUCH_SCK, GPIO_DRIVE_STRENGTH_4MA);      // Multiple devices connected
+    gpio_set_drive_strength(SPI_TOUCH_MOSI, GPIO_DRIVE_STRENGTH_4MA);     // Multiple devices connected
     gpio_set_drive_strength(SPI_DISPLAY_SCK, GPIO_DRIVE_STRENGTH_2MA);  // SPI Display is a single device
     gpio_set_drive_strength(SPI_DISPLAY_MOSI, GPIO_DRIVE_STRENGTH_2MA); // SPI Display is a single device
     gpio_set_drive_strength(SPI_CS_DISPLAY, GPIO_DRIVE_STRENGTH_2MA);   // CS goes to a single device
@@ -225,6 +227,8 @@ int board_init() {
     disp_module_init();
     disp_print_wrap_len_set(system_cfg->disp_wrap_back);
     display_backlight_on(true);
+    // Initialize the touch panel
+    tp_init(5, ili_screen_height(), ili_screen_width(), 1, 0, 1, 0);
 
     // Initialize the multicore subsystem
     multicore_module_init();

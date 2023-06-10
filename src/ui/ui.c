@@ -19,6 +19,7 @@
 #include "multicore.h"
 #include "re_pbsw.h"
 #include "rotary_encoder.h"
+#include "touch.h"
 #include "util.h"
 #include "ui_disp.h"
 #include "ui_term.h"
@@ -40,6 +41,7 @@ static void _handle_code_window_output(cmt_msg_t* msg);
 static void _handle_config_changed(cmt_msg_t* msg);
 static void _handle_init_terminal(cmt_msg_t* msg);
 static void _handle_kob_status(cmt_msg_t* msg);
+static void _handle_touch_panel(cmt_msg_t* msg);
 static void _handle_update_ui_status(cmt_msg_t* msg);
 static void _handle_wifi_conn_status_update(cmt_msg_t* msg);
 static void _handle_wire_changed(cmt_msg_t* msg);
@@ -63,6 +65,7 @@ static const msg_handler_entry_t _display_in_code_window_entry = { MSG_CODE_TEXT
 static const msg_handler_entry_t _force_to_code_window_entry = { MSG_DISPLAY_MESSAGE, _handle_code_window_output };
 static const msg_handler_entry_t _input_char_ready_handler_entry = { MSG_INPUT_CHAR_READY, _ui_term_handle_input_char_ready };
 static const msg_handler_entry_t _kob_status_handler_entry = { MSG_KOB_STATUS, _handle_kob_status };
+static const msg_handler_entry_t _touch_panel_handler_entry = { MSG_TOUCH_PANEL, _handle_touch_panel };
 static const msg_handler_entry_t _update_status_handler_entry = { MSG_UPDATE_UI_STATUS, _handle_update_ui_status };
 static const msg_handler_entry_t _wifi_status_handler_entry = { MSG_WIFI_CONN_STATUS_UPDATE, _handle_wifi_conn_status_update };
 static const msg_handler_entry_t _wire_changed_handler_entry = { MSG_WIRE_CHANGED, _handle_wire_changed };
@@ -84,6 +87,7 @@ static const msg_handler_entry_t* _handler_entries[] = {
     &_input_char_ready_handler_entry,
     &_kob_status_handler_entry,
     &_cmd_key_pressed_handler_entry,
+    &_touch_panel_handler_entry,
     &_wire_current_sender_handler_entry,
     &_wire_station_id_handler_entry,
     &_wire_stations_cleared_handler_entry,
@@ -117,6 +121,7 @@ static const char* _sender_id = NULL;
 static void _ui_idle_function_1() {
     // Something to do when there are no messages to process.
     uint32_t now = now_ms();
+
     if (_last_status_update_ts + _UI_STATUS_PULSE_PERIOD < now) {
         // Post update status message
         _msg_ui_update_status.id = MSG_UPDATE_UI_STATUS;
@@ -207,6 +212,13 @@ static void _handle_init_terminal(cmt_msg_t* msg) {
 static void _handle_kob_status(cmt_msg_t* msg) {
     ui_disp_update_kob_status(&(msg->data.kob_status));
     ui_term_update_kob_status(&(msg->data.kob_status));
+}
+
+static void _handle_touch_panel(cmt_msg_t* msg) {
+    gfx_point *sp = msg->data.touch_point;
+    gfx_point *pp = tp_last_panel_point();
+    uint16_t f = tp_last_touch_force();
+    debug_printf(false, "Touch - Screen:%3.3d,%3.3d  Panel:%5.5d,%5.5d  Force:%5.5u\n", sp->x, sp->y, pp->x, pp->y, f);
 }
 
 static void _handle_update_ui_status(cmt_msg_t* msg) {
@@ -374,6 +386,11 @@ void _ui_gpio_irq_handler(uint gpio, uint32_t events) {
         case IRQ_rotary_TURN:
             re_turn_irq_handler(gpio, events);
             break;
+        case IRQ_TOUCH:
+            gpio_set_irq_enabled(IRQ_TOUCH, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
+            tp_irq_handler(gpio, events);
+            gpio_set_irq_enabled(IRQ_TOUCH, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+            break;
     }
 }
 
@@ -395,6 +412,7 @@ void ui_module_init() {
     rotary_encoder_module_init();
     gpio_set_irq_enabled_with_callback(IRQ_rotary_TURN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &_ui_gpio_irq_handler);
     gpio_set_irq_enabled(IRQ_rotary_SW, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
+    gpio_set_irq_enabled(IRQ_TOUCH, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 
     ui_disp_build();
     _ui_init_terminal_shell();

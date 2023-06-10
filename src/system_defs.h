@@ -26,10 +26,10 @@ extern "C" {
 // Note: 'Pins' are the GPIO number, not the physical pins on the device.
 
 // Using SPI 0 for the Touch and SD
-#define SPI_TSD_DEVICE spi0     // Hardware SPI to use
-#define SPI_TSD_MOSI  3         // DP-5
-#define SPI_TSD_MISO 4          // DP-6
-#define SPI_TSD_SCK  2          // DP-4
+#define SPI_TOUCH_DEVICE spi0     // Hardware SPI to use
+#define SPI_TOUCH_MOSI  3         // DP-5
+#define SPI_TOUCH_MISO 4          // DP-6
+#define SPI_TOUCH_SCK  2          // DP-4
 
 // Using SPI 1, and allocate it to the following GPIO pins
 #define SPI_DISPLAY_DEVICE spi1 // Hardware SPI to use

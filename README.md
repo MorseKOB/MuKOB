@@ -1,11 +1,21 @@
-# MuKOB (μKOB) - Micro-controller version MorseKOB client
+# MuKOB (μKOB) - Micro-controller based MorseKOB Client Device
 
-Targeted at the Raspberry Pi Pico W (RP2040 CPU) with some specific
-parapherals.
+Raspberry Pi Pico W (RP2040 CPU) based device with a built-in display and
+a terminal interface. Uses built-in wifi to connect to the MorseKOB Server.
+
+It interfaces to a KOB, Key + Sounder, Key + Tone, Paddle + Tone, etc. to provide Morse
+input and output. The device can operate completely stand-alone (using the
+display-touchscreen) or it can connect to a VT-220 terminal (or emulator like Putty)
+to provide a larger interface and allow keyboard input.
+
+It supports both American (railroad) and International code with sounder or tone
+output, and allows use of Farnsworth word/character timing to promote improving
+copying speed.
 
 # References
 * [MorseKOB Main Project](https://github.com/MorseKOB)
 * [PyKOB - The full/computer MorseKOB Client Application, utilities and Python libraries](https://github.com/MorseKOB/PyKOB)
+* [Raspberry Pi Pico W](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html)
 * [FatFs - Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/00index_e.html)
 * [no-OS-FatFS-SD-SPI-RPi-Pico](https://github.com/carlk3/no-OS-FatFS-SD-SPI-RPi-Pico)
 

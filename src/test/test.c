@@ -15,7 +15,7 @@
 #include "system_defs.h"
 #include "config.h"
 #include "display.h"
-#include "ili9341_spi.h"
+#include "ili_lcd_spi.h"
 #include "mkboard.h"
 #include "term.h"
 #include "util.h"
@@ -130,7 +130,7 @@ void test_ili9341_show_scroll() {
     // Now scroll the ILI9341 (10 times)
     for (int i = 0; i < 10; i++) {
         for (int ss = 0; ss < 320; ss += 8) {
-            ili9341_scroll_set_start(ss);
+            ili_scroll_set_start(ss);
         }
     }
 }

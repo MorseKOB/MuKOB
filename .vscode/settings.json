@@ -26,6 +26,8 @@
     "cmake.sourceDirectory": "${workspaceFolder}/src",
     "files.associations": {
         "adc.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "spi.h": "c",
+        "re_pbsw.h": "c"
     }
 }

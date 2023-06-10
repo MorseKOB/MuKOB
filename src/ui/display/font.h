@@ -53,6 +53,10 @@ extern "C" {
 
 #define PARAGRAPH_CHR                   0x7Fu   // \177
 
+/**
+ * @brief Information about a font.
+ * @ingroup display
+ */
 typedef struct font_info_ {
     const char *name;
     const int8_t width;

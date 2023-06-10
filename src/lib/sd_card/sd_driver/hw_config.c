@@ -45,10 +45,10 @@ void spi_dma_isr();
 // Note: multiple SD cards can be driven by one SPI if they use different slave selects.
 static spi_t spis[] = {  // One for each SPI.
     {
-        .hw_inst = SPI_TSD_DEVICE,      // SPI component
-        .miso_gpio = SPI_TSD_MISO,      // GPIO number (not pin number)
-        .mosi_gpio = SPI_TSD_MOSI,
-        .sck_gpio = SPI_TSD_SCK,
+        .hw_inst = SPI_TOUCH_DEVICE,      // SPI component
+        .miso_gpio = SPI_TOUCH_MISO,      // GPIO number (not pin number)
+        .mosi_gpio = SPI_TOUCH_MOSI,
+        .sck_gpio = SPI_TOUCH_SCK,
         .set_drive_strength = true,
         .mosi_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
         .sck_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
