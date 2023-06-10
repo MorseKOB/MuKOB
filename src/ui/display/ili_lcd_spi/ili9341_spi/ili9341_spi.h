@@ -19,6 +19,10 @@
 #define ILI9341_ID_MODEL1 93
 #define ILI9341_ID_MODEL2 41
 
+/**
+ * @brief ILI Controller initialization data.
+ * @ingroup display
+ */
 extern const uint8_t ili9341_init_cmd_data[];
 
 #ifdef __cplusplus

@@ -36,6 +36,7 @@ add_subdirectory(be)
 add_subdirectory(config)
 add_subdirectory(cmt)
 add_subdirectory(data)
+add_subdirectory(gfx)
 add_subdirectory(kob)
 add_subdirectory(mks)
 add_subdirectory(morse)
@@ -58,7 +59,7 @@ pico_set_program_version(MuKOB "0.1")
 # Use the UART while using the Picoprobe
 # For Release the USB will be better
 pico_enable_stdio_uart(MuKOB 1)
-pico_enable_stdio_usb(MuKOB 1)
+pico_enable_stdio_usb(MuKOB 0)
 
 # Add the required include file paths to the build
 include_directories(
@@ -78,6 +79,7 @@ include_directories(
   config
   cmt
   data
+  gfx
   kob
   mks
   morse
@@ -114,6 +116,7 @@ target_link_libraries(MuKOB
   cmt
   data
   display
+  gfx
   ili_lcd_spi
   kob
   mks

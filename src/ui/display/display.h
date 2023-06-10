@@ -53,7 +53,10 @@ typedef enum colorn16 {
     C16_BR_WHITE
 } colorn16_t;
 
-/** @brief Use in display method calls to cause the screen to be printed */
+/** 
+ * @brief Use in display method calls to cause the screen to be printed
+ * @ingroup display
+ */
 typedef enum Paint_Control_ {
     No_Paint = 0,
     Paint,
@@ -70,6 +73,7 @@ typedef struct _scr_position_ {
 
 /**
  * @brief Text foreground and background color pair.
+ * @ingroup display
  */
 typedef struct _text_color_pair_ {
     colorn16_t fg;
@@ -244,6 +248,7 @@ extern void disp_text_colors_get(text_color_pair_t* cp);
 
 /**
  * @brief Display info - number of text columns
+ * @ingroup display
  *
  * Columns are numbered 0 through number of columns minus 1.
  *
@@ -253,6 +258,7 @@ extern uint16_t disp_info_columns();
 
 /**
  * @brief Display info - number of text lines
+ * @ingroup display
  *
  * Lines are numbered 0 through number of lines minus 1.
  *
@@ -262,6 +268,7 @@ extern uint16_t disp_info_lines();
 
 /**
  * @brief Display info - number of fixed text lines at the top of the display
+ * @ingroup display
  *
  * @return uint16_t The number of fixed lines
  */
@@ -269,6 +276,7 @@ extern uint16_t disp_info_fixed_top_lines();
 
 /**
  * @brief Display info - number of fixed text lines a the bottom of the display
+ * @ingroup display
  *
  * @return uint16_t The number of fixed lines
  */
@@ -276,6 +284,7 @@ extern uint16_t disp_info_fixed_bottom_lines();
 
 /**
  * @brief Display info - number of lines that scroll
+ * @ingroup display
  *
  * The scroll lines are the lines between the top fixed area and the bottom fixed
  * area. There can be as few as 0, and as many as the full screen, scroll lines.
@@ -481,6 +490,7 @@ extern void disp_screen_close();
 
 /**
  * @brief Create a new (sub) screen to work with.
+ * @ingroup display
  *
  * This creates a new screen context and makes it the current context. The previous screen is saved
  * until this one is closed. The screens are kept on a stack. When done with the screen, use

@@ -25,6 +25,7 @@ extern "C" {
 
 /**
  * @brief Context for a screen.
+ * @ingroup display
  *
  * Defines an active sreen.
  */
@@ -49,6 +50,7 @@ typedef struct scr_context_ {
 
 /**
  * @brief Test if there are screen contexts available on the stack.
+ * @ingroup display
  *
  * @return true If screen contexts are available.
  * @return false If no contexts are available.
@@ -57,6 +59,7 @@ bool _has_scr_context();
 
 /**
  * @brief Peek the top screen context.
+ * @ingroup display
  *
  * @return scr_context_t* The top context or NULL if none exist.
  */
@@ -64,6 +67,7 @@ scr_context_t* _peek_scr_context();
 
 /**
  * @brief Pop the top screen context from the stack.
+ * @ingroup display
  *
  * @return scr_context_t* The top context or NULL if none exist.
  */
@@ -71,6 +75,7 @@ scr_context_t* _pop_scr_context();
 
 /**
  * @brief Push a screen context on the stack.
+ * @ingroup display
  *
  * @param sc The screen context to push.
  * @return true If the context could be pushed.
