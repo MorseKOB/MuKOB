@@ -21,8 +21,9 @@ build/
 *.dsn
 Fp-info-cache
 
-# Word temporary
+# temporary
 ~$*.docx
+*.bak
 
 # Local info
 *.private
