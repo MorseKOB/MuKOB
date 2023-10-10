@@ -15,58 +15,6 @@
   )
 
   (lib_symbols
-    (symbol "+3.3V_1" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
-      (property "Reference" "#PWR" (at 0 -3.81 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "Value" "+3.3V_1" (at 0 3.556 0)
-        (effects (font (size 1.27 1.27)))
-      )
-      (property "Footprint" "" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "Datasheet" "" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "ki_keywords" "global power" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "ki_description" "Power symbol creates a global label with name \"+3.3V\"" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (symbol "+3.3V_1_0_1"
-        (polyline
-          (pts
-            (xy -0.762 1.27)
-            (xy 0 2.54)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0 0)
-            (xy 0 2.54)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0 2.54)
-            (xy 0.762 1.27)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-      )
-      (symbol "+3.3V_1_1_1"
-        (pin power_in line (at 0 0 90) (length 0) hide
-          (name "+3.3V" (effects (font (size 1.27 1.27))))
-          (number "1" (effects (font (size 1.27 1.27))))
-        )
-      )
-    )
     (symbol "Connector:Micro_SD_Card_Det" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "J3" (at -17.78 -19.05 0)
         (effects (font (size 1.27 1.27)))
@@ -2126,7 +2074,7 @@
       (property "Datasheet" "" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "ki_keywords" "power-flag" (at 0 0 0)
+      (property "ki_keywords" "global power" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
       (property "ki_description" "Power symbol creates a global label with name \"+3.3V\"" (at 0 0 0)
@@ -2160,7 +2108,7 @@
       )
       (symbol "+3.3V_1_1"
         (pin power_in line (at 0 0 90) (length 0) hide
-          (name "+3V3" (effects (font (size 1.27 1.27))))
+          (name "+3.3V" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
       )
@@ -2178,7 +2126,7 @@
       (property "Datasheet" "" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "ki_keywords" "power-flag" (at 0 0 0)
+      (property "ki_keywords" "global power" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
       (property "ki_description" "Power symbol creates a global label with name \"+3.3VA\"" (at 0 0 0)
@@ -2468,6 +2416,8 @@
 
   (no_connect (at 68.58 86.36) (uuid 02df6d7b-d8c1-4f11-8ebd-ccace33bf2b2))
   (no_connect (at 68.58 104.14) (uuid 23e2854e-7824-4a9f-b74d-779c4801cf27))
+  (no_connect (at 147.32 138.43) (uuid 3ff14533-a04e-4217-926e-7ed72a20907f))
+  (no_connect (at 142.24 138.43) (uuid 4144ddf2-6313-4ec7-ac0e-8ce9ce88a878))
   (no_connect (at 162.56 86.36) (uuid 53402558-2490-4e88-b25b-815849e914df))
   (no_connect (at 359.41 66.04) (uuid 7653fb4c-4e1a-473b-9b1a-ea5d91e4f58a))
   (no_connect (at 359.41 68.58) (uuid 8573a447-bce0-4ab6-9813-7179290c1dbc))
@@ -2524,6 +2474,10 @@
   (wire (pts (xy 81.28 88.9) (xy 81.28 93.98))
     (stroke (width 0) (type default))
     (uuid 0e5b0cad-e816-4f48-b309-620a4661ce0e)
+  )
+  (wire (pts (xy 344.17 26.67) (xy 344.17 27.94))
+    (stroke (width 0) (type default))
+    (uuid 0e75b537-3d1e-4af8-b6b1-6a45855e7ec5)
   )
   (wire (pts (xy 184.15 125.73) (xy 196.85 125.73))
     (stroke (width 0) (type default))
@@ -3954,11 +3908,11 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 2fafe68b-7224-416b-ae3c-7ec69c08ee34)
   )
-  (label "VCC" (at 383.54 97.79 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
+  (label "+3.3V" (at 387.35 97.79 180) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 310f9b33-3ef2-4b55-8e7b-86c1eee2ef9e)
   )
-  (label "VCC" (at 364.49 185.42 0) (fields_autoplaced)
+  (label "+3.3V" (at 364.49 185.42 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 3573b629-07a6-40b6-956c-21b8b610f2f5)
   )
@@ -4022,11 +3976,11 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 72e7b8dc-0095-4a51-84e9-1f42ed34d9d5)
   )
-  (label "VCC" (at 383.54 121.92 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
+  (label "+3.3V" (at 387.35 121.92 180) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 73230ef4-3125-477d-849f-30313487a0d7)
   )
-  (label "VCC" (at 364.49 147.32 0) (fields_autoplaced)
+  (label "+3.3V" (at 364.49 147.32 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 783296f0-5aca-4fbb-816f-708d7025a128)
   )
@@ -4058,7 +4012,7 @@
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 99406e9a-a141-4405-9f71-dca2aac853ad)
   )
-  (label "VCC" (at 364.49 182.88 0) (fields_autoplaced)
+  (label "+3.3V" (at 364.49 182.88 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 9ca83ac1-7cce-49e6-8315-1279e57ca352)
   )
@@ -4070,7 +4024,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid a182c998-3c05-4e5f-bb96-9d10453c1a59)
   )
-  (label "VCC" (at 364.49 220.98 0) (fields_autoplaced)
+  (label "+3.3V" (at 364.49 220.98 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid a23eb9a7-138f-42bf-8ecf-5a5670e3054e)
   )
@@ -4223,10 +4177,18 @@
     (uuid fdf3b167-7ef0-4095-bc38-b37785e023cc)
   )
 
+  (netclass_flag "" (length 2.54) (shape round) (at 177.8 76.2 270)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid 208d9973-45c5-4e82-877e-a38d835605ab)
+    (property "Netclass" "VCC3" (at 179.07 78.74 0)
+      (effects (font (size 1.27 1.27) italic) (justify left))
+    )
+  )
+
   (symbol (lib_id "RPi_Pico:PicoW") (at 144.78 102.87 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005ef5c72b)
-    (property "Reference" "U2" (at 144.78 74.93 0)
+    (property "Reference" "U1" (at 144.78 74.93 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "PicoW" (at 144.78 86.36 0)
@@ -4284,7 +4246,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "U2") (unit 1)
+          (reference "U1") (unit 1)
         )
       )
       (project ""
@@ -4298,7 +4260,7 @@
   (symbol (lib_id "Connector:Micro_SD_Card_Det") (at 45.72 96.52 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005ef60886)
-    (property "Reference" "J4" (at 63.5 115.57 0)
+    (property "Reference" "J1" (at 63.5 115.57 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "MicroSD-Socket w/Det" (at 38.1 95.25 0)
@@ -4323,7 +4285,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "J4") (unit 1)
+          (reference "J1") (unit 1)
         )
       )
       (project ""
@@ -4337,7 +4299,7 @@
   (symbol (lib_id "Device:C") (at 64.77 64.77 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005eff57b3)
-    (property "Reference" "C6" (at 67.691 63.6016 0)
+    (property "Reference" "C1" (at 67.691 63.6016 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10u" (at 67.691 65.913 0)
@@ -4354,7 +4316,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "C6") (unit 1)
+          (reference "C1") (unit 1)
         )
       )
       (project ""
@@ -4399,7 +4361,7 @@
   (symbol (lib_id "power:GND") (at 76.2 120.65 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005eff666e)
-    (property "Reference" "#PWR013" (at 76.2 127 0)
+    (property "Reference" "#PWR04" (at 76.2 127 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 76.073 125.0442 0)
@@ -4415,7 +4377,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR013") (unit 1)
+          (reference "#PWR04") (unit 1)
         )
       )
       (project ""
@@ -4429,7 +4391,7 @@
   (symbol (lib_id "power:GND") (at 64.77 68.58 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005f22c820)
-    (property "Reference" "#PWR05" (at 64.77 74.93 0)
+    (property "Reference" "#PWR03" (at 64.77 74.93 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 64.643 72.9742 0)
@@ -4445,7 +4407,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR05") (unit 1)
+          (reference "#PWR03") (unit 1)
         )
       )
       (project ""
@@ -4489,7 +4451,7 @@
   (symbol (lib_id "power:VBUS") (at 165.1 76.2 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005f26d1e5)
-    (property "Reference" "#PWR07" (at 165.1 80.01 0)
+    (property "Reference" "#PWR010" (at 165.1 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VBUS" (at 165.481 71.8058 0)
@@ -4505,7 +4467,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR07") (unit 1)
+          (reference "#PWR010") (unit 1)
         )
       )
       (project ""
@@ -4519,7 +4481,7 @@
   (symbol (lib_id "power:GND") (at 24.13 110.49 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005f383c0a)
-    (property "Reference" "#PWR012" (at 24.13 116.84 0)
+    (property "Reference" "#PWR01" (at 24.13 116.84 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 24.003 114.8842 0)
@@ -4535,7 +4497,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR012") (unit 1)
+          (reference "#PWR01") (unit 1)
         )
       )
       (project ""
@@ -4665,7 +4627,7 @@
   (symbol (lib_id "power:+3.3V") (at 177.8 76.2 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005f4c117e)
-    (property "Reference" "#PWR08" (at 177.8 80.01 0)
+    (property "Reference" "#PWR013" (at 177.8 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 178.181 71.8058 0)
@@ -4681,7 +4643,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR08") (unit 1)
+          (reference "#PWR013") (unit 1)
         )
       )
       (project ""
@@ -4726,7 +4688,7 @@
   (symbol (lib_id "power:GND") (at 361.95 129.54 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00005f87d47d)
-    (property "Reference" "#PWR014" (at 361.95 135.89 0)
+    (property "Reference" "#PWR021" (at 361.95 135.89 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 361.823 133.9342 0)
@@ -4742,7 +4704,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR014") (unit 1)
+          (reference "#PWR021") (unit 1)
         )
       )
       (project ""
@@ -4756,7 +4718,7 @@
   (symbol (lib_id "power:+3.3V") (at 346.71 143.51 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 011a12a3-b9a0-4cb1-9030-7d8bc46b8817)
-    (property "Reference" "#PWR011" (at 346.71 147.32 0)
+    (property "Reference" "#PWR019" (at 346.71 147.32 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 347.091 139.1158 0)
@@ -4772,7 +4734,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR011") (unit 1)
+          (reference "#PWR019") (unit 1)
         )
       )
       (project ""
@@ -4817,7 +4779,7 @@
   (symbol (lib_id "MuKOB:Option_A-B") (at 195.58 99.06 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 051b6bc4-e4d2-42fe-9b51-d41b9c9c644d)
-    (property "Reference" "OP1" (at 195.58 88.9 0)
+    (property "Reference" "OP3" (at 195.58 88.9 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "OP_A-B" (at 195.58 99.06 0)
@@ -4835,7 +4797,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "OP1") (unit 1)
+          (reference "OP3") (unit 1)
         )
       )
     )
@@ -4844,7 +4806,7 @@
   (symbol (lib_name "GND_3") (lib_id "power:GND") (at 144.78 139.7 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 05480a24-60b0-4a4a-b4fc-2960671e2569)
-    (property "Reference" "#PWR017" (at 144.78 146.05 0)
+    (property "Reference" "#PWR07" (at 144.78 146.05 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 143.51 135.89 90)
@@ -4860,7 +4822,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR017") (unit 1)
+          (reference "#PWR07") (unit 1)
         )
       )
     )
@@ -4869,7 +4831,7 @@
   (symbol (lib_id "Interface_UART:MAX3221") (at 344.17 50.8 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0717e3d0-99fb-4a66-a596-62dc52ab0ff9)
-    (property "Reference" "U1" (at 346.1259 27.94 0)
+    (property "Reference" "U3" (at 346.1259 27.94 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "MAX3221" (at 340.36 49.53 0)
@@ -4900,7 +4862,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "U1") (unit 1)
+          (reference "U3") (unit 1)
         )
       )
     )
@@ -4928,7 +4890,7 @@
           (reference "TP7") (unit 1)
         )
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "TP13") (unit 1)
+          (reference "TP2") (unit 1)
         )
       )
     )
@@ -4937,7 +4899,7 @@
   (symbol (lib_id "Device:C_Small") (at 363.22 55.88 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 24b75589-d6ce-4455-95f5-4bc800fb7f8f)
-    (property "Reference" "C5" (at 363.22 50.8 90)
+    (property "Reference" "C6" (at 363.22 50.8 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "0.1uF" (at 364.49 53.34 90)
@@ -4954,7 +4916,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "C5") (unit 1)
+          (reference "C6") (unit 1)
         )
       )
     )
@@ -4963,7 +4925,7 @@
   (symbol (lib_name "GND_7") (lib_id "power:GND") (at 165.1 139.7 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 2b4b6e94-dfa1-442b-9a1f-939daffe011c)
-    (property "Reference" "#PWR016" (at 165.1 146.05 0)
+    (property "Reference" "#PWR011" (at 165.1 146.05 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 165.1 144.78 0)
@@ -4979,7 +4941,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR016") (unit 1)
+          (reference "#PWR011") (unit 1)
         )
       )
     )
@@ -5007,7 +4969,7 @@
           (reference "TP11") (unit 1)
         )
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "TP11") (unit 1)
+          (reference "TP3") (unit 1)
         )
       )
     )
@@ -5044,7 +5006,7 @@
   (symbol (lib_id "MuKOB:MCP23S08-E/SO") (at 144.78 200.66 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3e44a391-de2c-4b39-9e72-2dfc977467d8)
-    (property "Reference" "U3" (at 144.78 176.53 0)
+    (property "Reference" "U2" (at 144.78 176.53 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "MCP23S08-E/SO" (at 144.78 179.07 0)
@@ -5077,7 +5039,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "U3") (unit 1)
+          (reference "U2") (unit 1)
         )
       )
     )
@@ -5086,7 +5048,7 @@
   (symbol (lib_name "GND_6") (lib_id "power:GND") (at 279.4 67.31 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 40a152a6-3309-4304-87ef-a92768c0e7da)
-    (property "Reference" "#PWR03" (at 279.4 73.66 0)
+    (property "Reference" "#PWR016" (at 279.4 73.66 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 279.4 72.39 0)
@@ -5102,7 +5064,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR03") (unit 1)
+          (reference "#PWR016") (unit 1)
         )
       )
     )
@@ -5138,7 +5100,7 @@
   (symbol (lib_name "GND_7") (lib_id "power:GND") (at 162.56 218.44 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 46a5d280-ec78-4369-9e2e-7d15002f72da)
-    (property "Reference" "#PWR045" (at 162.56 224.79 0)
+    (property "Reference" "#PWR09" (at 162.56 224.79 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 162.56 222.25 0)
@@ -5154,7 +5116,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR045") (unit 1)
+          (reference "#PWR09") (unit 1)
         )
       )
     )
@@ -5163,7 +5125,7 @@
   (symbol (lib_id "power:+3.3V") (at 365.76 92.71 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5ad2e938-06ed-4724-b1af-da35198ffd83)
-    (property "Reference" "#PWR010" (at 365.76 96.52 0)
+    (property "Reference" "#PWR022" (at 365.76 96.52 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 366.141 88.3158 0)
@@ -5179,7 +5141,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR010") (unit 1)
+          (reference "#PWR022") (unit 1)
         )
       )
       (project ""
@@ -5193,7 +5155,7 @@
   (symbol (lib_id "Device:C_Small") (at 326.39 38.1 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5ecbbdc8-3d35-4f58-b072-9a92e8e70253)
-    (property "Reference" "C1" (at 326.3229 36.4418 0)
+    (property "Reference" "C3" (at 326.3229 36.4418 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1uF" (at 326.2865 39.8503 0)
@@ -5210,7 +5172,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "C1") (unit 1)
+          (reference "C3") (unit 1)
         )
       )
     )
@@ -5219,7 +5181,7 @@
   (symbol (lib_id "power:+3.3V") (at 162.56 177.8 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6159791b-b9cc-43db-87cb-65379c52e9f7)
-    (property "Reference" "#PWR046" (at 162.56 181.61 0)
+    (property "Reference" "#PWR08" (at 162.56 181.61 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 162.941 173.4058 0)
@@ -5235,7 +5197,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR046") (unit 1)
+          (reference "#PWR08") (unit 1)
         )
       )
       (project ""
@@ -5249,7 +5211,7 @@
   (symbol (lib_id "Device:C_Small") (at 363.22 43.18 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6fc56300-93bf-4c72-8684-1e287537a1eb)
-    (property "Reference" "C3" (at 363.22 38.1 90)
+    (property "Reference" "C5" (at 363.22 38.1 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "0.1uF" (at 364.49 40.64 90)
@@ -5266,7 +5228,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "C3") (unit 1)
+          (reference "C5") (unit 1)
         )
       )
     )
@@ -5275,7 +5237,7 @@
   (symbol (lib_name "GND_7") (lib_id "power:GND") (at 124.46 139.7 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 70a68738-5ffa-4b98-bad0-938f1a3505ef)
-    (property "Reference" "#PWR015" (at 124.46 146.05 0)
+    (property "Reference" "#PWR06" (at 124.46 146.05 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 124.46 144.78 0)
@@ -5291,7 +5253,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR015") (unit 1)
+          (reference "#PWR06") (unit 1)
         )
       )
     )
@@ -5300,7 +5262,7 @@
   (symbol (lib_id "MuKOB:VSYS") (at 171.45 76.2 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 7467d432-8648-4e3a-b69e-5ee6ae4f83cd)
-    (property "Reference" "#PWR025" (at 171.45 80.01 0)
+    (property "Reference" "#PWR012" (at 171.45 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VSYS" (at 171.2449 71.7879 0)
@@ -5316,32 +5278,32 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR025") (unit 1)
+          (reference "#PWR012") (unit 1)
         )
       )
     )
   )
 
-  (symbol (lib_name "+3.3V_1") (lib_id "power:+3.3V") (at 344.17 27.94 0) (unit 1)
+  (symbol (lib_id "power:+3.3V") (at 344.17 26.67 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 7b878e31-5f05-42da-99d0-e1fb225c99b8)
-    (property "Reference" "#PWR01" (at 344.17 31.75 0)
+    (property "Reference" "#PWR017" (at 344.17 30.48 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Value" "+3.3V" (at 344.17 24.13 0)
+    (property "Value" "+3.3V" (at 344.17 22.86 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "" (at 344.17 27.94 0)
+    (property "Footprint" "" (at 344.17 26.67 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "" (at 344.17 27.94 0)
+    (property "Datasheet" "" (at 344.17 26.67 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid 1a9eff79-c75a-417b-aa27-48b551230062))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR01") (unit 1)
+          (reference "#PWR017") (unit 1)
         )
       )
     )
@@ -5350,7 +5312,7 @@
   (symbol (lib_id "power:GNDA") (at 191.77 74.93 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 7f26043d-f174-488d-8ac6-cc25dbc402ef)
-    (property "Reference" "#PWR026" (at 191.77 81.28 0)
+    (property "Reference" "#PWR015" (at 191.77 81.28 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GNDA" (at 195.58 77.47 0)
@@ -5366,7 +5328,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR026") (unit 1)
+          (reference "#PWR015") (unit 1)
         )
       )
     )
@@ -5375,7 +5337,7 @@
   (symbol (lib_name "GND_1") (lib_id "power:GND") (at 344.17 76.2 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 7f90cde0-c06d-43ab-8685-4bfb7fdf2b81)
-    (property "Reference" "#PWR06" (at 344.17 82.55 0)
+    (property "Reference" "#PWR018" (at 344.17 82.55 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 344.17 80.01 0)
@@ -5391,7 +5353,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR06") (unit 1)
+          (reference "#PWR018") (unit 1)
         )
       )
     )
@@ -5400,7 +5362,7 @@
   (symbol (lib_name "GND_7") (lib_id "power:GND") (at 90.17 200.66 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 994df76f-279f-4d75-927d-d845f0a76fb3)
-    (property "Reference" "#PWR054" (at 90.17 207.01 0)
+    (property "Reference" "#PWR05" (at 90.17 207.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 90.17 204.47 0)
@@ -5416,7 +5378,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR054") (unit 1)
+          (reference "#PWR05") (unit 1)
         )
       )
     )
@@ -5504,7 +5466,7 @@
   (symbol (lib_id "Connector_Audio:AudioJack3") (at 388.62 31.75 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid be85bc47-b8b4-4f7a-be1a-b57a7dec7edd)
-    (property "Reference" "J1" (at 388.62 24.13 0)
+    (property "Reference" "J4" (at 388.62 24.13 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "SER_COM" (at 396.24 27.94 0)
@@ -5522,7 +5484,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "J1") (unit 1)
+          (reference "J4") (unit 1)
         )
       )
     )
@@ -5531,7 +5493,7 @@
   (symbol (lib_name "GND_4") (lib_id "power:GND") (at 369.57 67.31 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid c6017595-fb6c-48ce-b953-7e845e50e568)
-    (property "Reference" "#PWR04" (at 369.57 73.66 0)
+    (property "Reference" "#PWR023" (at 369.57 73.66 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 369.57 71.12 0)
@@ -5547,7 +5509,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR04") (unit 1)
+          (reference "#PWR023") (unit 1)
         )
       )
     )
@@ -5556,7 +5518,7 @@
   (symbol (lib_id "power:+3.3VA") (at 185.42 76.2 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d01b5f0b-b63e-4cdf-8445-e66623b33c0c)
-    (property "Reference" "#PWR09" (at 185.42 80.01 0)
+    (property "Reference" "#PWR014" (at 185.42 80.01 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3VA" (at 185.039 71.8058 0)
@@ -5572,7 +5534,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR09") (unit 1)
+          (reference "#PWR014") (unit 1)
         )
       )
       (project ""
@@ -5612,7 +5574,7 @@
   (symbol (lib_id "Connector_Generic:Conn_02x15_Odd_Even") (at 339.09 182.88 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid d5a5e56a-a139-497a-879f-6fce279bf7b6)
-    (property "Reference" "J7" (at 337.82 162.56 0)
+    (property "Reference" "J3" (at 337.82 162.56 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "Conn_02x15_Odd_Even" (at 337.82 162.56 0)
@@ -5657,7 +5619,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "J7") (unit 1)
+          (reference "J3") (unit 1)
         )
       )
     )
@@ -5666,7 +5628,7 @@
   (symbol (lib_id "power:GND") (at 346.71 224.79 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d78019e3-ad7b-4096-9959-6c4158433325)
-    (property "Reference" "#PWR019" (at 346.71 231.14 0)
+    (property "Reference" "#PWR020" (at 346.71 231.14 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 346.583 229.1842 0)
@@ -5682,7 +5644,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "#PWR019") (unit 1)
+          (reference "#PWR020") (unit 1)
         )
       )
       (project ""
@@ -5696,7 +5658,7 @@
   (symbol (lib_id "MuKOB:Option_A-B") (at 179.07 123.19 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid dd0c0e71-4b24-4f49-a637-702daa513cf2)
-    (property "Reference" "OP3" (at 179.07 123.19 0)
+    (property "Reference" "OP1" (at 179.07 123.19 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "OP_A-B" (at 179.07 123.19 0)
@@ -5714,7 +5676,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "OP3") (unit 1)
+          (reference "OP1") (unit 1)
         )
       )
     )
@@ -5723,7 +5685,7 @@
   (symbol (lib_id "Connector_Generic:Conn_01x30") (at 392.43 182.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e4bc6be2-fc36-4096-92d1-272897dfbbe2)
-    (property "Reference" "J8" (at 391.16 144.78 0)
+    (property "Reference" "J7" (at 391.16 144.78 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Conn_01x30" (at 394.97 186.055 0)
@@ -5768,7 +5730,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "J8") (unit 1)
+          (reference "J7") (unit 1)
         )
       )
     )
@@ -5796,7 +5758,7 @@
           (reference "TP7") (unit 1)
         )
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206"
-          (reference "TP12") (unit 1)
+          (reference "TP1") (unit 1)
         )
       )
     )
@@ -5842,7 +5804,7 @@
     )
     (instances
       (project "MuKOB"
-        (path "/048b0ad6-aff0-457c-90cc-1f291c176206" (page "4"))
+        (path "/048b0ad6-aff0-457c-90cc-1f291c176206" (page "3"))
       )
     )
   )
@@ -5871,7 +5833,7 @@
     )
     (instances
       (project "MuKOB"
-        (path "/048b0ad6-aff0-457c-90cc-1f291c176206" (page "3"))
+        (path "/048b0ad6-aff0-457c-90cc-1f291c176206" (page "2"))
       )
     )
   )

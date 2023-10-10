@@ -2164,7 +2164,7 @@
   )
 
   (text_box "Example: Sounder Type, Loop Voltage, Loop Resistor\n======================================================================\n| Instrument             | Nominal | Voltage | Loop      | R-Loop 1W |\n|                        | Current | Drop    | Voltage   |   (Ohms)  |\n|------------------------+---------+---------+-----------+-----------|\n| Line Sounder, 30 Ohm   |   70 ma |   2.1   |  5v / 12v |  39 / 150 |\n|------------------------+---------+---------+-----------+-----------|\n| Line Sounder, 120 Ohm  |   40 ma |   4.8   | 12v / 18v | 180 / 330 |\n|------------------------+---------+---------+-----------+-----------|\n| Local Sounder, 4 Ohm   |  240 ma |   0.96  |  5v / 12v |  16 /  47 |\n|------------------------+---------+---------+-----------+-----------|\n| Local Sounder, 50 Ohm  |  110 ma |   5.5   | 12v / 18v |  56 / 110 |\n|------------------------+---------+---------+-----------+-----------|\n| Local Sounder, 400 Ohm |   30 ma |  12.0   | 18v / 24v | 200 / 400 |\n======================================================================"
-    (at 227.33 101.6 0) (size 91.44 39.37)
+    (at 229.87 100.33 0) (size 91.44 39.37)
     (stroke (width 0) (type default))
     (fill (type none))
     (effects (font (face "Courier New") (size 1.5 1.5) (thickness 0.3) bold (color 0 72 0 1)) (justify left top))
@@ -2251,7 +2251,7 @@
   (symbol (lib_id "rpikobhat-rescue:LM393DR-dk_Linear-Comparators") (at 156.21 161.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000618cf273)
-    (property "Reference" "U6" (at 154.94 161.29 0)
+    (property "Reference" "U4" (at 154.94 161.29 0)
       (effects (font (size 1.524 1.524)))
     )
     (property "Value" "LM393ADR" (at 148.59 154.94 0)
@@ -2293,17 +2293,17 @@
     (pin "1" (uuid b3e8b74f-9dbf-4b62-9d7d-a7e3d4814c7a))
     (pin "2" (uuid a0bd3334-849b-489f-b60e-c495e65a4c43))
     (pin "3" (uuid 50889567-aed4-4de8-96d7-f93c3e5aa118))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b6a))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b9))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b6a))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b6c))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511bb))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b6c))
     (pin "5" (uuid 630a599a-59fe-4cc4-8060-a0f1608d748e))
     (pin "6" (uuid 1291e702-fca5-449c-b8f0-e5b1af09b146))
     (pin "7" (uuid 456805c2-847f-405d-839f-c0039cb5a9d4))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511b9))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511bb))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "U6") (unit 1)
+          (reference "U4") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2317,7 +2317,7 @@
   (symbol (lib_name "LM393DR-dk_Linear-Comparators_1") (lib_id "rpikobhat-rescue:LM393DR-dk_Linear-Comparators") (at 135.89 134.62 0) (unit 2)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000618d0478)
-    (property "Reference" "U6" (at 132.08 134.62 0)
+    (property "Reference" "U4" (at 132.08 134.62 0)
       (effects (font (size 1.524 1.524)) (justify left))
     )
     (property "Value" "LM393ADR" (at 123.19 128.27 0)
@@ -2359,17 +2359,17 @@
     (pin "1" (uuid 6009d08d-a7a8-4099-8bf2-e49852d9dd8a))
     (pin "2" (uuid e30ed5fe-77e8-4b8d-82c9-26e1568ce8ca))
     (pin "3" (uuid 3d8511be-7499-4a41-9c0c-2009aaa207a2))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507468))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422ef))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde507468))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50746a))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422f1))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50746a))
     (pin "5" (uuid b70d53fe-145d-4bbc-ab17-609b29a39d98))
     (pin "6" (uuid c0c10013-3624-4b17-a40e-0a90844bbce7))
     (pin "7" (uuid 25cf0da5-87f2-484b-98cf-eecb512275ea))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422ef))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d2422f1))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "U6") (unit 2)
+          (reference "U4") (unit 2)
         )
       )
       (project "rpikobhat"
@@ -2413,7 +2413,7 @@
   (symbol (lib_id "power:GND") (at 156.21 168.91 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000618dbd37)
-    (property "Reference" "#PWR037" (at 156.21 175.26 0)
+    (property "Reference" "#PWR033" (at 156.21 175.26 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 156.337 173.3042 0)
@@ -2429,7 +2429,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR037") (unit 1)
+          (reference "#PWR033") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2443,7 +2443,7 @@
   (symbol (lib_id "power:GND") (at 135.89 142.24 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000618ee38b)
-    (property "Reference" "#PWR033" (at 135.89 148.59 0)
+    (property "Reference" "#PWR028" (at 135.89 148.59 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 136.017 146.6342 0)
@@ -2459,7 +2459,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR033") (unit 1)
+          (reference "#PWR028") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2473,7 +2473,7 @@
   (symbol (lib_id "Diode:MBR0560") (at 166.37 123.19 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-000061935f0d)
-    (property "Reference" "D3" (at 168.402 122.0216 90)
+    (property "Reference" "D4" (at 168.402 122.0216 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "MBR0560LT1G" (at 168.402 124.333 90)
@@ -2490,7 +2490,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "D3") (unit 1)
+          (reference "D4") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2504,7 +2504,7 @@
   (symbol (lib_id "power:GND") (at 104.14 171.45 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-000061951694)
-    (property "Reference" "#PWR038" (at 104.14 177.8 0)
+    (property "Reference" "#PWR026" (at 104.14 177.8 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 104.013 175.8442 0)
@@ -2520,7 +2520,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR038") (unit 1)
+          (reference "#PWR026") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2534,7 +2534,7 @@
   (symbol (lib_id "Device:R_US") (at 104.14 153.67 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00006195198f)
-    (property "Reference" "R15" (at 102.4128 152.5016 0)
+    (property "Reference" "R2" (at 102.4128 152.5016 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "20k" (at 102.4128 154.813 0)
@@ -2551,7 +2551,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "R15") (unit 1)
+          (reference "R2") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2565,7 +2565,7 @@
   (symbol (lib_id "Device:R_US") (at 148.59 127 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-00006198615a)
-    (property "Reference" "R14" (at 152.2102 125.8687 0)
+    (property "Reference" "R4" (at 152.2102 125.8687 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "20k" (at 152.4 128.27 0)
@@ -2582,7 +2582,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "R14") (unit 1)
+          (reference "R4") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2658,7 +2658,7 @@
   (symbol (lib_id "Device:C") (at 172.72 80.01 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000619ae51a)
-    (property "Reference" "C20" (at 175.641 78.8416 0)
+    (property "Reference" "C8" (at 175.641 78.8416 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 175.641 81.153 0)
@@ -2675,7 +2675,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C20") (unit 1)
+          (reference "C8") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2689,7 +2689,7 @@
   (symbol (lib_id "Connector:Conn_Coaxial_Power") (at 104.14 78.74 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000619bde34)
-    (property "Reference" "J15" (at 101.9048 78.8416 0)
+    (property "Reference" "J8" (at 101.9048 78.8416 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Conn_Coaxial_Power" (at 101.9048 81.153 0)
@@ -2706,7 +2706,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "J15") (unit 1)
+          (reference "J8") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2720,7 +2720,7 @@
   (symbol (lib_id "power:GND") (at 104.14 85.09 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000619beaef)
-    (property "Reference" "#PWR029" (at 104.14 91.44 0)
+    (property "Reference" "#PWR024" (at 104.14 91.44 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 104.013 89.4842 0)
@@ -2736,7 +2736,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR029") (unit 1)
+          (reference "#PWR024") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2750,7 +2750,7 @@
   (symbol (lib_id "Device:R_US") (at 175.26 184.15 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000619d5a65)
-    (property "Reference" "R16" (at 175.26 178.943 90)
+    (property "Reference" "R5" (at 175.26 178.943 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "20k" (at 175.26 181.2544 90)
@@ -2767,7 +2767,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "R16") (unit 1)
+          (reference "R5") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2781,7 +2781,7 @@
   (symbol (lib_id "power:GND") (at 140.97 194.31 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00000000-0000-0000-0000-0000619e54ac)
-    (property "Reference" "#PWR041" (at 140.97 200.66 0)
+    (property "Reference" "#PWR029" (at 140.97 200.66 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 140.97 198.12 0)
@@ -2797,7 +2797,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR041") (unit 1)
+          (reference "#PWR029") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2811,7 +2811,7 @@
   (symbol (lib_id "Device:R_US") (at 194.31 80.01 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 06672ab6-a27f-49db-9f0a-978540528401)
-    (property "Reference" "R13" (at 195.961 79.1753 0)
+    (property "Reference" "R6" (at 195.961 79.1753 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "3.3k" (at 195.961 81.7122 0)
@@ -2828,7 +2828,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "R13") (unit 1)
+          (reference "R6") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2873,7 +2873,7 @@
   (symbol (lib_id "Device:C") (at 194.31 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 11bb6f33-96fc-4589-9890-00f47d569b8e)
-    (property "Reference" "C25" (at 197.231 94.0816 0)
+    (property "Reference" "C13" (at 197.231 94.0816 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 197.231 96.393 0)
@@ -2890,7 +2890,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C25") (unit 1)
+          (reference "C13") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2904,7 +2904,7 @@
   (symbol (lib_id "Device:C") (at 184.15 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 12ddb7c4-624f-429b-809a-29299a902bdf)
-    (property "Reference" "C24" (at 187.071 94.0816 0)
+    (property "Reference" "C12" (at 187.071 94.0816 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 187.071 96.393 0)
@@ -2921,7 +2921,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C24") (unit 1)
+          (reference "C12") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2935,7 +2935,7 @@
   (symbol (lib_id "Connector_Audio:AudioJack3_SwitchT") (at 241.3 168.91 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 13101309-11bc-4f72-b102-c3b8284b130a)
-    (property "Reference" "J18" (at 248.92 166.37 0)
+    (property "Reference" "J11" (at 248.92 166.37 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "TRS-JACK-KP" (at 243.205 173.99 0)
@@ -2954,7 +2954,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "J18") (unit 1)
+          (reference "J11") (unit 1)
         )
       )
     )
@@ -2963,7 +2963,7 @@
   (symbol (lib_id "Diode:MBR0560") (at 104.14 165.1 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 26e6a71c-c103-4752-83f3-0693e9588dec)
-    (property "Reference" "D4" (at 102.108 163.9316 90)
+    (property "Reference" "D1" (at 102.108 163.9316 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "MBR0560LT1G" (at 102.108 166.243 90)
@@ -2980,7 +2980,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "D4") (unit 1)
+          (reference "D1") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -2994,7 +2994,7 @@
   (symbol (lib_id "power:+5V") (at 148.59 120.65 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 3529afbe-704c-4b28-9ad6-37317c0edab8)
-    (property "Reference" "#PWR031" (at 148.59 124.46 0)
+    (property "Reference" "#PWR030" (at 148.59 124.46 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (at 148.59 116.84 0)
@@ -3010,7 +3010,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR031") (unit 1)
+          (reference "#PWR030") (unit 1)
         )
       )
     )
@@ -3019,7 +3019,7 @@
   (symbol (lib_id "Device:C_Polarized_US") (at 125.73 80.01 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 455db6e1-ecdc-48ca-9632-51c1d09fd0de)
-    (property "Reference" "C19" (at 122.809 78.5403 0)
+    (property "Reference" "C7" (at 122.809 78.5403 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10uf" (at 122.809 81.0772 0)
@@ -3036,7 +3036,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C19") (unit 1)
+          (reference "C7") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3050,7 +3050,7 @@
   (symbol (lib_id "Device:C") (at 163.83 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 457679e7-8234-45e7-8260-033afe344e62)
-    (property "Reference" "C22" (at 166.751 94.0816 0)
+    (property "Reference" "C10" (at 166.751 94.0816 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 166.751 96.393 0)
@@ -3067,7 +3067,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C22") (unit 1)
+          (reference "C10") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3081,7 +3081,7 @@
   (symbol (lib_id "Diode:1N4004") (at 115.57 80.01 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 5a0f3c31-c83f-4d20-9044-870c7065c6a4)
-    (property "Reference" "D1" (at 113.538 79.1753 90)
+    (property "Reference" "D2" (at 113.538 79.1753 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "1N4004" (at 113.538 81.7122 90)
@@ -3098,7 +3098,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "D1") (unit 1)
+          (reference "D2") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3112,7 +3112,7 @@
   (symbol (lib_id "Test_point_Jump:TP_01") (at 128.27 110.49 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 5b5553bf-ea65-4c91-8ccd-35e545d6cfb4)
-    (property "Reference" "TP1" (at 128.27 107.95 0)
+    (property "Reference" "TP6" (at 128.27 107.95 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "Test_Point_01" (at 128.27 107.95 0)
@@ -3128,7 +3128,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "TP1") (unit 1)
+          (reference "TP6") (unit 1)
         )
       )
     )
@@ -3168,7 +3168,7 @@
   (symbol (lib_id "Device:R_US") (at 134.62 189.23 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 619ace4e-6ad8-495d-bacd-8eccf5e8073c)
-    (property "Reference" "R17" (at 130.81 187.96 0)
+    (property "Reference" "R3" (at 130.81 187.96 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "DNP" (at 130.81 190.5 0)
@@ -3185,7 +3185,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "R17") (unit 1)
+          (reference "R3") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3199,7 +3199,7 @@
   (symbol (lib_id "power:+5V") (at 104.14 149.86 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 6b3c389a-a08f-4333-88b5-1622d6249bb4)
-    (property "Reference" "#PWR035" (at 104.14 153.67 0)
+    (property "Reference" "#PWR025" (at 104.14 153.67 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (at 104.14 146.05 0)
@@ -3215,7 +3215,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR035") (unit 1)
+          (reference "#PWR025") (unit 1)
         )
       )
     )
@@ -3224,7 +3224,7 @@
   (symbol (lib_name "GND_2") (lib_id "power:GND") (at 224.79 172.72 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 7b71fc95-d494-49b4-a5c7-103db88e0a08)
-    (property "Reference" "#PWR039" (at 224.79 179.07 0)
+    (property "Reference" "#PWR035" (at 224.79 179.07 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 224.79 177.8 0)
@@ -3240,7 +3240,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR039") (unit 1)
+          (reference "#PWR035") (unit 1)
         )
       )
     )
@@ -3279,7 +3279,7 @@
   (symbol (lib_id "Connector:Screw_Terminal_01x02") (at 208.28 78.74 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8f0f16cb-2129-48dc-8c79-5cab24327da3)
-    (property "Reference" "J16" (at 207.01 76.2 0)
+    (property "Reference" "J9" (at 207.01 76.2 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Screw_Terminal_01x02" (at 210.312 81.7122 0)
@@ -3296,7 +3296,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "J16") (unit 1)
+          (reference "J9") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3310,7 +3310,7 @@
   (symbol (lib_id "Diode:1N4004") (at 140.97 189.23 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 929e29bd-bd30-4109-82d9-b5ee02073ab3)
-    (property "Reference" "D5" (at 143.002 188.3953 90)
+    (property "Reference" "D3" (at 143.002 188.3953 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "1N4004" (at 143.002 190.9322 90)
@@ -3327,7 +3327,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "D5") (unit 1)
+          (reference "D3") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3341,7 +3341,7 @@
   (symbol (lib_id "Test_point_Jump:TP_01") (at 177.8 166.37 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a0be38b1-3185-4418-885e-2083f8a359b0)
-    (property "Reference" "TP5" (at 180.34 163.83 0)
+    (property "Reference" "TP8" (at 180.34 163.83 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Test_Point_01" (at 175.26 168.275 0)
@@ -3357,7 +3357,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "TP5") (unit 1)
+          (reference "TP8") (unit 1)
         )
       )
     )
@@ -3366,7 +3366,7 @@
   (symbol (lib_id "Device:C") (at 153.67 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a7adb3b4-188f-4157-8c5c-1bbe73d3e64c)
-    (property "Reference" "C21" (at 156.591 94.0816 0)
+    (property "Reference" "C9" (at 156.591 94.0816 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 156.591 96.393 0)
@@ -3383,7 +3383,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C21") (unit 1)
+          (reference "C9") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3397,7 +3397,7 @@
   (symbol (lib_id "Test_point_Jump:TP_01") (at 107.95 132.08 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a8555f94-5302-4d7c-881d-adcc34feb046)
-    (property "Reference" "TP2" (at 107.95 129.54 0)
+    (property "Reference" "TP5" (at 107.95 129.54 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "Test_Point_01" (at 107.95 129.54 0)
@@ -3413,7 +3413,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "TP2") (unit 1)
+          (reference "TP5") (unit 1)
         )
       )
     )
@@ -3422,7 +3422,7 @@
   (symbol (lib_id "Diode:1N4004") (at 182.88 80.01 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b92befd8-ceb5-44db-8e92-e20bd1c458d5)
-    (property "Reference" "D2" (at 184.912 79.1753 90)
+    (property "Reference" "D5" (at 184.912 79.1753 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "1N4004" (at 184.912 81.7122 90)
@@ -3439,7 +3439,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "D2") (unit 1)
+          (reference "D5") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3453,7 +3453,7 @@
   (symbol (lib_name "GND_1") (lib_id "power:GND") (at 290.83 172.72 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid cff8ef42-dc22-4ae7-a2f1-cfd17bd40d77)
-    (property "Reference" "#PWR040" (at 290.83 179.07 0)
+    (property "Reference" "#PWR036" (at 290.83 179.07 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 290.83 177.8 0)
@@ -3469,7 +3469,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR040") (unit 1)
+          (reference "#PWR036") (unit 1)
         )
       )
     )
@@ -3478,7 +3478,7 @@
   (symbol (lib_id "power:+3.3V") (at 156.21 156.21 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid d7e4e48a-9449-4401-b703-621b8cfae02e)
-    (property "Reference" "#PWR036" (at 156.21 160.02 0)
+    (property "Reference" "#PWR032" (at 156.21 160.02 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 156.21 152.4 0)
@@ -3494,7 +3494,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR036") (unit 1)
+          (reference "#PWR032") (unit 1)
         )
       )
     )
@@ -3503,7 +3503,7 @@
   (symbol (lib_id "Test_point_Jump:TP_01") (at 137.16 163.83 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid db575410-7ea1-4fe1-9c26-f6b33765716f)
-    (property "Reference" "TP4" (at 139.7 161.29 0)
+    (property "Reference" "TP7" (at 139.7 161.29 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Test_Point_01" (at 134.62 165.735 0)
@@ -3519,7 +3519,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "TP4") (unit 1)
+          (reference "TP7") (unit 1)
         )
       )
     )
@@ -3567,7 +3567,7 @@
   (symbol (lib_id "Connector:Screw_Terminal_01x02") (at 208.28 107.95 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e4b078d5-159d-4169-993c-1caa78d9988e)
-    (property "Reference" "J17" (at 207.01 105.41 0)
+    (property "Reference" "J10" (at 207.01 105.41 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "Screw_Terminal_01x02" (at 210.312 110.9222 0)
@@ -3584,7 +3584,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "J17") (unit 1)
+          (reference "J10") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3598,7 +3598,7 @@
   (symbol (lib_id "power:GND") (at 153.67 100.33 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f36cddb5-6616-48e0-9cf5-37121af38ffc)
-    (property "Reference" "#PWR030" (at 153.67 106.68 0)
+    (property "Reference" "#PWR031" (at 153.67 106.68 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 153.797 104.7242 0)
@@ -3614,7 +3614,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR030") (unit 1)
+          (reference "#PWR031") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3628,7 +3628,7 @@
   (symbol (lib_id "Transistor_FET:2N7002") (at 163.83 134.62 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid f54b0715-0d41-4ce7-970c-d576026b7bdc)
-    (property "Reference" "Q2" (at 169.037 133.7853 0)
+    (property "Reference" "Q1" (at 169.037 133.7853 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "G01N20LE" (at 169.037 136.3222 0)
@@ -3646,7 +3646,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "Q2") (unit 1)
+          (reference "Q1") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3660,7 +3660,7 @@
   (symbol (lib_id "Device:C") (at 173.99 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid fae10d68-314a-406d-8b5b-4316304c51ae)
-    (property "Reference" "C23" (at 176.911 94.0816 0)
+    (property "Reference" "C11" (at 176.911 94.0816 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 176.911 96.393 0)
@@ -3677,7 +3677,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "C23") (unit 1)
+          (reference "C11") (unit 1)
         )
       )
       (project "rpikobhat"
@@ -3691,7 +3691,7 @@
   (symbol (lib_id "Test_point_Jump:TP_01") (at 92.71 158.75 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid fb84db1f-71b6-4036-8ad7-ad85e8d0309c)
-    (property "Reference" "TP3" (at 92.71 156.21 0)
+    (property "Reference" "TP4" (at 92.71 156.21 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "Test_Point_01" (at 92.71 156.21 0)
@@ -3707,7 +3707,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "TP3") (unit 1)
+          (reference "TP4") (unit 1)
         )
       )
     )
@@ -3716,7 +3716,7 @@
   (symbol (lib_id "power:+3.3V") (at 135.89 129.54 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid fdf0152e-a32e-4646-ad8e-232d735ed64a)
-    (property "Reference" "#PWR032" (at 135.89 133.35 0)
+    (property "Reference" "#PWR027" (at 135.89 133.35 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 135.89 125.73 0)
@@ -3732,7 +3732,7 @@
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
-          (reference "#PWR032") (unit 1)
+          (reference "#PWR027") (unit 1)
         )
       )
     )
