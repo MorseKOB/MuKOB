@@ -1,14 +1,14 @@
 {
   "board": {
-    "active_layer": 31,
+    "active_layer": 0,
     "active_layer_preset": "",
-    "auto_track_width": true,
+    "auto_track_width": false,
     "hidden_netclasses": [],
     "hidden_nets": [],
     "high_contrast_mode": 0,
     "net_color_mode": 1,
     "opacity": {
-      "images": 0.6,
+      "images": 0.28999999165534973,
       "pads": 1.0,
       "tracks": 1.0,
       "vias": 1.0,
@@ -64,8 +64,8 @@
       39,
       40
     ],
-    "visible_layers": "fddffff_ffffffff",
-    "zone_display_mode": 0
+    "visible_layers": "0001020_ffffffff",
+    "zone_display_mode": 1
   },
   "meta": {
     "filename": "MuKOB.kicad_prl",
