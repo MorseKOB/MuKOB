@@ -16,13 +16,16 @@ build/
 # PCB
 */#auto_saved_files#
 */#auto_saved_files#/*
+*/_autosave-*.kicad_pcb
+*/*-bak
 */*-backups/*
 */_reports/*
 *.dsn
 Fp-info-cache
 
-# Word temporary
+# temporary
 ~$*.docx
+*.bak
 
 # Local info
 *.private
