@@ -1,0 +1,16 @@
+USB - Serial for MKOB/MorseKOB
+
+CableCreation USB to RS232 Cable (FTDI Chipset), 3 Feet RS-232 Male DB9 Serial Converter Cable
+https://www.amazon.com/gp/product/B07589ZF9X/ref=sw_img_1?smid=A21TE5CLHZDYA7&th=1
+
+Full Handshake, +/-6VDC signal
+Computer is DTE, Interface is DCE
+1: DCD (DTE-In) = Data Carrier Detect
+2: RXD (DTE-In) = Received Data
+3: TXD (DTE-Out) = Transmitted Data
+4: DTR (DTE-Out) = Data Terminal Ready
+5: GND
+6: DSR (DTE-In) = Data Set Ready
+7: RTS (DTE-Out) = Request To Send
+8: CTS (DTE-In) = Clear To Send
+9: RI (DTE-In) = Ring Indicator
