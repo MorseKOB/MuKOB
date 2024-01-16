@@ -6,10 +6,10 @@
 
   (title_block
     (title "MuKOB - Device")
-    (date "2023-05-25")
-    (rev "1")
+    (date "2024-01-16")
+    (rev "1.0")
     (company "Silky-Design (AESilky)")
-    (comment 1 "Copyright 2023 AESilky")
+    (comment 1 "Copyright 2023-24 AESilky")
     (comment 4 "Ref: PicoW VGA_SD_AUD; (c) 2022 Raspberry Pi Ltd")
   )
 
