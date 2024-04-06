@@ -4247,20 +4247,20 @@
     (pin "1" (uuid b3e8b74f-9dbf-4b62-9d7d-a7e3d4814c7a))
     (pin "2" (uuid a0bd3334-849b-489f-b60e-c495e65a4c43))
     (pin "3" (uuid 50889567-aed4-4de8-96d7-f93c3e5aa118))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b7d))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511cc))
-    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b7d))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b7e))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511cd))
+    (pin "4" (uuid 9226ad93-dcd9-4eaa-9583-110390cf0b7e))
     (pin "5" (uuid 630a599a-59fe-4cc4-8060-a0f1608d748e))
     (pin "6" (uuid 1291e702-fca5-449c-b8f0-e5b1af09b146))
     (pin "7" (uuid 456805c2-847f-405d-839f-c0039cb5a9d4))
-    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511cc))
+    (pin "8" (uuid 700676a9-8941-4242-9b22-1a1a67e511cd))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
           (reference "U4") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U4") (unit 1)
         )
@@ -4318,20 +4318,20 @@
     (pin "1" (uuid 6009d08d-a7a8-4099-8bf2-e49852d9dd8a))
     (pin "2" (uuid e30ed5fe-77e8-4b8d-82c9-26e1568ce8ca))
     (pin "3" (uuid 3d8511be-7499-4a41-9c0c-2009aaa207a2))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50747b))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d242302))
-    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50747b))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50747c))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d242303))
+    (pin "4" (uuid 453ebc96-01c5-4601-a479-677cde50747c))
     (pin "5" (uuid b70d53fe-145d-4bbc-ab17-609b29a39d98))
     (pin "6" (uuid c0c10013-3624-4b17-a40e-0a90844bbce7))
     (pin "7" (uuid 25cf0da5-87f2-484b-98cf-eecb512275ea))
-    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d242302))
+    (pin "8" (uuid 1492b645-ac86-44f6-8106-448e1d242303))
     (instances
       (project "MuKOB"
         (path "/048b0ad6-aff0-457c-90cc-1f291c176206/e9084867-33ca-4e12-9e4f-16659ea56cdd"
           (reference "U4") (unit 2)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U4") (unit 2)
         )
@@ -4366,7 +4366,7 @@
           (reference "#PWR034") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR017") (unit 1)
         )
@@ -4401,7 +4401,7 @@
           (reference "#PWR033") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR022") (unit 1)
         )
@@ -4436,7 +4436,7 @@
           (reference "#PWR028") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR016") (unit 1)
         )
@@ -4472,7 +4472,7 @@
           (reference "D4") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D8") (unit 1)
         )
@@ -4507,7 +4507,7 @@
           (reference "#PWR026") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR024") (unit 1)
         )
@@ -4543,7 +4543,7 @@
           (reference "R2") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R6") (unit 1)
         )
@@ -4579,7 +4579,7 @@
           (reference "R4") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R5") (unit 1)
         )
@@ -4615,7 +4615,7 @@
           (reference "U5") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U2") (unit 1)
         )
@@ -4651,7 +4651,7 @@
           (reference "C8") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C4") (unit 1)
         )
@@ -4687,7 +4687,7 @@
           (reference "J8") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J2") (unit 1)
         )
@@ -4723,7 +4723,7 @@
           (reference "R5") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R8") (unit 1)
         )
@@ -4758,7 +4758,7 @@
           (reference "#PWR029") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR026") (unit 1)
         )
@@ -4794,7 +4794,7 @@
           (reference "R6") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R1") (unit 1)
         )
@@ -4829,7 +4829,7 @@
           (reference "#PWR041") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR028") (unit 1)
         )
@@ -4861,7 +4861,7 @@
           (reference "Q1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "Q2") (unit 1)
         )
@@ -4897,7 +4897,7 @@
           (reference "SW1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SW2") (unit 1)
         )
@@ -4924,7 +4924,7 @@
     (pin "2" (uuid 85d7f597-1e32-41ef-976a-1e3baf6c0d15))
     (pin "3" (uuid 5deba784-0983-4760-a0e1-b91b91f9f956))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U1") (unit 1)
         )
@@ -4958,7 +4958,7 @@
           (reference "R_Loop1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R_Loop1") (unit 1)
         )
@@ -4994,7 +4994,7 @@
           (reference "C13") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C9") (unit 1)
         )
@@ -5030,7 +5030,7 @@
           (reference "C12") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C8") (unit 1)
         )
@@ -5061,7 +5061,7 @@
     (pin "1" (uuid fe317ead-c23f-4926-ae8b-bfea0c869cc7))
     (pin "2" (uuid cc3dd419-8ba9-494b-8b58-f1a975b837bb))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SW1") (unit 1)
         )
@@ -5070,7 +5070,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 405.13 213.36 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 16cf547e-abb0-4d12-ba6f-96b58f0dc119)
     (property "Reference" "SHLD-2" (at 408.94 212.725 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -5086,7 +5086,7 @@
     )
     (pin "1" (uuid 0642a55f-ef49-4816-9685-e43fafcb7b45))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SHLD-2") (unit 1)
         )
@@ -5116,7 +5116,7 @@
           (reference "#PWR024") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR027") (unit 1)
         )
@@ -5152,7 +5152,7 @@
           (reference "D1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D7") (unit 1)
         )
@@ -5187,7 +5187,7 @@
           (reference "#PWR027") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR013") (unit 1)
         )
@@ -5223,7 +5223,7 @@
           (reference "LED1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "LED1") (unit 1)
         )
@@ -5253,7 +5253,7 @@
     )
     (pin "1" (uuid d6bed6c3-4142-4381-90e5-2cd555583518))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR09") (unit 1)
         )
@@ -5278,7 +5278,7 @@
     )
     (pin "1" (uuid 49562f0e-4dc8-4a15-8a22-d38552405f3a))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR05") (unit 1)
         )
@@ -5314,7 +5314,7 @@
           (reference "SW1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SW3") (unit 1)
         )
@@ -5344,7 +5344,7 @@
           (reference "#PWR030") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR012") (unit 1)
         )
@@ -5375,7 +5375,7 @@
           (reference "D1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D1") (unit 1)
         )
@@ -5410,7 +5410,7 @@
     (pin "5" (uuid 0c1f7fe7-2efc-4b14-b418-1729ece4796e))
     (pin "6" (uuid fd3cb52e-30e5-4e53-b33f-acf5ca0fbe15))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J1") (unit 1)
         )
@@ -5419,7 +5419,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 34.29 163.83 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 35e3209a-bc40-4b39-9868-a3f9c7ef02ba)
     (property "Reference" "M_KSI1" (at 38.1 163.195 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -5435,7 +5435,7 @@
     )
     (pin "1" (uuid e4c92e38-1499-435d-bb97-5a7e73abbca3))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "M_KSI1") (unit 1)
         )
@@ -5444,7 +5444,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 405.13 208.28 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 36cdc0cc-e845-4821-ade5-148fbb89057f)
     (property "Reference" "SHLD-1" (at 408.94 207.645 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -5460,7 +5460,7 @@
     )
     (pin "1" (uuid 39eaafcc-420b-4f0d-b041-fabd4805dfba))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SHLD-1") (unit 1)
         )
@@ -5469,7 +5469,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 34.29 173.99 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 3d885b92-9a9d-455d-aa45-ad4d5afb8af4)
     (property "Reference" "M_KSI3" (at 38.1 173.355 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -5485,7 +5485,7 @@
     )
     (pin "1" (uuid 25b29171-56f8-4013-b762-6266c8fa4d2d))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "M_KSI3") (unit 1)
         )
@@ -5515,7 +5515,7 @@
           (reference "#PWR025") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR02") (unit 1)
         )
@@ -5545,7 +5545,7 @@
           (reference "TP4") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "TP3") (unit 1)
         )
@@ -5576,7 +5576,7 @@
           (reference "C7") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C3") (unit 1)
         )
@@ -5612,7 +5612,7 @@
           (reference "C10") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C6") (unit 1)
         )
@@ -5648,7 +5648,7 @@
           (reference "KEY-EXT1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "KEY-EXT1") (unit 1)
         )
@@ -5683,7 +5683,7 @@
           (reference "#PWR042") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR029") (unit 1)
         )
@@ -5715,7 +5715,7 @@
     (pin "1" (uuid 57820eb4-939d-41ae-8cb4-bc3bb6b09aa1))
     (pin "2" (uuid 6db024d2-ffa6-4b69-9aea-82ec3dc0c2c7))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D6") (unit 1)
         )
@@ -5746,7 +5746,7 @@
     (pin "6" (uuid 919be61b-5594-4ea1-9a34-fc81da3a5f5d))
     (pin "7" (uuid e92b339b-0ec6-44de-b23d-c39a4cd62913))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J4") (unit 1)
         )
@@ -5776,7 +5776,7 @@
           (reference "#PWR024") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR018") (unit 1)
         )
@@ -5812,7 +5812,7 @@
           (reference "D2") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D4") (unit 1)
         )
@@ -5847,7 +5847,7 @@
           (reference "TP6") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "TP1") (unit 1)
         )
@@ -5878,7 +5878,7 @@
           (reference "KS1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "KS1") (unit 1)
         )
@@ -5913,7 +5913,7 @@
           (reference "#PWR025") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR014") (unit 1)
         )
@@ -5922,7 +5922,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 405.13 218.44 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 5f23ae0f-ded4-43e0-836b-03b1564a6a6a)
     (property "Reference" "SHLD-3" (at 408.94 217.805 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -5938,7 +5938,7 @@
     )
     (pin "1" (uuid a405eaa1-d1e3-4d73-8dbc-3932d30b3869))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SHLD-3") (unit 1)
         )
@@ -5973,7 +5973,7 @@
           (reference "Paddle1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "Paddle1") (unit 1)
         )
@@ -6004,7 +6004,7 @@
           (reference "R3") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R9") (unit 1)
         )
@@ -6040,7 +6040,7 @@
           (reference "R6") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R2") (unit 1)
         )
@@ -6072,7 +6072,7 @@
           (reference "Q8") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "Q1") (unit 1)
         )
@@ -6119,7 +6119,7 @@
           (reference "J-SP1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J-SP1") (unit 1)
         )
@@ -6150,7 +6150,7 @@
           (reference "C9") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C1") (unit 1)
         )
@@ -6164,7 +6164,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 34.29 179.07 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 6ad611ef-521b-4b76-864b-0fdedb8d5481)
     (property "Reference" "M_KSI4" (at 38.1 178.435 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -6180,7 +6180,7 @@
     )
     (pin "1" (uuid 1acddd32-239c-4ba7-924f-19fe4ead44f5))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "M_KSI4") (unit 1)
         )
@@ -6210,7 +6210,7 @@
           (reference "#PWR025") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR020") (unit 1)
         )
@@ -6240,7 +6240,7 @@
           (reference "#PWR024") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR06") (unit 1)
         )
@@ -6277,7 +6277,7 @@
           (reference "OP6") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "OPa1") (unit 1)
         )
@@ -6303,7 +6303,7 @@
     (pin "1" (uuid 0910a77b-d403-48ee-b7f5-3605d1df22c1))
     (pin "2" (uuid 96fb2ec4-2ad1-4bcb-9c10-3cdd02dadf95))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "JP2") (unit 1)
         )
@@ -6334,7 +6334,7 @@
           (reference "D2") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D2") (unit 1)
         )
@@ -6371,7 +6371,7 @@
     (pin "4" (uuid 7cce1fc7-05ef-49c5-9578-28761ce4955d))
     (pin "8" (uuid 9d9ebc71-d791-4ceb-b90f-f33633e27315))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U3") (unit 2)
         )
@@ -6380,7 +6380,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 34.29 168.91 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 7cc6ba78-f1b3-4f1a-985a-9309949fcd51)
     (property "Reference" "M_KSI2" (at 38.1 168.275 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -6396,7 +6396,7 @@
     )
     (pin "1" (uuid 105d3d48-a7b2-4729-ad82-3ebf68787749))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "M_KSI2") (unit 1)
         )
@@ -6421,7 +6421,7 @@
     )
     (pin "1" (uuid 6c4f3f4f-59b1-4e3b-b79c-e1eafb7c21f7))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR019") (unit 1)
         )
@@ -6470,7 +6470,7 @@
     (pin "3" (uuid bee5194d-8372-49ab-95ce-fbc1f6580da1))
     (pin "4" (uuid 51f2f5b3-91b2-4e2d-81f5-f5c9db1880e3))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J5") (unit 1)
         )
@@ -6502,7 +6502,7 @@
     (pin "4" (uuid 9b974ca7-01f9-4e64-9761-afcdbd5ba854))
     (pin "8" (uuid b0307ebc-477c-4cc7-a7b0-e42b74e1c46b))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U3") (unit 3)
         )
@@ -6533,7 +6533,7 @@
           (reference "J9") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "ST1") (unit 1)
         )
@@ -6569,7 +6569,7 @@
           (reference "D3") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D5") (unit 1)
         )
@@ -6606,7 +6606,7 @@
           (reference "Q1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "Q4") (unit 1)
         )
@@ -6631,7 +6631,7 @@
     )
     (pin "1" (uuid 13bc0026-ed1f-42a3-bd19-cf643c186576))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR010") (unit 1)
         )
@@ -6661,7 +6661,7 @@
           (reference "TP5") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "TP2") (unit 1)
         )
@@ -6691,7 +6691,7 @@
           (reference "TP8") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "TP5") (unit 1)
         )
@@ -6717,7 +6717,7 @@
     (pin "1" (uuid f5e6fd92-638a-402d-a236-5f0dacc85a64))
     (pin "2" (uuid 2e00a5f6-c0b2-41bc-ab73-984b93beb7d7))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "JP1") (unit 1)
         )
@@ -6748,7 +6748,7 @@
           (reference "C9") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C5") (unit 1)
         )
@@ -6762,7 +6762,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 405.13 223.52 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid ad506e75-7672-487c-ba18-9ac1486b6398)
     (property "Reference" "SHLD-4" (at 408.94 222.885 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -6778,7 +6778,7 @@
     )
     (pin "1" (uuid 33555c50-c4cd-4f45-a042-add1bb0dfdbb))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "SHLD-4") (unit 1)
         )
@@ -6809,7 +6809,7 @@
           (reference "R7") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R4") (unit 1)
         )
@@ -6841,7 +6841,7 @@
     (pin "4" (uuid 19c18559-6df0-4b09-8d49-68955e132254))
     (pin "8" (uuid 973c73ff-e63b-4ff5-a971-327b0cd376c4))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "U3") (unit 1)
         )
@@ -6871,7 +6871,7 @@
           (reference "#PWR030") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR01") (unit 1)
         )
@@ -6901,7 +6901,7 @@
           (reference "#PWR029") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR025") (unit 1)
         )
@@ -6937,7 +6937,7 @@
           (reference "D5") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "D3") (unit 1)
         )
@@ -6976,7 +6976,7 @@
     (pin "8" (uuid f2fae6fe-ebaf-4dd3-8b53-208cb7bae891))
     (pin "9" (uuid 44576a95-ed06-4a7e-9f27-d0ef5f438418))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "J3") (unit 1)
         )
@@ -7007,7 +7007,7 @@
           (reference "C9") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C2") (unit 1)
         )
@@ -7043,7 +7043,7 @@
           (reference "R2") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R10") (unit 1)
         )
@@ -7078,7 +7078,7 @@
           (reference "#PWR032") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR021") (unit 1)
         )
@@ -7108,7 +7108,7 @@
           (reference "TP7") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "TP4") (unit 1)
         )
@@ -7138,7 +7138,7 @@
           (reference "#PWR027") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR08") (unit 1)
         )
@@ -7169,7 +7169,7 @@
           (reference "R5") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R3") (unit 1)
         )
@@ -7205,7 +7205,7 @@
           (reference "J10") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "ST2") (unit 1)
         )
@@ -7236,7 +7236,7 @@
     (pin "1" (uuid 49c60113-2b97-4166-9834-9e3f72772e51))
     (pin "2" (uuid 47db0c26-e95c-4d42-b8db-fce767617d14))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "JP3") (unit 1)
         )
@@ -7261,7 +7261,7 @@
     )
     (pin "1" (uuid 637666d2-8f62-4ceb-9f43-8dd787f2c739))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR04") (unit 1)
         )
@@ -7291,7 +7291,7 @@
           (reference "#PWR031") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR07") (unit 1)
         )
@@ -7326,7 +7326,7 @@
           (reference "#PWR027") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR03") (unit 1)
         )
@@ -7358,7 +7358,7 @@
           (reference "Q1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "Q3") (unit 1)
         )
@@ -7394,7 +7394,7 @@
           (reference "C11") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "C7") (unit 1)
         )
@@ -7429,7 +7429,7 @@
           (reference "#PWR025") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR023") (unit 1)
         )
@@ -7460,7 +7460,7 @@
           (reference "JP1") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "OPa2") (unit 1)
         )
@@ -7485,7 +7485,7 @@
     )
     (pin "1" (uuid a3003e93-00cf-4da0-9594-5115dc99a0d0))
     (instances
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR011") (unit 1)
         )
@@ -7515,7 +7515,7 @@
           (reference "#PWR027") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "#PWR015") (unit 1)
         )
@@ -7546,7 +7546,7 @@
           (reference "R2") (unit 1)
         )
       )
-      (project "MK_KS"
+      (project "MK-KS"
         (path "/c58d90c2-85f3-4e69-91d5-1bcb030f2211"
           (reference "R7") (unit 1)
         )

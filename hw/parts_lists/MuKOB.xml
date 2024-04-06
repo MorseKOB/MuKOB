@@ -2,14 +2,14 @@
 <export version="E">
   <design>
     <source>C:\Users\aesil\proj\mukob-hw\MuKOB\hw\MuKOB.kicad_sch</source>
-    <date>1/13/2024 1:55:12 PM</date>
+    <date>1/16/2024 11:01:40 AM</date>
     <tool>Eeschema 7.0.2</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>MuKOB - Device</title>
         <company>Silky-Design (AESilky)</company>
-        <rev>1</rev>
-        <date>2023-05-25</date>
+        <rev>1.0</rev>
+        <date>2024-01-16</date>
         <source>MuKOB.kicad_sch</source>
         <comment number="1" value="Copyright 2023-24 AESilky"/>
         <comment number="2" value=""/>
