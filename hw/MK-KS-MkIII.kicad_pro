@@ -444,7 +444,7 @@
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "Earth-GND",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(0, 132, 0)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.6,
         "via_diameter": 1.0,
@@ -461,7 +461,7 @@
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "Loop-Power",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(255, 0, 255)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.8,
         "via_diameter": 1.0,
@@ -478,7 +478,7 @@
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "Power-GND",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(0, 0, 255)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.4,
         "via_diameter": 0.8,
@@ -495,7 +495,7 @@
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "Power-POS",
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "pcb_color": "rgb(255, 255, 0)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.4,
         "via_diameter": 0.8,
@@ -506,7 +506,9 @@
     "meta": {
       "version": 3
     },
-    "net_colors": null,
+    "net_colors": {
+      "Earth": "rgb(0, 132, 0)"
+    },
     "netclass_assignments": null,
     "netclass_patterns": [
       {

@@ -17,17 +17,17 @@
       "zones": 0.3100000023841858
     },
     "selection_filter": {
-      "dimensions": false,
-      "footprints": false,
+      "dimensions": true,
+      "footprints": true,
       "graphics": true,
-      "keepouts": false,
+      "keepouts": true,
       "lockedItems": false,
-      "otherItems": false,
+      "otherItems": true,
       "pads": true,
       "text": true,
       "tracks": true,
       "vias": true,
-      "zones": false
+      "zones": true
     },
     "visible_items": [
       0,
@@ -66,8 +66,8 @@
       39,
       40
     ],
-    "visible_layers": "8001000_ffffffff",
-    "zone_display_mode": 0
+    "visible_layers": "8041020_ffffffff",
+    "zone_display_mode": 1
   },
   "meta": {
     "filename": "MK-KS-MkIII.kicad_prl",
