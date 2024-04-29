@@ -1,0 +1,41 @@
+"null","Sourced","Placed","References","Value","Footprint","Quantity"
+1,"","","C4, C5, C6, C7, C8, C9","0.1u","C_0603_1608Metric_Pad1.08x0.95mm_HandSolder",6
+2,"","","C1, C2","1uF","C_0201_0603Metric_Pad0.64x0.40mm_HandSolder",2
+3,"","","C3","10uf","CP_Radial_D8.0mm_P5.00mm",1
+4,"","","R5, R6, R8","20k","R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",3
+5,"","","R2, R10","1k","R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",2
+6,"","","R1","3.3k","R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",1
+7,"","","R3","10k","R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",1
+8,"","","R4",270,"R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",1
+9,"","","R7",100,"R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",1
+10,"","","R9","DNP","R_0402_1005Metric_Pad0.72x0.64mm_HandSolder",1
+11,"","","D1, D7, D8","MBR0560LT1G","D_SOD-123",3
+12,"","","D3, D5, D6","1N4148","D_SOD-123",3
+13,"","","D2, D4","1N4148","D_DO-35_SOD27_P7.62mm_Horizontal",2
+14,"","","U1","MCP1702T-3302E","SOT-23",1
+15,"","","U3","LM358","SOIC-8_3.9x4.9mm_P1.27mm",1
+16,"","","U4","LM393ADR","SOIC-8_3.9x4.9mm_P1.27mm",1
+17,"","","SW1","CLOSER","SW-TGL-Micro-DPST-CIT",1
+18,"","","SW2","KEY/DOT","SW_PUSH_SMD_1P1T_NO_6x6mm",1
+19,"","","SW3","DASH","SW_PUSH_SMD_1P1T_NO_6x6mm",1
+20,"","","M_KSI1, M_KSI2, M_KSI3, M_KSI4","MountingHole_Pad","MountingHole_3.2mm_M3_ISO7380_Pad_TopBottom",4
+21,"","","SHLD-1, SHLD-2, SHLD-3, SHLD-4","MountingHole_Pad","MountingHole_4.3mm_M4_ISO14580_Pad_TopBottom",4
+22,"","","JP1, JP3","1x2 Header","PinHeader_1x02_P2.54mm_Vertical",2
+23,"","","Q2, Q4","2N3904","TO-92_Inline",2
+24,"","","JP2","KEY-IN","PinHeader_1x02_P2.54mm_Vertical",1
+25,"","","LED1","SNDR","LED_SMD_SIDEVIEW_Harvatek",1
+26,"","","OPa1","5V-SRC","PinHeader_1x03_P2.54mm_Vertical",1
+27,"","","OPa2","LoopDbgPwr","PinHeader_1x02_P2.54mm_Vertical",1
+28,"","","Q1","2N3905","TO-92_Inline",1
+29,"","","Q3","G01N20LE","SOT-23",1
+30,"","","ST1","SNDR/KOB","TerminalBlock_Philmore_TB132_1x02_P5.00mm_Horizontal",1
+31,"","","ST2","LOOP RES","TerminalBlock_Philmore_TB132_1x02_P5.00mm_Horizontal",1
+32,"","","TP1","LP2","PinHeader_1x01_P2.54mm_Vertical",1
+33,"","","TP2","SE","PinHeader_1x01_P2.54mm_Vertical",1
+34,"","","TP3","RV","PinHeader_1x01_P2.54mm_Vertical",1
+35,"","","TP4","LS","PinHeader_1x01_P2.54mm_Vertical",1
+36,"","","TP5","KS-","PinHeader_1x01_P2.54mm_Vertical",1
+37,"","","J1","USB-PWR","USB_Micro-B_Amphenol_10103594-0001LF_Horizontal_modified",1
+38,"","","J2","LOOP PWR","CUI_PJ-037B",1
+39,"","","J3","MKOB-Serial","DSUB-9_Female_Horizontal_P2.77x2.84mm_EdgePinOffset9.90mm_Housed_MountingHolesOffset11.32mm",1
+40,"","","J5","KEY/PDL","CUI_SJ1-3534NG-audio-jack",1

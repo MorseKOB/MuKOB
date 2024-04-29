@@ -9529,7 +9529,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 17.78 38.1 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 2fef99ac-e00e-4bd6-97d1-ff5f586451a5)
     (property "Reference" "M_KSI1" (at 21.59 37.465 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -11958,7 +11958,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 17.78 53.34 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 8adca11f-21e3-43e2-9733-30c22ccf33e5)
     (property "Reference" "M_KSI4" (at 21.59 52.705 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -12818,7 +12818,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 17.78 48.26 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid afb390c2-7d34-480e-8bfc-a508aabe2d03)
     (property "Reference" "M_KSI3" (at 21.59 47.625 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -13159,7 +13159,7 @@
   )
 
   (symbol (lib_id "Mechanical:MountingHole_Pad") (at 17.78 43.18 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid c053b338-a11d-46ee-86ec-264b01ec733b)
     (property "Reference" "M_KSI2" (at 21.59 42.545 90) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
