@@ -12,6 +12,8 @@ It supports both American (railroad) and International code with sounder or tone
 output, and allows use of Farnsworth word/character timing to promote improving
 copying speed.
 
+This repo also includes the **MuKOB Interface** which can be used with **MKOB** and **MorseKOB** through a USB to a PC.
+
 # References
 * [MorseKOB Main Project](https://github.com/MorseKOB)
 * [PyKOB - The full/computer MorseKOB Client Application, utilities and Python libraries](https://github.com/MorseKOB/PyKOB)
