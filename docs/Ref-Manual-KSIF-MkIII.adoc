@@ -1,0 +1,540 @@
+= μKOB KS Interface MkIII: Reference Manual
+include::man_settings.adoc[]
+//include::../mukobversion.txt[]
+:title: μKOB KS Interface MkIII: Reference Manual
+:docver: 1.1
+:docdate: 20240506
+:organization: Silky Design - AES
+:copyright: Copyright (c) 2023-24 AESilky
+:license: MIT License
+:doctype: book
+:description: μKOB KOB/Key/Paddle/Sounder Interface MkIII
+:imagesdir: ./images
+
+toc::[]
+
+[introduction]
+= Introduction
+This is the reference manual for the μKOB Key/Sounder/KOB/Paddle Interface MkIII. It is not intended as a tutorial, and it is not a user manual for the μKOB device. It describes the external device connections, the jumper settings, and how to use the test features of the interface board.
+
+[preface%nonfacing]
+= Preface
+At a high level, the ((μKOB KS Interface)) (board) provides an interface between the ((μKOB)) main board and a ((KOB)) or a separate ((Key & Sounder)). It is also capable of being used as a KOB/Key&Sounder interface for the ((MKOB)) application running on a ((Raspberry Pi)) through the ((GPIO)) (((GPIO, Raspberry Pi))) connector,footnote:gpiorpi[In this document the term _the GPIO_ will be used to refer to the Raspberry Pi GPIO connector/connection.] or for the ((MKOB)) or ((MorseKOB)) application running on any system that supports an FTDIfootnote:ftdi[Future Technology Devices International (*FTDI*) is the manufacturer of the USB-Serial module used. The FTDI _Virtual Serial Port_ driver is part of the Linux and MacOS kernel, and auto-installs on Windows.] USB serial port.
+
+Depending on the intended application - ((μKOB)), ((Raspberry Pi)), or ((USB Serial)) - certain components may or may not, be populated. The possible options are:footnote:ifconn[Since this interface board connects to μKOB and Raspberry Pi using a _((piggyback))_ connector on the bottom of the board, it isn't possible to assemble a board that can be used on both a μKOB and a Raspberry Pi.]
+
+1. μKOB Only
+2. μKOB + USB Serial
+3. Raspberry Pi GPIO Only
+4. Raspberry Pi + USB Serial
+5. USB Serial Only
+
+Following are sections that identify all of the connectors and option jumpers, setting the option jumpers for applications 1, 3, and 5 (2 and 4 can be deduced), connecting a KOB, a Key & Sounder, or a Paddle, including power options and current limit resistor. Finally, there is a section on using the test key/paddle & sounder portion of the board (when the real thing isn't available, or isn't practical).
+
+This interface can be used with a KOB (_KOB_ = _Key On Board_, a Sounder and Key connected in series, typically as a single unit on a base) (((KOB, Key On Board))) or a separate key and sounder (((Key & Sounder, separate))). The KOB, or a key and sounder connected in series, will sometimes be referred to as _The Loop Circuit_, _The Loop_, or simply, _Loop_ (((Loop, Loop Circuit))).
+
+TIP: When carrying a ((stand-alone)) interface board, it is suggested that you hold it by the bottom, edges, or shield rather than by the USB cable. Carrying it by the USB cable has a tendency to cause the micro-USB connector to part ways with the USB-Serial Module that it was assembled to, and you will be left holding a USB cable and connector and the interface board will be on the floor. You will then need to test your surface mount soldering, and possibly trace repair, skills.
+
+== Connectors, Controls, and Option Jumpers
+
+[%breakable]
+=== Connectors and Controls
+[%unbreakable]
+--
+Going clockwise around the board, the connectors and controls are:
+
+image::KS-IF-MkIII-top-anno-conn.jpg[Connectors and Controls,90%]
+--
+
+.Interface Board Connectors
+[%breakable]
+[width=98%]
+[cols="^.<1,<.<3,<.<10,^.<3",options=header]
+|===
+|#
+|Connector / Control
+|Usage
+|Schematic Designator
+
+|1
+|Power Jack 2x5.5mm: Sounder/Loop Power
+|This barrel connector is a typical size for _wall wart_ and small _inline_ power supplies in the 9v-24v range that can be used to power the sounder or KOB loop. The center pin is positive. This input is reverse polarity protected. Refer to the <<Sounder / KOB Loop Connection>> section for suggestions on selecting a power source.
+|J2
+
+|2
+|2pos Screw Terminal (inward facing): Sounder Current Limit
+|Used to connect a current limiting resistor for the sounder or KOB loop power (((KOB, loop power))). Refer to the <<Sounder / KOB Loop Connection>> section for suggestions on selecting an appropriate resistor value.
+|ST1
+
+|3
+|2pos Screw Terminal: Sounder/KOB
+|The connection to the Sounder/KOB. This is *The Loop*. Refer to the <<Sounder / KOB Loop Connection>> section for notes about connecting to a loop that is externally powered.
+|ST2
+
+|4
+|2pos Switch: Mini Sounder & Visual Sounder Enable
+|Pos-1 (left) enables the _Visual Sounder Indicator_. Pos-2 (right) enables the _Mini Sounder_. Down enables the feature, up disables the feature.
+|SW4
+
+|5
+|USB (Micro-B): Serial interface and logic power
+|Serial connection to a host running MKOB or MorseKOB. This is also used to supply power to the logic portion of the interface board when being used _((stand-alone))_.
+
+*IMPORTANT:* If the interface board is attached to a *μKOB* or a *Raspberry Pi*, refer to the <<Option Jumpers>> section before connecting to this USB connector.
+|U1
+
+|6
+|1/4in Stereo (TRS): Key/Paddle
+|Key/Paddle input for use with a separate Key & Sounder. Refer to the <<Key/Paddle Input>> section for connection details.
+|J3
+
+|7
+|Toggle Switch: Test Closer
+|The key closer for the mini-test key portion. Lever to the left (toward the pushbutton switches) is CLOSED, to the right is OPEN.
+|SW1
+
+|8
+|Pushbutton Switch: Test Paddle-Dash (Dah)
+|The _Dash_ sender of the mini-test paddle.
+|SW3
+
+|9
+|Pushbutton Switch: Test Key / Paddle-Dot (Dit)
+|The mini-test key, or the _Dot_ sender of the mini-test paddle.
+|SW2
+
+|10
+|1x4 Socket: I2C Disp
+|Connection for an I2C display panel for a Raspberry Pi through the GPIO connector.  This 4-pin socket connector is connected to the I2C-1 GPIO pins for use with a small OLED panel.
+|J6
+
+|11
+|2x20 Socket: GPIO
+|Connection to a Raspberry Pi GPIO connector.  The 40-pin socket connector is populated on the bottom of the board.
+|J5
+
+|12
+|2x5 Header: Serial I/O
+|10-pin header for the serial port I/O signals. This can connect to a DB9 ribbon cable or to a piggyback'ed μKOB Comm Adaptor board.
+|J4
+
+|13
+|1x7 Socket: μKOB
+|Connection to a μKOB main board. The 7-pin socket connector is populated on the bottom of the board.
+|J1
+
+|NA
+|7 Pin x 2 Rows on USB-Serial Module
+|The two 7-pin header rows on the USB-Serial Module connect the module to the interface board. They are not intended to be used, and must not be jumpered. The signals are labeled on the interface board, and can be used for testing if needed.
+|U1
+
+|===
+
+[%breakable]
+=== Option Jumpers
+[%unbreakable]
+--
+The option jumpers described in this section may or may not be configurable (via pins and jumpers) depending on how the interface board was assembled. It is possible that the options are hard-jumpered a specific way and cannot be changed. Unless noted, the option jumpers are either ON (jumpered) or OFF (open). Option jumper OP1 is the one 2-position option (left-right).
+
+
+Going clockwise around the board, the option jumpers are:
+
+image::KS-IF-MkIII-top-anno-opts.jpg[Option Jumpers,90%]
+--
+
+.Interface Board Option Jumpers
+[%breakable]
+[width=98%]
+[cols="^.<1,<.<3,<.<10,^.<3",options=header]
+|===
+|#
+|Name
+|Usage
+|Schematic Designator
+
+|1
+|5V-USB
+|When jumpered, 5 volt power to the board is supplied by the USB connection. When open, 5 volt power is supplied by the μKOB or GPIO.
+|JP8
+
+|2
+|LoopDbgPwr
+|When jumpered, power is supplied to the Sounder / KOB Loop circuit from the 5V board (logic) power.
+|OPa1
+
+|3
+|SNDR
+|When jumpered, the sounder drive is from the USB (serial) RTS line. When open, the sounder drive is from the μKOB or GPIO.
+|JP4
+
+|4
+|DASH-
+|When jumpered, the paddle dash signal is sent to the USB (serial) CTS line. When open, the paddle dash signal is sent to the μKOB or GPIO.
+|JP5
+
+|5
+|DOT-
+|When jumpered, the key / paddle dot signal is sent to the USB (serial) DSR line. When open, the key / paddle dot signal is sent to the μKOB or GPIO.
+|JP6
+
+|6
+|3V3
+|When jumpered, 3.3 volt power to the board is supplied by the USB connection. When open, 3.3 volt power is supplied by the μKOB or GPIO.
+|JP7
+
+|7
+|KeyJack-NP
+|This must be jumpered when the Key/Paddle Jack (J3) is not installed. The jumper and markings are located within the border of the jack.
+|JP1
+
+|8
+|KEY-IN
+|When jumpered, the key / paddle dot signal is connected to the interface board. When open, the signal is not connected, allowing the mini-test key function to be used.
+|JP3
+
+|9
+|DASH-IN
+|When jumpered, the paddle dash signal is connected to the interface board. When open, the signal is not connected, allowing the mini-test key function to be used.
+|JP2
+
+|10
+|KS-LOOP
+|This 2-position jumper selects how the mini-test key and sounder are connected. When the jumper is to the *KS* side, the mini-test is connected as a separate key & sounder. When the jumper is to the *LOOP* side, the mini-test is connected as a loop (key and sounder in series). The paddle-dash is always separate, and when testing as a paddle the jumper should be in the *KS* position.
+|OP1
+
+|11
+|JP9
+|When jumpered, the shield (Altoids can) is connected to power/signal ground.
+|JP9
+
+|===
+
+[%nonfacing]
+== Option Settings
+Following are the option settings for the different applications of the interface board.
+
+[%breakable]
+=== Common
+[%unbreakable]
+--
+The option jumper settings in this section are common to all applications of the interface board.
+--
+
+.Common Option Jumpers
+[%breakable]
+[width=98%]
+[cols="^.<3,<.<5,<.<5",options=header]
+|===
+|Name / Designator
+|Typical Setting
+|Alternate Setting Use
+
+|LoopDbgPwr / OPa1
+|OPEN
+|Jumper to provide 5 volt power to the loop circuit for board testing.
+
+|KEY-IN / JP3
+|JUMPERED
+|Open to use the on-board test key and closer when the external key can't be left open.
+
+|DASH-IN / JP2
+|JUMPERED
+|Open to use the on-board test paddle if the external paddle can't be left open.
+
+|KS-LOOP / OP1
+|LEFT = Key&Sounder / RIGHT = Loop Configuration of the on-board test key and sounder.
+|Must be jumpered to left or right for the on-board test sounder (visual or mini) to operate.
+
+|JP9
+|JUMPERED. This connects the shield to the board's (electrical) ground.
+|Open to isolate the shield from the board. When this is done, one of the shield screws can be used to attach an external ground for the shield.
+
+|===
+
+[%breakable]
+=== μKOB (Configurations 1 and 2)
+[%unbreakable]
+--
+In addition to the common option jumper settings, the following settings apply when the interface board is being attached to a μKOB via piggyback connector J1.(((μKOB, Attached, J1))) If the board is only being used with a μKOB, the board most likely does not have the ((FTDI USB-Serial Module (U1))) populated. If that is the case, many of the jumpers in this section will also not be populated, and therefore will be OPEN.
+--
+
+[%unbreakable]
+--
+.μKOB Option Jumpers
+[width=98%]
+[cols="^.<3,<.<5,<.<5",options=header]
+|===
+|Name / Designator
+|Setting
+|Operation
+
+|SNDR / JP4
+|OPEN
+|USB interface sounder drive signal is disconnected from the board.
+
+|DASH- / JP5
+|OPEN
+|USB interface dash input is disconnected from the board.
+
+|DOT- / JP6
+|OPEN
+|USB interface dot input is disconnected from the board.
+
+|3V3 / JP7
+|OPEN
+|USB interface 3.3 volt source is disconnected from the board.
+
+|5V-USB / JP8
+|OPEN
+|USB interface 5 volt source is disconnected from the board.
+
+|RPI-GPIO40 / J5
+|NON-EXISTENT
+|A Raspberry Pi cannot be connected.
+
+|===
+--
+
+[%breakable]
+=== Raspberry Pi GPIO (Configurations 3 and 4)
+[%unbreakable]
+--
+In addition to the common option jumper settings, the following settings apply when the interface board is being attached to a Raspberry Pi via piggyback connector J5.(((Raspberry Pi, Attached, J5))) If the board is only being used with a Raspberry Pi, the board most likely does not have the ((FTDI USB-Serial Module (U1))) populated. If that is the case, many of the jumpers in this section will also not be populated, and therefore will be OPEN.
+--
+
+.Raspberry Pi Option Jumpers
+[%breakable]
+[width=98%]
+[cols="^.<3,<.<5,<.<5",options=header]
+|===
+|Name / Designator
+|Setting
+|Operation
+
+|SNDR / JP4
+|OPEN
+|USB interface sounder drive signal is disconnected from the board.
+
+|DASH- / JP5
+|OPEN
+|USB interface dash input is disconnected from the board.
+
+|DOT- / JP6
+|OPEN
+|USB interface dot input is disconnected from the board.
+
+|3V3 / JP7
+|OPEN
+|USB interface 3.3 volt source is disconnected from the board.
+
+|5V-USB / JP8
+|OPEN
+|USB interface 5 volt source is disconnected from the board.
+
+|I2C Disp / J6
+|OPTIONAL
+|Connects an I2C OLED Display panel to the Raspberry Pi GPIO (Pin1=GND, Pin2=3.3V/P1, Pin3=SCL/GP3/P5, Pin4=SDA/GP2/P3).
+
+|μKOB / J1
+|NON-EXISTENT
+|A μKOB cannot be connected.
+
+|===
+
+[%breakable]
+=== USB Serial (Configuration 5, plus 2 and 4)
+[%unbreakable]
+--
+In addition to the common option jumper settings, the following settings apply when the interface board is being used through the USB Serial connection to a system running MKOB or MorseKOB. If the board is assembled for use only with the USB Serial interface, the options in this section are most likely permanently jumpered.
+--
+
+.USB Serial Option Jumpers
+[%breakable]
+[width=98%]
+[cols="^.<3,<.<5,<.<5",options=header]
+|===
+|Name / Designator
+|Setting
+|Operation
+
+|SNDR / JP4
+|JUMPERED
+|USB interface sounder drive signal is driving the board circuit.
+
+|DASH- / JP5
+|JUMPERED
+|USB interface dash input is from the board circuit.
+
+|DOT- / JP6
+|JUMPERED
+|USB interface dot input is from the board circuit.
+
+|3V3 / JP7
+|JUMPERED
+|USB interface 3.3 volt source is powering the board.
+
+|5V-USB / JP8
+|JUMPERED
+|USB interface 5 volt source is powering the board.
+
+|μKOB / J1
+|NO
+|A μKOB cannot be connected.
+
+|RPI-GPIO40 / J5
+|NO
+|A Raspberry Pi cannot be connected.
+
+|===
+
+[%nonfacing]
+== Sounder / KOB Loop Connection
+[%unbreakable]
+--
+A Sounder or a KOB Loop (key and sounder connected in series) are connected to the interface board using the screw-terminal block ST2. A user-supplied ((current limiting resistor))(((resistor, current limiting))) must be connected to screw-terminal block ST1. The resistor is positioned on the inside (under the shield) to reduce ((radio interference)) and to help guard against touching it, as it may become warm during operation.
+
+Power for the sounder/loop is normally provided by a user-supplied power module connected via J2. Refer to the <<Externally Powered Loop>> section below if connecting to a powered telegraph loop.
+
+Selecting the appropriate power module voltage and the current limiting resistor value depends on the sounder being used. The following table provides values that can be used as a starting point.
+
+NOTE: The values in the table are meant to be used with this interface board and a Sounder or KOB for enjoying and practicing land-line telegraphy. They are not meant to indicate what was used in actual telegraph circuits _of the day_.
+
+CAUTION: Some telegraphy enthusiasts use higher voltages and/or lower valued current limiting resistors to get a more _SNAPPY_ sound/response. Just remember that, in most cases, you are dealing with antique equipment that, if damaged, can be impossible to repair. If the sounder windings are over-powered long enough, or too many times, it can cause the (very thin) insulation coating the (extremely fine) wire to fail, causing an internal short. This results in the sounder becoming an interesting paper weight or conversation provoking door stop, rather than a functional telegraph instrument. It is suggested that you start with a lower voltage and/or higher resistor value. Then, if the sound produced isn't satisfactory, slightly increase the voltage *or* decrease the resistor value until a good, solid, *CLICK* is produced. Note that the *CLACK* is produced by the spring and other adjustments of the sounder, so voltage and resistance values don't really affect it.
+--
+
+[%unbreakable]
+--
+.Example Sounder / KOB Loop Voltage and Current Limit Resistor Values
+[width=98%]
+[cols="<.<10,<.<3,<.<3,^.<5,^.<5",options=header]
+|===
+|Instrument
+|Nominal Current
+|Voltage Drop
+|Power Supply Voltage (J2)
+|Current Limit Resistor Ohms (ST1)
+
+|Line Sounder, 30 Ohms
+|70 ma
+|2.1v
+|9v / 12v
+|39 / 150 1W
+
+|Line Sounder, 120 Ohms
+|40 ma
+|4.0v
+|12v / 18v
+|180 / 330 1W
+
+|Local Sounder / KOB, 4 Ohms
+|240 ma
+|0.96v
+|9v / 12v
+|16 / 47 3W
+
+|Local Sounder, 50 Ohms
+|110 ma
+|5.5v
+|12v / 18v
+|56 / 110 3W
+
+|Local Sounder, 400 Ohms
+|30 ma
+|12v
+|18v / 24v
+|200 / 400 1W
+
+|===
+--
+
+[%breakable]
+=== Externally Powered Loop
+The interface board is designed to make it easy to set up a personal telegraph station by providing a convenient way to provide power to the Sounder / KOB Loop. However, rather than powering the Sounder / KOB Loop from a power supply connected to J2, the interface board can be connected into a powered telegraph loop if the following conditions are met:
+
+* The loop power must be DC
+* The loop voltage must not exceed 30 volts (regardless of the amperage)
+* The loop amperage must not exceed 1 amp (regardless of the voltage)
+* The loop wattage must not exceed 1.8 watts (all sounders and other equipment in the loop energized)
+
+If the existing telegraph loop has appropriate current limiting, the current limit resistor normally connected to ST1 can be replaced by a jumper wire. ST1 must have a resistor or a jumper wire in order to complete the loop circuit.
+
+When connecting to a powered telegraph loop the J2 power connector must be jumpered. This can be accomplished using a shorting connector.
+
+The interface board must be connected into the telegraph loop with the negative side of the loop circuit connected to the screw terminal nearer the J2 Power Jack (right side when viewing the face of the terminal block) and the positive side of the loop circuit connected to the screw terminal away from the J2 Power Jack (left when viewing the face of the terminal block). The interface board will introduce a 1.5 volt drop into the telegraph loop circuit.
+
+[%nonfacing]
+== Key/Paddle Input
+[%unbreakable]
+--
+When using a separate key and sounder, or a paddle, the ((key)) or ((paddle))(((connecting, key or paddle))) is connected to the 1/4 inch phone jack ((J3)).
+
+IMPORTANT: No power should be applied to this connection.
+
+The connection is the same as many common HAM radios. It is illustrated below:
+--
+
+.Key/Paddle Connection
+[%breakable]
+[width=50%]
+[cols="<.<1,<.<4"]
+|===
+|Tip
+|Key or Paddle Dot
+
+|Ring
+|Paddle Dash
+
+|Sleeve
+|Common
+
+|===
+
+image::Key-Paddle-Conn.png[Key/Paddle Jack Connection]
+
+[%nonfacing]
+== Connection Diagrams
+
+.Separate Key and Sounder, powered through the interface
+image::Connection_KS.png[Key & Sounder]
+
+.Separate Key and Sounder with external power
+image::Connection_KS_ExPwr.png[Key & Sounder with External Power]
+
+.KOB or Loop, powered through the interface
+image::Connection_KOB.png[KOB (Loop)]
+
+.KOB or Loop with external power
+image::Connection_KOB_ExPwr.png[KOB (Loop) with External Power]
+
+[%nonfacing]
+== Optional Test Key/Paddle and Visual/Mini Sounder
+For testing μKOB or MKOB it can be handy to have a small, self-contained device that includes a key and sounder. This interface board optionally provides a _((Visual Sounder))_, a _((Mini Sounder))_, and a _Key_(((key))) with _Closer_(((closer))) switch, and a _((Paddle-Dash))_ switch. The _((Visual Sounder))_ and _((Mini Sounder))_ can be enabled/disabled individually using the 2-position ((DIP-Switch))(((DIP-Switch, 2-position))) (SW4). The test features do not require the Sounder/Loop power (J2), the Sounder Current Limit resistor (ST1), or a Sounder/KOB (ST2).
+
+To use the key+closer when an external key is attached, the ((JP2)) jumper can be removed or the external key can be left open. Normally, nothing special needs to be done to use the _((Paddle Switches))_, as a paddle doesn't close the circuit when it's not being used.
+
+((Option Jumper)) OP1 (((Option Jumper, OP1))) configures the test key+closer and visual sounder and mini sounder as either a ((separate key and sounder)) or a ((loop)) circuit. This configuration only affects the test key and sounder, it does not change the external circuit.
+
+NOTE: Technically, the test key/paddle, visual sounder, and mini sounder are in parallel with the actual, external, telegraph equipment. Therefore, when using the actual telegraph equipment the test closer, if installed, must be open in order for the telegraph key's operation to be recognized.
+
+=== Adjusting Tone
+The _((Mini Sounder))_ ((tone)) can be adjusted by tightening or loosening the screws that hold down the ((shield tin)) (((shield tin, Altoids))).
+
+ifdef::backend-pdf[]
+[index]
+== Index
+endif::[]
+
+[colophon%nonfacing]
+= Colophon
+This document is for PCB: μKOB-K&S | MKOB-IF MkIII v1.0 with Cv2 mods
+--
+Document version: {docver} ({docdate})
+--
+
+{license}
+
+{copyright}
+
+This document is authored using *asciidoc*, and the pdf version rendered through
+*asciidoctor-pdf*, to create a manual that is more readable and more pleasing to the eye.
+
