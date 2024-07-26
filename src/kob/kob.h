@@ -77,6 +77,14 @@ extern void kob_tone_energize(bool energize);
 extern const kob_status_t* kob_status();
 
 /**
+ * @brief Update the `circuit_closed` state.
+ * @ingroup kob
+ *
+ * @param closed New state
+ */
+extern void kob_update_circuit_closed(bool closed);
+
+/**
  * @brief Update the state of the Config controlled aspects of the module.
  *
  * @param invert_key_input True if the key input should be inverted (used for modem input)

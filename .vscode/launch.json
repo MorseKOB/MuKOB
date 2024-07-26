@@ -8,7 +8,7 @@
       "request": "launch",
       "type": "cortex-debug",
       "servertype": "openocd",
-      "gdbPath": "arm-none-eabi-gdb",
+      "gdbPath": "${env:ARM_GDB_PATH}",
       "device": "RP2040",
       "configFiles": [
         "interface/cmsis-dap.cfg",
@@ -28,7 +28,7 @@
       "type": "cortex-debug",
       "servertype": "external",
       "gdbTarget": "localhost:3333",
-      "gdbPath": "arm-none-eabi-gdb",
+      "gdbPath": "${env:ARM_GDB_PATH}",
       "device": "RP2040",
       "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
       "runToEntryPoint": "main"

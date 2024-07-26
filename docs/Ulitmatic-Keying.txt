@@ -1,0 +1,113 @@
+Chuck Olson, WB9KZY
+Jackson Harbor Press
+http://wb9kzy.com
+wb9kzy@wb9kzy.com
+
+updated 2/4/2016 
+original date 3/22/2002
+
+Just what is Ultimatic mode ?
+
+It's the original two lever paddle electronic keying mode!
+
+Most Morse code keyer users are familiar with Iambic A & B dual lever
+keying modes, if you are not, please see the Acrobat file:  modeab.pdf
+
+Recently a friend brought the Ultimatic dual lever keying mode to my 
+attention.  This mode seems to have largely been eclipsed recently by
+the two iambic modes.  
+
+One warning:  confirmed users of either mode A or mode B iambic keying
+probably won't like Ultimatic mode - once a certain keying sequence is
+ingrained, it's hard to change to something new.  But, Ultimatic mode 
+may be useful for a beginner to electronic keying to try in additon to 
+the iambic modes - it has some interesting differences.
+
+Here are a few comments on Ultimatic versus Iambic keying from the internet:
+
+>IAMBIC - UGH !@!  I am convinced that the so-called iambic keyer owes
+>its design entirely to sloppy, corner-cutting programming. It can
+>only have been developed by a phone man. Very few useful code
+>combinations can be sent using it. Far more useful is the "ultimatic"
+>logic of yesteryear. For those unfamiliar with it, squeeze both paddles
+>and the last to close takes control, no mindless alternation between
+>dots and dashes. So a single squeeze can be a W, G, J, 7 or a 3 etc.
+>just by working the English on the timing of the second closure (whilst
+>hanging onto the first one, no need to let go). Much more user-friendly
+>than just squeezing an A,C, N, or a period.
+
+The mode is selected in the Island Keyer II or MegaPK within the CE 
+(command entry) mode by sending a UN (Ultimatic oN).  Turn it off with 
+a UF (Ultimatic oFf).
+
+The mode is selected in the PK-4 mem+both menu item U by hitting dit.
+Turn it off by hitting dah.
+
+After returning to normal keying mode, try squeezing both paddles.  
+
+Instead of the familiar iambic default: di-dah-di-dah . . . OR
+					dah-di-dah-di . . .
+
+you'll hear either:  	di-dah-dah-dah . . ;   OR
+			dah-di-di-di . . . 
+
+depending on which paddle you press first.
+
+The basic premise of Ultimatic mode (as I understand it) is that when
+both paddles have been pressed at the same time, the keyer will output 
+the element of last paddle pressed.  
+
+This is useful for generating some characters, for example the question mark:
+
+1) press the dit paddle for two dits
+2) keeping the dit pressed, squeeze the dah also for the middle two dahs
+3) release the dah paddle only for the last two dits
+4) release the dit
+
+The comma would be generated the opposite way:
+
+1) press the dah paddle for two dahs
+2) keeping the dah pressed, squeeze the dit for the middle two dits
+3) release the dit paddle only for the last two dahs
+4) release the dah
+
+
+Try it, you may find it useful!   Comments invited to: wb9kzy@wb9kzy.com
+
+
+Best Regards,
+
+Chuck, WB9KZY
+
+
+Ultimatic QST Bibliography:
+
+May 1979 QST 11 Versakeyer--A Multimode Paddle Keyer
+Keywords: CONSTRUCTION HOMEBREW KEYER MORSE CW Horowitz, Paul, W1HFA 
+
+Dec 1961 QST 64 Transistorized ''Ultimatic,'' The
+(Technical Correspondence) Kanda, Alvin, K0MHU 
+
+Oct 1960 QST 31 "Ultimatic"--Transistorized, The--Part 2 of 2
+Keywords: CONSTRUCTION HOMEBREW KEYER MORSE CW Kanda, Alvin, K0MHU 
+
+Oct 1960 QST 152 "Ultimatic"--Transistorized, The (September 1969 QST)
+(Feedback)   
+
+Sep 1960 QST 27 "Ultimatic"--Transistorized, The--Part 1 of 2
+Keywords: CONSTRUCTION HOMEBREW KEYER MORSE CW Kanda, Alvin, K0MHU 
+
+May 1955 QST 36 All-Electronic "Ultimatic" Keyer, The, Part II
+Keywords: MORSE CW Kaye, John, W6SRY 
+
+Apr 1955 QST 11 All-Electronic "Ultimatic" Keyer, The, Part I
+Keywords: MORSE CW TUBE 12AU7 12AT7 Kaye, John, W6SRY 
+
+Apr 1953 QST 73 Ultimatic
+(Correspondence) Mouatt, Howard, W2VVO 
+
+Apr 1953 QST 73 Ultimatic
+(Correspondence) Preston, Elmer, W1AYC 
+
+Feb 1953 QST 11 "Ultimatic"--The Key With a Memory, The
+Keywords: MORSE CW KEYER TUBE 12AU7 Kaye, John, W6SRY 

@@ -16,8 +16,6 @@
 
 #include "cmd_t.h" // Command processing type definitions
 
-#define CONFIG_NAME_MAX_LEN 15
-
 typedef enum _code_type_ {
     CODE_TYPE_AMERICAN = 0,
     CODE_TYPE_INTERNATIONAL = 1,
@@ -30,12 +28,13 @@ typedef enum _code_spacing_ {
 } code_spacing_t;
 
 #define CONFIG_NAME_MAX_LEN 15
-
 #define CONFIG_VERSION 1
+
 typedef struct _config_ {
     uint16_t cfg_version;
     //
     char* name;
+    //
     bool auto_connect;
     uint8_t char_speed_min;
     code_type_t code_type;

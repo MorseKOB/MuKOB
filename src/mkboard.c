@@ -22,25 +22,28 @@
 #include "pico/printf.h"
 #include "pico/time.h"
 #include "pico/types.h"
-#include "hardware/spi.h"
+#include "hardware/adc.h"
+#include "hardware/clocks.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
-#include "hardware/timer.h"
-#include "hardware/clocks.h"
 #include "hardware/rtc.h"
-#include "pico/cyw43_arch.h"
+#include "hardware/spi.h"
+#include "hardware/timer.h"
 #include "pico/bootrom.h"
+#include "pico/cyw43_arch.h"
 
 #include "system_defs.h"
 
 #include "config.h"
 #include "display.h"
+#include "ili_lcd_spi.h"
 #include "kob.h"
 #include "mkboard.h"
 #include "mkdebug.h"
 #include "multicore.h"
 #include "net.h"
 #include "term.h"
+#include "touch.h"
 #include "util.h"
 
 static uint8_t _options_value = 0;
@@ -95,16 +98,16 @@ int board_init() {
     }
     cyw43_arch_enable_sta_mode();
 
-    // SPI 0 initialization for the touch and SD card. Use SPI at 8MHz.
-    spi_init(SPI_TSD_DEVICE, 8000 * 1000);
-    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_TSD_SCK, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_TSD_MOSI, GPIO_FUNC_SPI);
-    // SPI 1 initialization for the display. Use SPI at 20MHz.
-    spi_init(SPI_DISPLAY_DEVICE, 20000 * 1000);
-    gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
+    // SPI 0 initialization for the touch and SD card. Use SPI at 2.2MHz.
+    spi_init(SPI_TOUCH_DEVICE, 2200 * 1000);
+    gpio_set_function(SPI_TOUCH_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TOUCH_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_TOUCH_MISO, GPIO_FUNC_SPI);
+    // SPI 1 initialization for the display. Use SPI at 18MHz.
+    spi_init(SPI_DISPLAY_DEVICE, 18000 * 1000);
     gpio_set_function(SPI_DISPLAY_SCK,  GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISPLAY_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_DISPLAY_MISO, GPIO_FUNC_SPI);
     // Chip selects for the SPI paripherals
     gpio_set_function(SPI_CS_DISPLAY,   GPIO_FUNC_SIO);
     gpio_set_function(SPI_DC_DISPLAY,   GPIO_FUNC_SIO);  // Data/Command
@@ -116,8 +119,8 @@ int board_init() {
     gpio_set_dir(SPI_CS_SDCARD, GPIO_OUT);
     gpio_set_dir(SPI_CS_TOUCH, GPIO_OUT);
     // Signal drive strengths
-    gpio_set_drive_strength(SPI_TSD_SCK, GPIO_DRIVE_STRENGTH_4MA);      // Multiple devices connected
-    gpio_set_drive_strength(SPI_TSD_MOSI, GPIO_DRIVE_STRENGTH_4MA);     // Multiple devices connected
+    gpio_set_drive_strength(SPI_TOUCH_SCK, GPIO_DRIVE_STRENGTH_4MA);      // Multiple devices connected
+    gpio_set_drive_strength(SPI_TOUCH_MOSI, GPIO_DRIVE_STRENGTH_4MA);     // Multiple devices connected
     gpio_set_drive_strength(SPI_DISPLAY_SCK, GPIO_DRIVE_STRENGTH_2MA);  // SPI Display is a single device
     gpio_set_drive_strength(SPI_DISPLAY_MOSI, GPIO_DRIVE_STRENGTH_2MA); // SPI Display is a single device
     gpio_set_drive_strength(SPI_CS_DISPLAY, GPIO_DRIVE_STRENGTH_2MA);   // CS goes to a single device
@@ -143,19 +146,26 @@ int board_init() {
     // GPIO Outputs (other than chip-selects)
     gpio_set_function(DISPLAY_RESET_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_RESET_OUT, GPIO_OUT);
+    gpio_set_drive_strength(DISPLAY_RESET_OUT, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(DISPLAY_RESET_OUT, DISPLAY_HW_RESET_ON);           // Hold reset on until rest of board is initialized
     gpio_set_function(DISPLAY_BACKLIGHT_OUT,   GPIO_FUNC_SIO);
     gpio_set_dir(DISPLAY_BACKLIGHT_OUT, GPIO_OUT);
+    gpio_set_drive_strength(DISPLAY_BACKLIGHT_OUT, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(DISPLAY_BACKLIGHT_OUT, DISPLAY_BACKLIGHT_OFF);     // No backlight until the display is initialized
     gpio_set_function(TONE_DRIVE,   GPIO_FUNC_SIO);
     gpio_set_dir(TONE_DRIVE, GPIO_OUT);
+    gpio_set_drive_strength(TONE_DRIVE, GPIO_DRIVE_STRENGTH_2MA);
     gpio_put(TONE_DRIVE, TONE_OFF);
-    gpio_set_function(KOB_SOUNDER_OUT,   GPIO_FUNC_SIO);
-    gpio_set_dir(KOB_SOUNDER_OUT, GPIO_OUT);
-    gpio_set_drive_strength(KOB_SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
-    gpio_put(KOB_SOUNDER_OUT, KOB_SOUNDER_DEENERGIZED);
+    gpio_set_function(SOUNDER_OUT,   GPIO_FUNC_SIO);
+    gpio_set_dir(SOUNDER_OUT, GPIO_OUT);
+    gpio_set_drive_strength(SOUNDER_OUT, GPIO_DRIVE_STRENGTH_2MA);
+    gpio_put(SOUNDER_OUT, SOUNDER_DEENERGIZED);
 
     // GPIO Inputs
+    //    Key
+    gpio_init(KEY_IN);
+    gpio_set_dir(KEY_IN, GPIO_IN);
+    gpio_pull_up(KEY_IN);
     //    Options Switch
     gpio_init(OPTIONS_1_IN);
     gpio_set_dir(OPTIONS_1_IN, GPIO_IN);
@@ -187,6 +197,12 @@ int board_init() {
     // Read and cache the option switch value
     options_read();
 
+    // Initialize hardware AD converter, enable onboard temperature sensor and
+    //  select its channel.
+    adc_init();
+    adc_set_temp_sensor_enabled(true);
+    adc_select_input(4); // Inputs 0-3 are GPIO pins, 4 is the built-in temp sensor
+
     // Get the configuration
     config_module_init();
     const config_sys_t* system_cfg = config_sys();
@@ -211,6 +227,8 @@ int board_init() {
     disp_module_init();
     disp_print_wrap_len_set(system_cfg->disp_wrap_back);
     display_backlight_on(true);
+    // Initialize the touch panel
+    tp_init(5, ili_screen_height(), ili_screen_width(), 1, 0, 1, 0);
 
     // Initialize the multicore subsystem
     multicore_module_init();
@@ -326,6 +344,25 @@ uint64_t now_us() {
     return (time_us_64());
 }
 
+/* References for this implementation:
+ * raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
+ * pico-examples/adc/adc_console/adc_console.c */
+float onboard_temp_c() {
+
+    /* 12-bit conversion, assume max value == ADC_VREF == 3.3 V */
+    const float conversionFactor = 3.3f / (1 << 12);
+
+    float adc = (float)adc_read() * conversionFactor;
+    float tempC = 27.0f - (adc - 0.706f) / 0.001721f;
+
+    return (tempC);
+}
+
+float onboard_temp_f() {
+
+    return (onboard_temp_f() * 9 / 5 + 32);
+}
+
 uint8_t options_read(void) {
     uint8_t opt_value = 0x00;
     uint8_t opt_bit = gpio_get(OPTIONS_3_IN);
@@ -355,10 +392,13 @@ int _format_printf_datetime(char* buf, size_t len) {
     return (snprintf(buf, len, "%02d-%02d-%04d %02d:%02d:%02d", t.month, t.day, t.year, t.hour, t.min, t.sec));
 }
 
-void debug_printf(const char* format, ...) {
+void debug_printf(bool incl_dts, const char* format, ...) {
     if (mk_debug()) {
         char buf[512];
-        int index = _format_printf_datetime(buf, sizeof(buf));
+        int index = 0;
+        if (incl_dts) {
+            index = _format_printf_datetime(buf, sizeof(buf));
+        }
         index += snprintf(&buf[index], sizeof(buf) - index, " DEBUG: ");
         va_list xArgs;
         va_start(xArgs, format);
@@ -382,9 +422,12 @@ void error_printf(bool inc_dts, const char* format, ...) {
     printf("%s\033[0m", buf);
 }
 
-void info_printf(const char* format, ...) {
+void info_printf(bool incl_dts, const char* format, ...) {
     char buf[512];
-    int index = _format_printf_datetime(buf, sizeof(buf));
+    int index = 0;
+    if (incl_dts) {
+        index = _format_printf_datetime(buf, sizeof(buf));
+    }
     index += snprintf(&buf[index], sizeof(buf) - index, " INFO: ");
     va_list xArgs;
     va_start(xArgs, format);

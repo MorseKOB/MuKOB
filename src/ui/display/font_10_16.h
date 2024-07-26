@@ -12,6 +12,10 @@
 
 #include "font.h"
 
+/**
+ * @brief Information for the 10x16 fixed font.
+ * @ingroup display
+ */
 extern const font_info_t font_10_16;
 
 #ifdef __cplusplus

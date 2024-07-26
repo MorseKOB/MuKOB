@@ -30,5 +30,11 @@
         "imagesdir",
         "SNDR"
     ],
-    "asciidoc.antora.enableAntoraSupport": true
+    "asciidoc.antora.enableAntoraSupport": true,
+    "files.associations": {
+        "adc.h": "c",
+        "types.h": "c",
+        "spi.h": "c",
+        "re_pbsw.h": "c"
+    }
 }

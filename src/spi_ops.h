@@ -25,25 +25,36 @@
 #include <stdbool.h>
 #include "hardware/spi.h"
 
-void spi_begin(spi_inst_t* spi);
-void spi_display_begin(void);
-void spi_tsd_begin(void);
+#define SPI_HIGH_TXD_FOR_READ 0xFF
+#define SPI_LOW_TXD_FOR_READ 0x00
 
-void spi_end(spi_inst_t* spi);
-void spi_display_end(void);
-void spi_tsd_end(void);
+extern void spi_begin(spi_inst_t* spi);
+extern void spi_display_begin(void);
+extern void spi_touch_begin(void);
 
-int spi_read(spi_inst_t* spi, uint8_t txv, uint8_t* dst, size_t len);
-int spi_display_read(uint8_t txv, uint8_t* dst, size_t len);
-int spi_tsd_read(uint8_t txv, uint8_t* dst, size_t len);
+extern void spi_end(spi_inst_t* spi);
+extern void spi_display_end(void);
+extern void spi_touch_end(void);
 
-int spi_write(spi_inst_t* spi, const uint8_t* data, size_t len);
-int spi_display_write(const uint8_t* data, size_t len);
-int spi_tsd_write(const uint8_t* data, size_t len);
+extern int spi_read(spi_inst_t* spi, uint8_t txval, uint8_t* dst, size_t len);
+extern int spi_display_read(uint8_t txval, uint8_t* dst, size_t len);
+extern int spi_touch_read(uint8_t txval, uint8_t* dst, size_t len);
 
-int spi_write16(spi_inst_t* spi, const uint16_t* data, size_t len);
-int spi_display_write16(const uint16_t* data, size_t len);
-int spi_tsd_write16(const uint16_t* data, size_t len);
+extern int spi_write8_buf(spi_inst_t* spi, const uint8_t* buf, size_t len);
+extern int spi_display_write8_buf(const uint8_t* buf, size_t len);
+extern int spi_touch_write_buf(const uint8_t* buf, size_t len);
+
+extern int spi_write8(spi_inst_t* spi, uint8_t data);
+extern int spi_display_write8(uint8_t data);
+extern int spi_touch_write8(uint8_t data);
+
+extern int spi_write16(spi_inst_t* spi, uint16_t data);
+extern int spi_display_write16(uint16_t data);
+extern int spi_touch_write16(uint16_t data);
+
+extern int spi_write16_buf(spi_inst_t* spi, const uint16_t* buf, size_t len);
+extern int spi_display_write16_buf(const uint16_t* buf, size_t len);
+extern int spi_touch_write16_buf(const uint16_t* buf, size_t len);
 
 #ifdef __cplusplus
  }

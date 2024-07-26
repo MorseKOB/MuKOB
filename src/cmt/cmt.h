@@ -15,6 +15,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "gfx.h"
 #include "kob_t.h"
 #include "morse.h"
 #include "pico/types.h"
@@ -26,10 +27,10 @@ typedef enum _MSG_ID_ {
     MSG_DEBUG_CHANGED,
     //
     // Back-End messages
-    MSG_BACKEND_NOOP = 0x4000,
+    MSG_BACKEND_NOOP = 0x0100,
     MSG_BE_TEST,
     MSG_CMT_SLEEP,
-    MSG_KOB_KEY_READ,
+    MSG_KEY_READ,
     MSG_KOB_SOUND_CODE_CONT,
     MSG_MKS_KEEP_ALIVE_SEND,
     MSG_MKS_PACKET_RECEIVED,
@@ -43,7 +44,7 @@ typedef enum _MSG_ID_ {
     MSG_WIRE_SET,
     //
     // Front-End/UI messages
-    MSG_UI_NOOP = 0x8000,
+    MSG_UI_NOOP = 0x0200,
     MSG_BE_INITIALIZED,
     MSG_CMD_KEY_PRESSED,
     MSG_CMD_INIT_TERMINAL,
@@ -51,12 +52,14 @@ typedef enum _MSG_ID_ {
     MSG_CODE_TEXT,
     MSG_DISPLAY_MESSAGE,
     MSG_KOB_STATUS,
+    MSG_TOUCH_PANEL,
     MSG_UPDATE_UI_STATUS,
     MSG_WIFI_CONN_STATUS_UPDATE,
     MSG_WIRE_CHANGED,
     MSG_WIRE_CONNECTED_STATE,
     MSG_WIRE_CURRENT_SENDER,
     MSG_WIRE_STATION_ID_RCVD,
+    MSG_WIRE_STATIONS_CLEARED,
 } msg_id_t;
 
 /**
@@ -87,6 +90,7 @@ typedef union _MSG_DATA_VALUE {
     const char* station_id;
     char* str;
     int32_t status;
+    gfx_point* touch_point;
     unsigned short wire;
 } msg_data_value_t;
 
@@ -138,8 +142,17 @@ typedef struct _MSG_HANDLER_ENTRY {
     msg_handler_fn msg_handler;
 } msg_handler_entry_t;
 
-typedef struct _MSG_DISPATCH_CNTX {
-} msg_dispatch_cntx_t;
+typedef struct _PROC_STATUS_ACCUM_ {
+    volatile int64_t cs;
+    volatile uint32_t ts_psa;                               // Timestamp of last PS Accumulator/sec update
+    volatile uint32_t t_active;
+    volatile uint32_t t_idle;
+    volatile uint32_t t_msgr;
+    volatile uint16_t retrived;
+    volatile uint16_t idle;
+    volatile uint32_t int_status;
+    volatile float core_temp;
+} proc_status_accum_t;
 
 typedef struct _MSG_LOOP_CNTX {
     uint8_t corenum;                                // The core number the loop is running on
@@ -180,6 +193,21 @@ extern bool cmt_message_loops_running();
  * @param msg (not used)
  */
 extern void cmt_handle_sleep(cmt_msg_t* msg);
+
+/**
+ * @brief Get the last Process Status Accumulator per second values.
+ *
+ * @param psas Pointer to Process Status Accumulator structure to fill with values.
+ * @param corenum The core number (0|1) to get the process status values for.
+ */
+extern void cmt_proc_status_sec(proc_status_accum_t* psas, uint8_t corenum);
+
+/**
+ * @brief The number of scheduled messages waiting.
+ *
+ * @return int Number of scheduled messages.
+ */
+extern int cmt_sched_msg_waiting();
 
 /**
  * @brief Sleep for milliseconds and call a function.
