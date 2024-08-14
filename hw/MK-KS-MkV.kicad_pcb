@@ -6,8 +6,8 @@
 
   (paper "USLetter" portrait)
   (title_block
-    (title "MuKOB / RPi / USB - Key/Paddle&Sounder Interface MkV")
-    (date "2024-06-17")
+    (title "MuKOB / RPi / USB - K&S IF MkV")
+    (date "2024-08-13")
     (rev "1.0")
     (company "Silky Design AES")
     (comment 1 "Copyright AESilky 2023-24")
