@@ -43,7 +43,7 @@ TIP: When carrying a ((stand-alone)) interface board, it is suggested that you h
 --
 Going clockwise around the board, the connectors and controls are:
 
-image::KS-IF-MkIII-top-anno-conn.jpg[Connectors and Controls,90%]
+image::KSIF-MkIII-top-anno-conn.jpg[Connectors and Controls,90%]
 --
 
 .Interface Board Connectors
@@ -139,7 +139,7 @@ The option jumpers described in this section may or may not be configurable (via
 
 Going clockwise around the board, the option jumpers are:
 
-image::KS-IF-MkIII-top-anno-opts.jpg[Option Jumpers,90%]
+image::KSIF-MkIII-top-anno-opts.jpg[Option Jumpers,90%]
 --
 
 .Interface Board Option Jumpers
@@ -495,16 +495,16 @@ image::Key-Paddle-Conn.png[Key/Paddle Jack Connection]
 == Connection Diagrams
 
 .Separate Key and Sounder, powered through the interface
-image::Connection_KS.png[Key & Sounder]
+image::KSIF-MkIII-Connection_KS.png[Key & Sounder]
 
 .Separate Key and Sounder with external power
-image::Connection_KS_ExPwr.png[Key & Sounder with External Power]
+image::KSIF-MkIII-Connection_KS_ExPwr.png[Key & Sounder with External Power]
 
 .KOB or Loop, powered through the interface
-image::Connection_KOB.png[KOB (Loop)]
+image::KSIF-MkIII-Connection_KOB.png[KOB (Loop)]
 
 .KOB or Loop with external power
-image::Connection_KOB_ExPwr.png[KOB (Loop) with External Power]
+image::KSIF-MkIII-Connection_KOB_ExPwr.png[KOB (Loop) with External Power]
 
 [%nonfacing]
 == Optional Test Key/Paddle and Visual/Mini Sounder

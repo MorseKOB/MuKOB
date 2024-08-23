@@ -66,11 +66,11 @@
       39,
       40
     ],
-    "visible_layers": "8049020_7ffffffe",
+    "visible_layers": "8049020_ffffffff",
     "zone_display_mode": 0
   },
   "meta": {
-    "filename": "MK-KS-MkIV.kicad_pro.kicad_prl",
+    "filename": "MK-KS-MkIV.kicad_prl",
     "version": 3
   },
   "project": {

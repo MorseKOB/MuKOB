@@ -43,7 +43,7 @@ IMAGES_DIR		?= $(DOC_DIR)/images
 
 MANUAL_SETTINGS	:= $(DOC_DIR)/man_settings.adoc
 MuKOB_THEME		:= $(DOC_DIR)/MuKOB-theme.yml
-MK_KS_IF_REFMAN	:= $(DOC_DIR)/Ref-Manual-KSIF-MkIII.pdf
+MK_KS_IF_REFMAN	:= $(DOC_DIR)/Ref-Manual-KSIF-MkV.pdf
 MK_KS_IF_REFMAN_IMAGES	:= $(IMAGES_DIR)/*.png $(IMAGES_DIR)/*.jpg
 
 vpath %.py		src.py
@@ -81,3 +81,5 @@ help:
 
 %.pdf: %.adoc
 	$(PDFGEN) $<
+
+Ref-Manual-KSIF-MkIII.pdf: Ref-Manual-KSIF-MkIII.adoc $(MANUAL_SETTINGS) $(MuKOB_THEME) $(MK_KS_IF_REFMAN_IMAGES)
