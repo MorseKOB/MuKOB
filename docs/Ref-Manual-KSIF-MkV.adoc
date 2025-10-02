@@ -35,6 +35,12 @@ Following are sections that identify all of the connectors and option jumpers, s
 
 This interface can be used with a KOB (_KOB_ = _Key On Board_, a Sounder and Key connected in series, typically as a single unit on a base) (((KOB, Key On Board))) or a separate key and sounder (((Key & Sounder, separate))). Within this document, a KOB or a key and sounder connected in series, will sometimes be referred to as _The Loop Circuit_, _The Loop_, or simply, _Loop_ (((Loop, Loop Circuit))).
 
+== MKOB Suite Auto-Detect (USB Serial)
+
+When using a single interface connected via the USB Serial and the MKOB Suite of applications (MKOB, MRT, Telegram, and the utilities), the configuration (preferences) can be set to auto-detect the interface. Using Configure (or the Preferences in MKOB) set the Serial Port value to *SDIF* (Silky Design Interface)(((SDIF, Silky Design Interface))). The value must by typed in manually. With the serial port set to *SDIF*, the application will search for the interface and once found it will automatically be used.
+
+If more than one Silky Design interface is connected, the first interface found will be used.
+
 == Connectors, Controls, and Option Jumpers
 
 [%breakable]

@@ -7,7 +7,7 @@
   (paper "USLetter" portrait)
   (title_block
     (title "MuKOB Main Board")
-    (rev "1.0a")
+    (rev "1.0b")
     (company "Silky Design")
     (comment 1 "Copyright AESilky 2023-24")
     (comment 4 "a=Value/Silkscreen Changes only")
