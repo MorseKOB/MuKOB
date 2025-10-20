@@ -23,6 +23,13 @@
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "cmake.sourceDirectory": "${workspaceFolder}/src",
+    "cSpell.words": [
+        "FTDI",
+        "ifconn",
+        "imagesdir",
+        "SNDR"
+    ],
+    "asciidoc.antora.enableAntoraSupport": true,
     "files.associations": {
         "adc.h": "c",
         "types.h": "c",

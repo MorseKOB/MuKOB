@@ -16,7 +16,7 @@ This repo also includes the **MuKOB Interface** which can be used with **MKOB** 
 
 # References
 * [MorseKOB Main Project](https://github.com/MorseKOB)
-* [PyKOB - The full/computer MorseKOB Client Application, utilities and Python libraries](https://github.com/MorseKOB/PyKOB)
+* [PyKOB - The full/computer MKOB Client Application, utilities and Python libraries](https://github.com/MorseKOB/PyKOB)
 * [Raspberry Pi Pico W](https://www.raspberrypi.com/documentation/microcontrollers/raspberry-pi-pico.html)
 * [FatFs - Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/00index_e.html)
 * [no-OS-FatFS-SD-SPI-RPi-Pico](https://github.com/carlk3/no-OS-FatFS-SD-SPI-RPi-Pico)

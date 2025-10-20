@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"adc.h": "c",
+			"types.h": "c",
+			"spi.h": "c",
+			"re_pbsw.h": "c"
+		}
+	}
+}
