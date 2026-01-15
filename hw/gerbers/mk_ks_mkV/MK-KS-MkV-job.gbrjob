@@ -3,19 +3,19 @@
     "GenerationSoftware": {
       "Vendor": "KiCad",
       "Application": "Pcbnew",
-      "Version": "7.0.2"
+      "Version": "9.0.5"
     },
-    "CreationDate": "2024-08-07T09:48:02-07:00"
+    "CreationDate": "2025-11-02T14:43:09-08:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
       "Name": "MK-KS-MkV",
       "GUID": "4d4b2d4b-532d-44d6-9b56-2e6b69636164",
-      "Revision": "1.0"
+      "Revision": "1.0b"
     },
     "Size": {
-      "X": 103.18,
-      "Y": 59.8244
+      "X": 88.114,
+      "Y": 52.964
     },
     "LayerNumber": 2,
     "BoardThickness": 1.6,

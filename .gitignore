@@ -14,12 +14,13 @@ build/
 **/compie_commands.json
 
 # PCB
-*/#auto_saved_files#
-*/#auto_saved_files#/*
-*/_autosave-*.kicad_pcb
-*/*-bak
-*/*-backups/*
-*/_reports/*
+**/#auto_saved_files#
+**/#auto_saved_files#/*
+**/_autosave-*.kicad_pcb
+**/*-bak
+**/*-backups/*
+**/_backups/*
+**/_reports/*
 *.dsn
 Fp-info-cache
 
