@@ -19,6 +19,8 @@ build/
 **/_autosave-*.kicad_pcb
 **/*-bak
 **/*-backups/*
+**/*_backups*
+**/*_backups*/*
 **/_backups/*
 **/_reports/*
 *.dsn
